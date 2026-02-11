@@ -6,6 +6,15 @@ All notable changes to the HCP Terraform CLI (`hcptf`).
 
 ### Added
 
+- **URL-style navigation**: Access resources using path-like syntax (e.g., `hcptf my-org my-workspace runs list`)
+  - `hcptf <org>` - Show organization details
+  - `hcptf <org> workspaces` - List workspaces
+  - `hcptf <org> <workspace>` - Show workspace details
+  - `hcptf <org> <workspace> runs` - List runs
+  - `hcptf <org> <workspace> runs <run-id> <action>` - Perform run actions
+  - See [docs/URL_NAVIGATION.md](docs/URL_NAVIGATION.md) for complete guide
+  - Traditional command syntax remains fully supported
+
 - Workspace commands: `workspace list|create|read|update|delete`
 - Run commands: `run list|create|show|apply|discard|cancel`
 - Organization commands: `organization list|create|show|update|delete`

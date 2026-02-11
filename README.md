@@ -53,6 +53,8 @@ export HCPTF_ADDRESS="https://tfe.example.com"
 
 ## Usage
 
+### Traditional Command Style
+
 ```bash
 # List workspaces
 hcptf workspace list -org=my-org
@@ -73,6 +75,45 @@ hcptf variable create -org=my-org -workspace=staging \
 # JSON output for scripting
 hcptf workspace list -org=my-org -output=json
 ```
+
+### URL-Style Navigation
+
+For convenience, you can use a URL-like path syntax to access resources:
+
+```bash
+# Show organization details
+hcptf my-org
+
+# List workspaces in an org
+hcptf my-org workspaces
+
+# Show workspace details
+hcptf my-org my-workspace
+
+# List runs for a workspace
+hcptf my-org my-workspace runs
+hcptf my-org my-workspace runs list
+
+# Show a specific run
+hcptf my-org my-workspace runs run-abc123
+
+# Apply a run
+hcptf my-org my-workspace runs run-abc123 apply
+
+# List workspace variables
+hcptf my-org my-workspace variables
+
+# View state
+hcptf my-org my-workspace state
+hcptf my-org my-workspace state outputs
+
+# Other org resources
+hcptf my-org projects
+hcptf my-org teams
+hcptf my-org policies
+```
+
+Both styles work interchangeably - use whichever you prefer!
 
 ## Commands
 

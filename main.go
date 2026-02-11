@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/hcptf-cli/command"
+	"github.com/hashicorp/hcptf-cli/internal/router"
 	"github.com/mitchellh/cli"
 )
 
@@ -44,11 +45,20 @@ func realMain() int {
 
 	meta.Ui = ui
 
+	// Translate URL-like args if present
+	args := os.Args[1:]
+	r := router.NewRouter(nil) // Pass nil client for now - we don't need validation
+	translatedArgs, err := r.TranslateArgs(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing arguments: %s\n", err.Error())
+		return 1
+	}
+
 	// Create CLI instance
 	c := &cli.CLI{
 		Name:       "hcptf",
 		Version:    GetVersion(),
-		Args:       os.Args[1:],
+		Args:       translatedArgs,
 		Commands:   command.Commands(&meta),
 		HelpFunc:   cli.BasicHelpFunc("hcptf"),
 		HelpWriter: os.Stdout,
