@@ -1,0 +1,100 @@
+package command
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
+)
+
+type RegistryModuleDeleteCommand struct {
+	Meta
+	organization      string
+	name              string
+	provider          string
+	registryModuleSvc registryModuleDeleter
+}
+
+// Run executes the registry module delete command
+func (c *RegistryModuleDeleteCommand) Run(args []string) int {
+	flags := c.Meta.FlagSet("registrymodule delete")
+	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
+	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.name, "name", "", "Module name (required)")
+	flags.StringVar(&c.provider, "provider", "", "Provider name (optional, deletes specific provider)")
+
+	if err := flags.Parse(args); err != nil {
+		return 1
+	}
+
+	// Validate required flags
+	if c.organization == "" {
+		c.Ui.Error("Error: -organization flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	// Get API client
+	client, err := c.Meta.Client()
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
+		return 1
+	}
+
+	// Delete registry module
+	err = c.registryModuleService(client).Delete(client.Context(), c.organization, c.name)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error deleting registry module: %s", err))
+		return 1
+	}
+
+	if c.provider != "" {
+		c.Ui.Output(fmt.Sprintf("Registry module '%s/%s/%s' deleted successfully", c.organization, c.name, c.provider))
+	} else {
+		c.Ui.Output(fmt.Sprintf("Registry module '%s/%s' deleted successfully", c.organization, c.name))
+	}
+	return 0
+}
+
+func (c *RegistryModuleDeleteCommand) registryModuleService(client *client.Client) registryModuleDeleter {
+	if c.registryModuleSvc != nil {
+		return c.registryModuleSvc
+	}
+	return client.RegistryModules
+}
+
+// Help returns help text for the registry module delete command
+func (c *RegistryModuleDeleteCommand) Help() string {
+	helpText := `
+Usage: hcptf registrymodule delete [options]
+
+  Delete a private registry module.
+
+  If provider is specified, only that provider version of the module
+  is deleted. Otherwise, the entire module is deleted.
+
+Options:
+
+  -organization=<name>  Organization name (required)
+  -org=<name>          Alias for -organization
+  -name=<name>         Module name (required)
+  -provider=<name>     Provider name (optional)
+
+Example:
+
+  hcptf registrymodule delete -org=my-org -name=vpc -provider=aws
+  hcptf registrymodule delete -org=my-org -name=vpc
+`
+	return strings.TrimSpace(helpText)
+}
+
+// Synopsis returns a short synopsis for the registry module delete command
+func (c *RegistryModuleDeleteCommand) Synopsis() string {
+	return "Delete a private registry module"
+}

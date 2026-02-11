@@ -1,0 +1,26 @@
+# HCP Terraform CLI Configuration Example
+# Copy this file to ~/.hcptfrc and update with your credentials
+#
+# NOTE: If you already use Terraform CLI, you don't need this file!
+# The CLI automatically reads credentials from ~/.terraform.d/credentials.tfrc.json
+#
+# You can also use environment variables:
+#   export TFE_TOKEN="your-token"      (standard Terraform CLI variable)
+#   export HCPTF_TOKEN="your-token"    (hcptf-specific variable)
+
+# Credentials for HCP Terraform
+credentials "app.terraform.io" {
+  token = "your-hcp-terraform-token-here"
+}
+
+# Credentials for Terraform Enterprise (if using)
+# credentials "tfe.example.com" {
+#   token = "your-tfe-token-here"
+# }
+
+# Default organization (optional)
+default_organization = "my-org"
+
+# Default output format (optional)
+# Options: table, json
+output_format = "table"

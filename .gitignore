@@ -1,0 +1,32 @@
+# Binaries
+hcptf
+hcptf-cli
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+*.out
+
+# Go workspace files
+go.work
+go.work.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config files with credentials
+.hcptfrc
+*.tfvars
+*.auto.tfvars
