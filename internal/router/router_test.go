@@ -31,7 +31,7 @@ func TestTranslateArgs(t *testing.T) {
 		{
 			name:     "org only",
 			input:    []string{"myorg"},
-			expected: []string{"organization", "show", "-org=myorg"},
+			expected: []string{"organization", "show", "-name=myorg"},
 		},
 		{
 			name:     "org workspaces",
@@ -61,7 +61,7 @@ func TestTranslateArgs(t *testing.T) {
 		{
 			name:     "org workspace",
 			input:    []string{"myorg", "myworkspace"},
-			expected: []string{"workspace", "read", "-org=myorg", "-workspace=myworkspace"},
+			expected: []string{"workspace", "read", "-org=myorg", "-name=myworkspace"},
 		},
 		{
 			name:     "org workspace runs",

@@ -40,7 +40,7 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 
 	// Just org: show org details
 	if len(args) == 1 {
-		return []string{"organization", "show", "-org=" + org}, nil
+		return []string{"organization", "show", "-name=" + org}, nil
 	}
 
 	// Check for resource type as second arg
@@ -70,7 +70,7 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	// assume it's a workspace
 	if len(args) == 2 {
 		workspace := args[1]
-		return []string{"workspace", "read", "-org=" + org, "-workspace=" + workspace}, nil
+		return []string{"workspace", "read", "-org=" + org, "-name=" + workspace}, nil
 	}
 
 	// 3+ args: org, workspace, resource
