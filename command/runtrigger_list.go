@@ -12,12 +12,12 @@ import (
 // RunTriggerListCommand is a command to list run triggers
 type RunTriggerListCommand struct {
 	Meta
-	organization   string
-	workspace      string
-	triggerType    string
-	format         string
-	workspaceSvc   workspaceReader
-	runTriggerSvc  runTriggerLister
+	organization  string
+	workspace     string
+	triggerType   string
+	format        string
+	workspaceSvc  workspaceReader
+	runTriggerSvc runTriggerLister
 }
 
 // Run executes the run trigger list command

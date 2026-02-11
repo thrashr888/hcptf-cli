@@ -11,16 +11,16 @@ import (
 // HYOKCreateCommand is a command to create a HYOK configuration
 type HYOKCreateCommand struct {
 	Meta
-	organization      string
-	name              string
-	kekID             string
-	agentPoolID       string
-	oidcConfigID      string
-	oidcType          string
-	keyRegion         string
-	keyLocation       string
-	keyRingID         string
-	format            string
+	organization string
+	name         string
+	kekID        string
+	agentPoolID  string
+	oidcConfigID string
+	oidcType     string
+	keyRegion    string
+	keyLocation  string
+	keyRingID    string
+	format       string
 }
 
 // Run executes the HYOK create command

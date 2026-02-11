@@ -11,17 +11,17 @@ import (
 // QueryRunListCommand is a command to search runs across an organization
 type QueryRunListCommand struct {
 	Meta
-	organization  string
-	status        string
-	operation     string
-	source        string
-	workspace     string
-	agentPool     string
-	statusGroup   string
-	searchUser    string
-	searchCommit  string
-	searchBasic   string
-	format        string
+	organization string
+	status       string
+	operation    string
+	source       string
+	workspace    string
+	agentPool    string
+	statusGroup  string
+	searchUser   string
+	searchCommit string
+	searchBasic  string
+	format       string
 }
 
 // Run executes the query run list command

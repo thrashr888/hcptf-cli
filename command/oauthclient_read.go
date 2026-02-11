@@ -56,15 +56,15 @@ func (c *OAuthClientReadCommand) Run(args []string) int {
 	}
 
 	data := map[string]interface{}{
-		"ID":                   oauthClient.ID,
-		"Name":                 name,
-		"ServiceProvider":      string(oauthClient.ServiceProvider),
-		"ServiceProviderName":  oauthClient.ServiceProviderName,
-		"HTTPURL":              oauthClient.HTTPURL,
-		"APIURL":               oauthClient.APIURL,
-		"CallbackURL":          oauthClient.CallbackURL,
-		"ConnectPath":          oauthClient.ConnectPath,
-		"CreatedAt":            oauthClient.CreatedAt,
+		"ID":                  oauthClient.ID,
+		"Name":                name,
+		"ServiceProvider":     string(oauthClient.ServiceProvider),
+		"ServiceProviderName": oauthClient.ServiceProviderName,
+		"HTTPURL":             oauthClient.HTTPURL,
+		"APIURL":              oauthClient.APIURL,
+		"CallbackURL":         oauthClient.CallbackURL,
+		"ConnectPath":         oauthClient.ConnectPath,
+		"CreatedAt":           oauthClient.CreatedAt,
 	}
 
 	if oauthClient.OrganizationScoped != nil {

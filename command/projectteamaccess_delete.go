@@ -9,9 +9,9 @@ import (
 
 type ProjectTeamAccessDeleteCommand struct {
 	Meta
-	id                     string
-	force                  bool
-	projectTeamAccessSvc   projectTeamAccessDeleter
+	id                   string
+	force                bool
+	projectTeamAccessSvc projectTeamAccessDeleter
 }
 
 // Run executes the project team access delete command

@@ -11,12 +11,12 @@ import (
 // RunTaskAttachCommand is a command to attach a run task to a workspace
 type RunTaskAttachCommand struct {
 	Meta
-	organization      string
-	workspace         string
-	runTaskID         string
-	enforcementLevel  string
-	stage             string
-	format            string
+	organization     string
+	workspace        string
+	runTaskID        string
+	enforcementLevel string
+	stage            string
+	format           string
 }
 
 // Run executes the run task attach command

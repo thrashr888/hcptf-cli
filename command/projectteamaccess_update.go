@@ -11,10 +11,10 @@ import (
 
 type ProjectTeamAccessUpdateCommand struct {
 	Meta
-	id                     string
-	access                 string
-	format                 string
-	projectTeamAccessSvc   projectTeamAccessUpdater
+	id                   string
+	access               string
+	format               string
+	projectTeamAccessSvc projectTeamAccessUpdater
 }
 
 // Run executes the project team access update command

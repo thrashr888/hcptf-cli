@@ -104,14 +104,57 @@ func TestGetTokenPriority(t *testing.T) {
 }
 
 func TestGetAddress(t *testing.T) {
-	t.Setenv("HCPTF_ADDRESS", "https://example.com")
-	if addr := GetAddress(); addr != "https://example.com" {
-		t.Fatalf("expected custom address, got %s", addr)
+	tests := []struct {
+		name             string
+		hcptfAddress     string
+		tfeAddress       string
+		expectedAddress  string
+	}{
+		{
+			name:            "HCPTF_ADDRESS takes precedence",
+			hcptfAddress:    "https://hcptf.example.com",
+			tfeAddress:      "https://tfe.example.com",
+			expectedAddress: "https://hcptf.example.com",
+		},
+		{
+			name:            "TFE_ADDRESS used as fallback",
+			hcptfAddress:    "",
+			tfeAddress:      "https://tfe.example.com",
+			expectedAddress: "https://tfe.example.com",
+		},
+		{
+			name:            "default address when neither set",
+			hcptfAddress:    "",
+			tfeAddress:      "",
+			expectedAddress: "https://app.terraform.io",
+		},
+		{
+			name:            "HCPTF_ADDRESS alone works",
+			hcptfAddress:    "https://custom.example.com",
+			tfeAddress:      "",
+			expectedAddress: "https://custom.example.com",
+		},
 	}
 
-	t.Setenv("HCPTF_ADDRESS", "")
-	if addr := GetAddress(); addr != "https://app.terraform.io" {
-		t.Fatalf("expected default address, got %s", addr)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.hcptfAddress != "" {
+				t.Setenv("HCPTF_ADDRESS", tt.hcptfAddress)
+			} else {
+				t.Setenv("HCPTF_ADDRESS", "")
+			}
+
+			if tt.tfeAddress != "" {
+				t.Setenv("TFE_ADDRESS", tt.tfeAddress)
+			} else {
+				t.Setenv("TFE_ADDRESS", "")
+			}
+
+			addr := GetAddress()
+			if addr != tt.expectedAddress {
+				t.Errorf("expected address %q, got %q", tt.expectedAddress, addr)
+			}
+		})
 	}
 }
 

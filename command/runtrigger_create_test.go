@@ -12,10 +12,10 @@ import (
 )
 
 type mockRunTriggerCreateService struct {
-	response      *tfe.RunTrigger
-	err           error
-	lastWSID      string
-	lastOptions   tfe.RunTriggerCreateOptions
+	response    *tfe.RunTrigger
+	err         error
+	lastWSID    string
+	lastOptions tfe.RunTriggerCreateOptions
 }
 
 func (m *mockRunTriggerCreateService) Create(_ context.Context, workspaceID string, options tfe.RunTriggerCreateOptions) (*tfe.RunTrigger, error) {

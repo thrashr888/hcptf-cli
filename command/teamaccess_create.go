@@ -11,11 +11,11 @@ import (
 
 type TeamAccessCreateCommand struct {
 	Meta
-	workspaceID     string
-	teamID          string
-	access          string
-	format          string
-	teamAccessSvc   teamAccessCreator
+	workspaceID   string
+	teamID        string
+	access        string
+	format        string
+	teamAccessSvc teamAccessCreator
 }
 
 // Run executes the team access create command

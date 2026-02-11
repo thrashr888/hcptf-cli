@@ -11,11 +11,11 @@ import (
 
 type ProjectTeamAccessCreateCommand struct {
 	Meta
-	projectID              string
-	teamID                 string
-	access                 string
-	format                 string
-	projectTeamAccessSvc   projectTeamAccessCreator
+	projectID            string
+	teamID               string
+	access               string
+	format               string
+	projectTeamAccessSvc projectTeamAccessCreator
 }
 
 // Run executes the project team access create command

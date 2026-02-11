@@ -11,9 +11,9 @@ import (
 
 type TeamAccessListCommand struct {
 	Meta
-	workspaceID     string
-	format          string
-	teamAccessSvc   teamAccessLister
+	workspaceID   string
+	format        string
+	teamAccessSvc teamAccessLister
 }
 
 // Run executes the team access list command

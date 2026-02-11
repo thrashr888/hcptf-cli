@@ -40,13 +40,13 @@ func (c *AccountShowCommand) Run(args []string) int {
 	formatter := output.NewFormatter(c.format)
 
 	data := map[string]interface{}{
-		"ID":                    account.ID,
-		"Email":                 account.Email,
-		"Username":              account.Username,
-		"AvatarURL":             account.AvatarURL,
-		"TwoFactorEnabled":      account.TwoFactor != nil && account.TwoFactor.Enabled,
-		"IsServiceAccount":      account.IsServiceAccount,
-		"UnconfirmedEmail":      account.UnconfirmedEmail,
+		"ID":               account.ID,
+		"Email":            account.Email,
+		"Username":         account.Username,
+		"AvatarURL":        account.AvatarURL,
+		"TwoFactorEnabled": account.TwoFactor != nil && account.TwoFactor.Enabled,
+		"IsServiceAccount": account.IsServiceAccount,
+		"UnconfirmedEmail": account.UnconfirmedEmail,
 	}
 
 	if account.TwoFactor != nil {

@@ -20,9 +20,9 @@ type ChangeRequestListCommand struct {
 
 // ChangeRequest represents a workspace change request
 type ChangeRequest struct {
-	ID         string                       `json:"id"`
-	Type       string                       `json:"type"`
-	Attributes ChangeRequestAttributes      `json:"attributes"`
+	ID            string                     `json:"id"`
+	Type          string                     `json:"type"`
+	Attributes    ChangeRequestAttributes    `json:"attributes"`
 	Relationships ChangeRequestRelationships `json:"relationships"`
 }
 

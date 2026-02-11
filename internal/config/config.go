@@ -139,7 +139,12 @@ func (c *Config) GetToken(hostname string) string {
 // GetAddress returns the API address to use
 // Priority: HCPTF_ADDRESS env var > default
 func GetAddress() string {
+	// Check HCPTF_ADDRESS first (new standard)
 	if addr := os.Getenv("HCPTF_ADDRESS"); addr != "" {
+		return addr
+	}
+	// Fall back to TFE_ADDRESS for compatibility
+	if addr := os.Getenv("TFE_ADDRESS"); addr != "" {
 		return addr
 	}
 	return "https://app.terraform.io"

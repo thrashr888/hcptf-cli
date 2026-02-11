@@ -17,9 +17,9 @@ type oauthClientLister interface {
 
 type OAuthClientListCommand struct {
 	Meta
-	organization    string
-	format          string
-	oauthClientSvc  oauthClientLister
+	organization   string
+	format         string
+	oauthClientSvc oauthClientLister
 }
 
 // Run executes the oauthclient list command

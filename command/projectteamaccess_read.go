@@ -11,9 +11,9 @@ import (
 
 type ProjectTeamAccessReadCommand struct {
 	Meta
-	id                     string
-	format                 string
-	projectTeamAccessSvc   projectTeamAccessReader
+	id                   string
+	format               string
+	projectTeamAccessSvc projectTeamAccessReader
 }
 
 // Run executes the project team access read command

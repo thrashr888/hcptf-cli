@@ -61,15 +61,20 @@ hcptf login                              # app.terraform.io (default)
 hcptf login -hostname=tfe.example.com    # Terraform Enterprise
 ```
 
-Switch between instances with `HCPTF_ADDRESS`:
+Switch between instances with environment variables:
 
 ```bash
 # Default: app.terraform.io
 hcptf workspace list -org=my-org
 
-# Enterprise instance
+# Enterprise instance (preferred)
 HCPTF_ADDRESS="https://tfe.example.com" hcptf workspace list -org=my-org
+
+# Enterprise instance (legacy - also supported)
+TFE_ADDRESS="https://tfe.example.com" hcptf workspace list -org=my-org
 ```
+
+Note: `HCPTF_ADDRESS` takes precedence over `TFE_ADDRESS` for backward compatibility with Terraform Enterprise users.
 
 ## Logout
 

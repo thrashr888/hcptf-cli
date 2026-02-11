@@ -17,9 +17,9 @@ type oauthTokenLister interface {
 
 type OAuthTokenListCommand struct {
 	Meta
-	organization   string
-	format         string
-	oauthTokenSvc  oauthTokenLister
+	organization  string
+	format        string
+	oauthTokenSvc oauthTokenLister
 }
 
 // Run executes the oauthtoken list command

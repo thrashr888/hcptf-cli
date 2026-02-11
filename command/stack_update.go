@@ -92,11 +92,11 @@ func (c *StackUpdateCommand) Run(args []string) int {
 
 	// Show stack details
 	data := map[string]interface{}{
-		"ID":                  stack.ID,
-		"Name":                stack.Name,
-		"Description":         stack.Description,
-		"SpeculativeEnabled":  stack.SpeculativeEnabled,
-		"UpdatedAt":           stack.UpdatedAt,
+		"ID":                 stack.ID,
+		"Name":               stack.Name,
+		"Description":        stack.Description,
+		"SpeculativeEnabled": stack.SpeculativeEnabled,
+		"UpdatedAt":          stack.UpdatedAt,
 	}
 
 	formatter.KeyValue(data)

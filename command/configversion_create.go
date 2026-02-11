@@ -83,13 +83,13 @@ func (c *ConfigVersionCreateCommand) Run(args []string) int {
 	c.Ui.Output("Configuration version created successfully")
 
 	data := map[string]interface{}{
-		"ID":             configVersion.ID,
-		"Status":         configVersion.Status,
-		"Source":         configVersion.Source,
-		"Speculative":    configVersion.Speculative,
-		"Provisional":    configVersion.Provisional,
-		"AutoQueueRuns":  c.autoQueueRuns,
-		"UploadURL":      configVersion.UploadURL,
+		"ID":            configVersion.ID,
+		"Status":        configVersion.Status,
+		"Source":        configVersion.Source,
+		"Speculative":   configVersion.Speculative,
+		"Provisional":   configVersion.Provisional,
+		"AutoQueueRuns": c.autoQueueRuns,
+		"UploadURL":     configVersion.UploadURL,
 	}
 
 	formatter.KeyValue(data)

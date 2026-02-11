@@ -51,13 +51,13 @@ func (c *PlanReadCommand) Run(args []string) int {
 	formatter := output.NewFormatter(c.format)
 
 	data := map[string]interface{}{
-		"ID":                    plan.ID,
-		"Status":                plan.Status,
-		"HasChanges":            plan.HasChanges,
-		"ResourceAdditions":     plan.ResourceAdditions,
-		"ResourceChanges":       plan.ResourceChanges,
-		"ResourceDestructions":  plan.ResourceDestructions,
-		"ResourceImports":       plan.ResourceImports,
+		"ID":                     plan.ID,
+		"Status":                 plan.Status,
+		"HasChanges":             plan.HasChanges,
+		"ResourceAdditions":      plan.ResourceAdditions,
+		"ResourceChanges":        plan.ResourceChanges,
+		"ResourceDestructions":   plan.ResourceDestructions,
+		"ResourceImports":        plan.ResourceImports,
 		"GeneratedConfiguration": plan.GeneratedConfiguration,
 	}
 

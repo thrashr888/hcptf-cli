@@ -103,11 +103,11 @@ func (c *StackCreateCommand) Run(args []string) int {
 
 	// Show stack details
 	data := map[string]interface{}{
-		"ID":                  stack.ID,
-		"Name":                stack.Name,
-		"Description":         stack.Description,
-		"SpeculativeEnabled":  stack.SpeculativeEnabled,
-		"CreatedAt":           stack.CreatedAt,
+		"ID":                 stack.ID,
+		"Name":               stack.Name,
+		"Description":        stack.Description,
+		"SpeculativeEnabled": stack.SpeculativeEnabled,
+		"CreatedAt":          stack.CreatedAt,
 	}
 
 	if stack.Project != nil {

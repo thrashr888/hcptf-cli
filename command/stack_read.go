@@ -49,12 +49,12 @@ func (c *StackReadCommand) Run(args []string) int {
 	formatter := output.NewFormatter(c.format)
 
 	data := map[string]interface{}{
-		"ID":                  stack.ID,
-		"Name":                stack.Name,
-		"Description":         stack.Description,
-		"SpeculativeEnabled":  stack.SpeculativeEnabled,
-		"CreatedAt":           stack.CreatedAt,
-		"UpdatedAt":           stack.UpdatedAt,
+		"ID":                 stack.ID,
+		"Name":               stack.Name,
+		"Description":        stack.Description,
+		"SpeculativeEnabled": stack.SpeculativeEnabled,
+		"CreatedAt":          stack.CreatedAt,
+		"UpdatedAt":          stack.UpdatedAt,
 	}
 
 	if stack.Project != nil {

@@ -45,11 +45,14 @@ default_organization = "my-org"
 output_format = "table"  # or "json"
 ```
 
-Override the API endpoint with `HCPTF_ADDRESS`:
+Override the API endpoint:
 
 ```bash
-export HCPTF_ADDRESS="https://tfe.example.com"
+export HCPTF_ADDRESS="https://tfe.example.com"  # Preferred
+export TFE_ADDRESS="https://tfe.example.com"    # Legacy support
 ```
+
+Note: `HCPTF_ADDRESS` takes precedence over `TFE_ADDRESS` for compatibility.
 
 ## Usage
 

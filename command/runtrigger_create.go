@@ -12,12 +12,12 @@ import (
 // RunTriggerCreateCommand is a command to create a run trigger
 type RunTriggerCreateCommand struct {
 	Meta
-	organization      string
-	workspace         string
-	sourceWorkspace   string
-	format            string
-	workspaceSvc      workspaceReader
-	runTriggerSvc     runTriggerCreator
+	organization    string
+	workspace       string
+	sourceWorkspace string
+	format          string
+	workspaceSvc    workspaceReader
+	runTriggerSvc   runTriggerCreator
 }
 
 // Run executes the run trigger create command

@@ -115,10 +115,10 @@ func TestRunTriggerListCommandSuccess(t *testing.T) {
 		response: &tfe.RunTriggerList{
 			Items: []*tfe.RunTrigger{
 				{
-					ID:              "rt-abc123",
-					WorkspaceName:   "target-workspace",
-					SourceableName:  "source-workspace",
-					CreatedAt:       time.Now(),
+					ID:             "rt-abc123",
+					WorkspaceName:  "target-workspace",
+					SourceableName: "source-workspace",
+					CreatedAt:      time.Now(),
 				},
 			},
 		},

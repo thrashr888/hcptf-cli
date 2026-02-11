@@ -19,9 +19,9 @@ type AssessmentResultReadCommand struct {
 
 // AssessmentResult represents a health assessment result
 type AssessmentResult struct {
-	ID   string                      `json:"id"`
-	Type string                      `json:"type"`
-	Data AssessmentResultData        `json:"data"`
+	ID   string               `json:"id"`
+	Type string               `json:"type"`
+	Data AssessmentResultData `json:"data"`
 }
 
 // AssessmentResultData contains assessment result details

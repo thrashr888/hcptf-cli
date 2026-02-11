@@ -10,9 +10,9 @@ import (
 
 type TeamAccessReadCommand struct {
 	Meta
-	id              string
-	format          string
-	teamAccessSvc   teamAccessReader
+	id            string
+	format        string
+	teamAccessSvc teamAccessReader
 }
 
 // Run executes the team access read command

@@ -9,9 +9,9 @@ import (
 
 type TeamAccessDeleteCommand struct {
 	Meta
-	id              string
-	force           bool
-	teamAccessSvc   teamAccessDeleter
+	id            string
+	force         bool
+	teamAccessSvc teamAccessDeleter
 }
 
 // Run executes the team access delete command

@@ -39,8 +39,8 @@ type ChangeRequestCreatePayload struct {
 // BulkActionResponse represents the bulk action response
 type BulkActionResponse struct {
 	Data struct {
-		ID   string `json:"id"`
-		Type string `json:"type"`
+		ID         string `json:"id"`
+		Type       string `json:"type"`
 		Attributes struct {
 			OrganizationID string `json:"organization_id"`
 			ActionType     string `json:"action_type"`

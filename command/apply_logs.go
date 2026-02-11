@@ -12,9 +12,9 @@ import (
 // ApplyLogsCommand is a command to get apply logs
 type ApplyLogsCommand struct {
 	Meta
-	applyID      string
-	format       string
-	applyLogSvc  applyLogReader
+	applyID     string
+	format      string
+	applyLogSvc applyLogReader
 }
 
 // Run executes the apply logs command
