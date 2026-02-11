@@ -2,7 +2,14 @@
 
 All notable changes to the HCP Terraform CLI (`hcptf`).
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
+
+## [0.1.0] - 2025-02-11
+
+Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 ### Added
 
@@ -101,3 +108,6 @@ All notable changes to the HCP Terraform CLI (`hcptf`).
 - HCL-based configuration (`~/.hcptfrc`)
 
 Total: 229 commands across 59 resource types.
+
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/thrashr888/hcptf-cli/releases/tag/v0.1.0
