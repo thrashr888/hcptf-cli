@@ -6,6 +6,24 @@ All notable changes to the HCP Terraform CLI (`hcptf`).
 
 ### Added
 
+- **Automated releases**: GoReleaser workflow for creating GitHub releases with binaries
+  - Multi-platform binaries: Linux (amd64, arm64), macOS (Intel, Apple Silicon), Windows, FreeBSD
+  - Automatic changelog generation from commits
+  - SHA256 checksums for all binaries
+  - See [docs/RELEASING.md](docs/RELEASING.md) for release process
+
+- **TFE_ADDRESS support**: Backward compatibility with Terraform Enterprise
+  - Environment variable precedence: HCPTF_ADDRESS > TFE_ADDRESS > default
+  - Seamless migration for existing TFE users
+  - See [docs/AUTH_GUIDE.md](docs/AUTH_GUIDE.md) for details
+
+- **Comprehensive testing infrastructure**:
+  - Added internal/client tests (92.9% coverage)
+  - Added docs/TESTING.md guide following HashiCorp go-tfe patterns
+  - Added docs/TEST_COVERAGE.md with coverage report and roadmap
+  - Internal packages average 79% coverage
+  - Fixed broken test files and added test helpers
+
 - **URL-style navigation**: Access resources using path-like syntax (e.g., `hcptf my-org my-workspace runs list`)
   - `hcptf <org>` - Show organization details
   - `hcptf <org> workspaces` - List workspaces

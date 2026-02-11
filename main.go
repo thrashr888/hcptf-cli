@@ -10,11 +10,11 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-const (
-	// Version is the main version number
+var (
+	// Version is the main version number (injected by GoReleaser via -ldflags)
 	Version = "0.1.0"
 
-	// VersionPrerelease is a pre-release marker for the version
+	// VersionPrerelease is a pre-release marker for the version (injected by GoReleaser)
 	VersionPrerelease = "dev"
 )
 

@@ -4,6 +4,26 @@ A Go CLI for managing HCP Terraform resources. Built with `mitchellh/cli` and `h
 
 ## Installation
 
+### Download Pre-built Binary (Recommended)
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/thrashr888/hcptf-cli/releases):
+
+```bash
+# Example: macOS (Apple Silicon)
+curl -LO https://github.com/thrashr888/hcptf-cli/releases/latest/download/hcptf_VERSION_darwin_arm64.tar.gz
+tar -xzf hcptf_VERSION_darwin_arm64.tar.gz
+sudo mv hcptf /usr/local/bin/
+
+# Verify installation
+hcptf version
+```
+
+Available platforms: Linux (amd64, arm64), macOS (Intel, Apple Silicon), Windows, FreeBSD.
+
+See [docs/RELEASING.md](docs/RELEASING.md) for checksum verification.
+
+### Build from Source
+
 ```bash
 go build -o hcptf .
 

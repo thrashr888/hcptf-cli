@@ -1,0 +1,139 @@
+# GoReleaser configuration for hcptf CLI
+# See: https://goreleaser.com
+
+version: 2
+
+before:
+  hooks:
+    # Run tests before building
+    - go test ./...
+    # Ensure dependencies are tidy
+    - go mod tidy
+
+builds:
+  - id: hcptf
+    binary: hcptf
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "6"
+      - "7"
+    # Exclude unsupported combinations
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.VersionPrerelease={{if .Prerelease}}{{.Prerelease}}{{else}}{{end}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - docs/**/*
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+  groups:
+    - title: "New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 10
+    - title: "Documentation"
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 20
+    - title: "Other Changes"
+      order: 999
+
+release:
+  github:
+    owner: thrashr888
+    name: hcptf-cli
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## HCP Terraform CLI {{ .Tag }}
+
+    Official release of the HCP Terraform command-line interface.
+
+    ### Installation
+
+    Download the appropriate binary for your platform below, extract it, and move it to a directory in your `PATH`.
+
+    ### Verification
+
+    Checksums are provided in `{{ .ProjectName }}_{{ .Version }}_SHA256SUMS`.
+
+    ```bash
+    # Example verification on macOS/Linux
+    shasum -a 256 -c {{ .ProjectName }}_{{ .Version }}_SHA256SUMS
+    ```
+  footer: |
+    ---
+
+    **Full Changelog**: https://github.com/thrashr888/hcptf-cli/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    ## Documentation
+
+    - [README](https://github.com/thrashr888/hcptf-cli/blob/{{ .Tag }}/README.md)
+    - [Commands Reference](https://github.com/thrashr888/hcptf-cli/blob/{{ .Tag }}/docs/COMMANDS.md)
+    - [Authentication Guide](https://github.com/thrashr888/hcptf-cli/blob/{{ .Tag }}/docs/AUTH_GUIDE.md)
+
+    ## Support
+
+    Report issues at https://github.com/thrashr888/hcptf-cli/issues
+
+# Homebrew tap (optional - can enable later)
+# brews:
+#   - name: hcptf
+#     repository:
+#       owner: thrashr888
+#       name: homebrew-tap
+#     description: "HCP Terraform CLI"
+#     homepage: "https://github.com/thrashr888/hcptf-cli"
+#     license: "MIT"
+#     install: |
+#       bin.install "hcptf"
