@@ -3,6 +3,7 @@ package command
 import (
 	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
@@ -11,6 +12,17 @@ import (
 
 func newTestMeta(ui cli.Ui) Meta {
 	return Meta{Ui: ui, client: &client.Client{}}
+}
+
+// testMeta is an alias for newTestMeta for backwards compatibility
+func testMeta(t *testing.T, ui cli.Ui) Meta {
+	t.Helper()
+	return newTestMeta(ui)
+}
+
+// contains checks if a string contains a substring
+func contains(s, substr string) bool {
+	return strings.Contains(s, substr)
 }
 
 func captureStdout(t *testing.T, fn func() int) (string, int) {
