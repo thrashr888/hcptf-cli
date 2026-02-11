@@ -105,10 +105,10 @@ func TestGetTokenPriority(t *testing.T) {
 
 func TestGetAddress(t *testing.T) {
 	tests := []struct {
-		name             string
-		hcptfAddress     string
-		tfeAddress       string
-		expectedAddress  string
+		name            string
+		hcptfAddress    string
+		tfeAddress      string
+		expectedAddress string
 	}{
 		{
 			name:            "HCPTF_ADDRESS takes precedence",
