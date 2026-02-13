@@ -115,12 +115,18 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 				action := "show"
 				if len(args) >= 5 {
 					action = args[4]
-					// Special case: plan and logs are subcommands, not run actions
+					// Special case: plan, logs, and apply subcommands
 					if action == "plan" {
 						return []string{"plan", "read", "-id=" + runID}, nil
 					}
-					if action == "logs" {
+					if action == "logs" || action == "planlogs" {
 						return []string{"plan", "logs", "-id=" + runID}, nil
+					}
+					if action == "applylogs" {
+						return []string{"apply", "logs", "-id=" + runID}, nil
+					}
+					if action == "applyread" || action == "applydetails" {
+						return []string{"apply", "read", "-id=" + runID}, nil
 					}
 				}
 				return []string{"run", action, "-id=" + runID}, nil
