@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -15,6 +16,7 @@ type AgentPoolCreateCommand struct {
 	name               string
 	organizationScoped bool
 	format             string
+	agentPoolSvc       agentPoolCreator
 }
 
 // Run executes the agent pool create command
@@ -56,7 +58,7 @@ func (c *AgentPoolCreateCommand) Run(args []string) int {
 		OrganizationScoped: tfe.Bool(c.organizationScoped),
 	}
 
-	agentPool, err := client.AgentPools.Create(client.Context(), c.organization, options)
+	agentPool, err := c.agentPoolService(client).Create(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating agent pool: %s", err))
 		return 1
@@ -79,6 +81,13 @@ func (c *AgentPoolCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *AgentPoolCreateCommand) agentPoolService(client *client.Client) agentPoolCreator {
+	if c.agentPoolSvc != nil {
+		return c.agentPoolSvc
+	}
+	return client.AgentPools
 }
 
 // Help returns help text for the agent pool create command

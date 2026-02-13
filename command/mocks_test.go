@@ -578,3 +578,47 @@ func (m *mockRegistryProviderVersionDeleteService) Delete(_ context.Context, ver
 	m.lastID = versionID
 	return m.err
 }
+
+type mockCommentListService struct {
+	response *tfe.CommentList
+	err      error
+	lastID   string
+}
+
+func (m *mockCommentListService) List(_ context.Context, runID string) (*tfe.CommentList, error) {
+	m.lastID = runID
+	return m.response, m.err
+}
+
+type mockAgentPoolCreateService struct {
+	response    *tfe.AgentPool
+	err         error
+	lastOrg     string
+	lastOptions tfe.AgentPoolCreateOptions
+}
+
+func (m *mockAgentPoolCreateService) Create(_ context.Context, organization string, options tfe.AgentPoolCreateOptions) (*tfe.AgentPool, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockUserReadService struct {
+	response *tfe.User
+	err      error
+}
+
+func (m *mockUserReadService) ReadCurrent(_ context.Context) (*tfe.User, error) {
+	return m.response, m.err
+}
+
+type mockUserTokenListService struct {
+	response *tfe.UserTokenList
+	err      error
+	lastID   string
+}
+
+func (m *mockUserTokenListService) List(_ context.Context, userID string) (*tfe.UserTokenList, error) {
+	m.lastID = userID
+	return m.response, m.err
+}
