@@ -48,20 +48,13 @@ func (c *StateListCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Get workspace first
-	ws, err := client.Workspaces.Read(client.Context(), c.organization, c.workspace)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading workspace: %s", err))
-		return 1
-	}
-
 	// List state versions
 	stateVersions, err := client.StateVersions.List(client.Context(), &tfe.StateVersionListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 50,
 		},
 		Organization: c.organization,
-		Workspace:    ws.ID,
+		Workspace:    c.workspace,
 	})
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing state versions: %s", err))
