@@ -124,7 +124,7 @@ case "$MODE" in
     echo ""
 
     # Calculate progress to goals
-    goal_60=60
+    goal_50=50
     goal_75=75
     goal_80=80
 
@@ -134,12 +134,12 @@ case "$MODE" in
       echo -e "  ${GREEN}✓${NC} Exceeded 75% goal!"
       remaining=$(echo "$goal_80 - $total" | bc)
       echo -e "  ${YELLOW}○${NC} Next goal: 80% (need ${remaining}% more)"
-    elif (( $(echo "$total >= $goal_60" | bc -l) )); then
+    elif (( $(echo "$total >= $goal_50" | bc -l) )); then
       echo -e "  ${GREEN}✓${NC} Exceeded 60% goal!"
       remaining=$(echo "$goal_75 - $total" | bc)
       echo -e "  ${YELLOW}○${NC} Next goal: 75% (need ${remaining}% more)"
     else
-      remaining=$(echo "$goal_60 - $total" | bc)
+      remaining=$(echo "$goal_50 - $total" | bc)
       echo -e "  ${YELLOW}○${NC} Target: 60% (need ${remaining}% more)"
     fi
 

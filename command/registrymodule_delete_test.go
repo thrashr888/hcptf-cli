@@ -1,0 +1,170 @@
+package command
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/mitchellh/cli"
+)
+
+func TestRegistryModuleDeleteRequiresOrganization(t *testing.T) {
+	ui := cli.NewMockUi()
+	cmd := &RegistryModuleDeleteCommand{
+		Meta: newTestMeta(ui),
+	}
+
+	code := cmd.Run([]string{"-name=vpc"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-organization") {
+		t.Fatalf("expected organization error, got %q", out)
+	}
+}
+
+func TestRegistryModuleDeleteRequiresName(t *testing.T) {
+	ui := cli.NewMockUi()
+	cmd := &RegistryModuleDeleteCommand{
+		Meta: newTestMeta(ui),
+	}
+
+	code := cmd.Run([]string{"-organization=test-org"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-name") {
+		t.Fatalf("expected name error, got %q", out)
+	}
+}
+
+func TestRegistryModuleDeleteRequiresBothFlags(t *testing.T) {
+	ui := cli.NewMockUi()
+	cmd := &RegistryModuleDeleteCommand{
+		Meta: newTestMeta(ui),
+	}
+
+	code := cmd.Run([]string{})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if out := ui.ErrorWriter.String(); !strings.Contains(out, "required") {
+		t.Fatalf("expected required error, got %q", out)
+	}
+}
+
+func TestRegistryModuleDeleteHelp(t *testing.T) {
+	cmd := &RegistryModuleDeleteCommand{}
+
+	help := cmd.Help()
+	if help == "" {
+		t.Fatal("Help should not be empty")
+	}
+
+	// Check for key help elements
+	if !strings.Contains(help, "hcptf registrymodule delete") {
+		t.Error("Help should contain usage")
+	}
+	if !strings.Contains(help, "-organization") {
+		t.Error("Help should mention -organization flag")
+	}
+	if !strings.Contains(help, "-org") {
+		t.Error("Help should mention -org flag alias")
+	}
+	if !strings.Contains(help, "-name") {
+		t.Error("Help should mention -name flag")
+	}
+	if !strings.Contains(help, "-provider") {
+		t.Error("Help should mention -provider flag")
+	}
+	if !strings.Contains(help, "private registry module") {
+		t.Error("Help should mention private registry module")
+	}
+	if !strings.Contains(help, "(optional)") {
+		t.Error("Help should indicate provider is optional")
+	}
+}
+
+func TestRegistryModuleDeleteSynopsis(t *testing.T) {
+	cmd := &RegistryModuleDeleteCommand{}
+
+	synopsis := cmd.Synopsis()
+	if synopsis == "" {
+		t.Fatal("Synopsis should not be empty")
+	}
+	if synopsis != "Delete a private registry module" {
+		t.Errorf("expected 'Delete a private registry module', got %q", synopsis)
+	}
+}
+
+func TestRegistryModuleDeleteFlagParsing(t *testing.T) {
+	tests := []struct {
+		name                 string
+		args                 []string
+		expectedOrganization string
+		expectedName         string
+		expectedProvider     string
+	}{
+		{
+			name:                 "basic flags without provider",
+			args:                 []string{"-organization=my-org", "-name=vpc"},
+			expectedOrganization: "my-org",
+			expectedName:         "vpc",
+			expectedProvider:     "",
+		},
+		{
+			name:                 "with provider specified",
+			args:                 []string{"-organization=my-org", "-name=vpc", "-provider=aws"},
+			expectedOrganization: "my-org",
+			expectedName:         "vpc",
+			expectedProvider:     "aws",
+		},
+		{
+			name:                 "using org alias",
+			args:                 []string{"-org=test-org", "-name=network"},
+			expectedOrganization: "test-org",
+			expectedName:         "network",
+			expectedProvider:     "",
+		},
+		{
+			name:                 "using org alias with provider",
+			args:                 []string{"-org=test-org", "-name=storage", "-provider=azure"},
+			expectedOrganization: "test-org",
+			expectedName:         "storage",
+			expectedProvider:     "azure",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &RegistryModuleDeleteCommand{}
+
+			flags := cmd.Meta.FlagSet("registrymodule delete")
+			flags.StringVar(&cmd.organization, "organization", "", "Organization name (required)")
+			flags.StringVar(&cmd.organization, "org", "", "Organization name (alias)")
+			flags.StringVar(&cmd.name, "name", "", "Module name (required)")
+			flags.StringVar(&cmd.provider, "provider", "", "Provider name (optional, deletes specific provider)")
+
+			if err := flags.Parse(tt.args); err != nil {
+				t.Fatalf("flag parsing failed: %v", err)
+			}
+
+			// Verify the organization was set correctly
+			if cmd.organization != tt.expectedOrganization {
+				t.Errorf("expected organization %q, got %q", tt.expectedOrganization, cmd.organization)
+			}
+
+			// Verify the name was set correctly
+			if cmd.name != tt.expectedName {
+				t.Errorf("expected name %q, got %q", tt.expectedName, cmd.name)
+			}
+
+			// Verify the provider was set correctly
+			if cmd.provider != tt.expectedProvider {
+				t.Errorf("expected provider %q, got %q", tt.expectedProvider, cmd.provider)
+			}
+		})
+	}
+}
