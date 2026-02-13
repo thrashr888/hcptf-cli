@@ -38,30 +38,36 @@ func (c *WorkspaceContextCommand) Run(args []string) int {
 Available commands for this workspace:
 
   Runs:
-    hcptf <org> <workspace> runs                 List runs
-    hcptf <org> <workspace> runs <run-id>        Show run details
+    hcptf <org> <workspace> runs                    List runs
+    hcptf <org> <workspace> <run-id>                Show run details
+    hcptf <org> <workspace> runs <run-id> plan      Show plan
+    hcptf <org> <workspace> runs <run-id> logs      Show plan logs
+    hcptf <org> <workspace> runs <run-id> applyread Show apply details
+    hcptf <org> <workspace> runs <run-id> applylogs Show apply logs
+    hcptf <org> <workspace> runs <run-id> comments  List run comments
+    hcptf <org> <workspace> runs <run-id> policychecks List policy checks
 
   Variables:
-    hcptf <org> <workspace> variables            List variables
+    hcptf <org> <workspace> variables               List variables
 
   State:
-    hcptf <org> <workspace> state                List state versions
-    hcptf <org> <workspace> state outputs        Show state outputs
+    hcptf <org> <workspace> state                   List state versions
+    hcptf <org> <workspace> state outputs           Show state outputs
 
   Resources:
-    hcptf <org> <workspace> resources            List managed resources
+    hcptf <org> <workspace> resources               List managed resources
 
   Configuration Versions:
-    hcptf <org> <workspace> configversions       List configuration versions
+    hcptf <org> <workspace> configversions          List configuration versions
 
   Tags:
-    hcptf <org> <workspace> tags                 List workspace tags
+    hcptf <org> <workspace> tags                    List workspace tags
 
   Assessment Results:
-    hcptf <org> <workspace> assessments          List assessment results
+    hcptf <org> <workspace> assessments             List assessment results
 
   Change Requests:
-    hcptf <org> <workspace> changerequests       List change requests
+    hcptf <org> <workspace> changerequests          List change requests
 
 You can also use traditional command syntax:
     hcptf run list -org=%s -workspace=%s

@@ -100,6 +100,36 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 			action := "show"
 			if len(args) >= 4 {
 				action = args[3]
+				// Special case: plan, logs, and apply subcommands
+				if action == "plan" {
+					return []string{"plan", "read", "-id=" + runID}, nil
+				}
+				if action == "logs" || action == "planlogs" {
+					return []string{"plan", "logs", "-id=" + runID}, nil
+				}
+				if action == "applylogs" {
+					return []string{"apply", "logs", "-id=" + runID}, nil
+				}
+				if action == "applyread" || action == "applydetails" {
+					return []string{"apply", "read", "-id=" + runID}, nil
+				}
+				// Sub-resource lists
+				if action == "comments" {
+					return []string{"comment", "list", "-run-id=" + runID}, nil
+				}
+				if action == "policychecks" {
+					return []string{"policycheck", "list", "-run-id=" + runID}, nil
+				}
+				// Workspace-level convenience shortcuts (when accessed via run)
+				if action == "state" || action == "stateversions" {
+					return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+				}
+				if action == "outputs" {
+					return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+				}
+				if action == "configversion" {
+					return []string{"configversion", "read", "-run-id=" + runID}, nil
+				}
 			}
 			return []string{"run", action, "-id=" + runID}, nil
 		}
@@ -127,6 +157,24 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 					}
 					if action == "applyread" || action == "applydetails" {
 						return []string{"apply", "read", "-id=" + runID}, nil
+					}
+					// Sub-resource lists
+					if action == "comments" {
+						return []string{"comment", "list", "-run-id=" + runID}, nil
+					}
+					if action == "policychecks" {
+						return []string{"policycheck", "list", "-run-id=" + runID}, nil
+					}
+					// Workspace-level convenience shortcuts (when accessed via run)
+					if action == "state" || action == "stateversions" {
+						return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+					}
+					if action == "outputs" {
+						return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+					}
+					if action == "configversion" {
+						// Show the config version used by this run
+						return []string{"configversion", "read", "-run-id=" + runID}, nil
 					}
 				}
 				return []string{"run", action, "-id=" + runID}, nil

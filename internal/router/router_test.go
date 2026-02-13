@@ -163,6 +163,51 @@ func TestTranslateArgs(t *testing.T) {
 			input:    []string{"myorg", "myworkspace", "changerequests"},
 			expected: []string{"changerequest", "list", "-org=myorg", "-workspace=myworkspace"},
 		},
+		{
+			name:     "org workspace run-id plan (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "plan"},
+			expected: []string{"plan", "read", "-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id logs (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "logs"},
+			expected: []string{"plan", "logs", "-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id comments (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "comments"},
+			expected: []string{"comment", "list", "-run-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id policychecks (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "policychecks"},
+			expected: []string{"policycheck", "list", "-run-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id outputs (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "outputs"},
+			expected: []string{"state", "outputs", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace run-id state (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "state"},
+			expected: []string{"state", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace run-id configversion (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "configversion"},
+			expected: []string{"configversion", "read", "-run-id=run-abc123"},
+		},
+		{
+			name:     "org workspace runs run-id comments (longer syntax)",
+			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "comments"},
+			expected: []string{"comment", "list", "-run-id=run-abc123"},
+		},
+		{
+			name:     "org workspace runs run-id policychecks (longer syntax)",
+			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "policychecks"},
+			expected: []string{"policycheck", "list", "-run-id=run-abc123"},
+		},
 	}
 
 	for _, tt := range tests {
