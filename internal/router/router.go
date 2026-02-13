@@ -225,7 +225,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"state", "policy", "policyset", "sshkey", "notification",
 		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
 		"runtrigger", "plan", "apply", "configversion", "teamaccess",
-		"projectteamaccess", "registrymodule", "registryprovider",
+		"projectteamaccess", "registry", "registrymodule", "registryprovider",
 		"registryproviderversion", "registryproviderplatform", "gpgkey",
 		"stack", "stackconfiguration", "stackdeployment", "stackstate",
 		"audittrail", "audittrailtoken", "organizationtoken", "usertoken",
@@ -235,7 +235,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"awsoidc", "azureoidc", "gcpoidc", "vaultoidc",
 		"workspaceresource", "workspacetag", "queryrun", "queryworkspace",
 		"changerequest", "assessmentresult", "hyok", "hyokkey",
-		"vcsevent", "planexport", "agent",
+		"vcsevent", "planexport", "agent", "explorer",
 	}
 
 	for _, cmd := range knownCommands {
