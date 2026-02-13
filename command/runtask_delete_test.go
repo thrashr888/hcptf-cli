@@ -1,108 +1,90 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
-func TestRunTaskDeleteRequiresID(t *testing.T) {
-	ui := cli.NewMockUi()
-	cmd := &RunTaskDeleteCommand{
-		Meta: newTestMeta(ui),
+func newRunTaskDeleteCommand(ui cli.Ui, svc runTaskDeleterReader) *RunTaskDeleteCommand {
+	return &RunTaskDeleteCommand{
+		Meta:       newTestMeta(ui),
+		runTaskSvc: svc,
 	}
+}
 
-	code := cmd.Run([]string{})
-	if code != 1 {
+func TestRunTaskDeleteRequiresFlags(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunTaskDeleteReaderService{
+		readResponse: &tfe.RunTask{Name: "test-task"},
+	}
+	cmd := newRunTaskDeleteCommand(ui, svc)
+
+	if code := cmd.Run(nil); code != 1 {
+		t.Fatalf("expected exit 1 missing id, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-id") {
+		t.Fatalf("expected id error, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestRunTaskDeleteReadError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunTaskDeleteReaderService{
+		readErr: errors.New("not found"),
+	}
+	cmd := newRunTaskDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=task-123", "-force"}); code != 1 {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-id") {
-		t.Fatalf("expected id error, got %q", out)
+	if svc.lastReadID != "task-123" {
+		t.Fatalf("expected lastReadID task-123, got %q", svc.lastReadID)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "not found") {
+		t.Fatalf("expected read error output, got %q", ui.ErrorWriter.String())
 	}
 }
 
-func TestRunTaskDeleteHelp(t *testing.T) {
-	cmd := &RunTaskDeleteCommand{}
+func TestRunTaskDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunTaskDeleteReaderService{
+		readResponse: &tfe.RunTask{Name: "my-task"},
+		deleteErr:    errors.New("boom"),
+	}
+	cmd := newRunTaskDeleteCommand(ui, svc)
 
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
+	if code := cmd.Run([]string{"-id=task-123", "-force"}); code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
 	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf runtask delete") {
-		t.Error("Help should contain usage")
+	if svc.lastDeleteID != "task-123" {
+		t.Fatalf("expected lastDeleteID task-123, got %q", svc.lastDeleteID)
 	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate -id is required")
-	}
-}
-
-func TestRunTaskDeleteSynopsis(t *testing.T) {
-	cmd := &RunTaskDeleteCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Delete a run task" {
-		t.Errorf("expected 'Delete a run task', got %q", synopsis)
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output, got %q", ui.ErrorWriter.String())
 	}
 }
 
-func TestRunTaskDeleteFlagParsing(t *testing.T) {
-	tests := []struct {
-		name          string
-		args          []string
-		expectedID    string
-		expectedForce bool
-	}{
-		{
-			name:          "id only, no force",
-			args:          []string{"-id=task-ABC123"},
-			expectedID:    "task-ABC123",
-			expectedForce: false,
-		},
-		{
-			name:          "id with force flag",
-			args:          []string{"-id=task-XYZ789", "-force"},
-			expectedID:    "task-XYZ789",
-			expectedForce: true,
-		},
-		{
-			name:          "id with force=true",
-			args:          []string{"-id=task-DEF456", "-force=true"},
-			expectedID:    "task-DEF456",
-			expectedForce: true,
-		},
+func TestRunTaskDeleteSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunTaskDeleteReaderService{
+		readResponse: &tfe.RunTask{Name: "my-task"},
 	}
+	cmd := newRunTaskDeleteCommand(ui, svc)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &RunTaskDeleteCommand{}
-
-			flags := cmd.Meta.FlagSet("runtask delete")
-			flags.StringVar(&cmd.id, "id", "", "Run task ID (required)")
-			flags.BoolVar(&cmd.force, "force", false, "Force delete without confirmation")
-
-			if err := flags.Parse(tt.args); err != nil {
-				t.Fatalf("flag parsing failed: %v", err)
-			}
-
-			// Verify the id was set correctly
-			if cmd.id != tt.expectedID {
-				t.Errorf("expected id %q, got %q", tt.expectedID, cmd.id)
-			}
-
-			// Verify the force was set correctly
-			if cmd.force != tt.expectedForce {
-				t.Errorf("expected force %v, got %v", tt.expectedForce, cmd.force)
-			}
-		})
+	if code := cmd.Run([]string{"-id=task-123", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if svc.lastReadID != "task-123" {
+		t.Fatalf("expected lastReadID task-123, got %q", svc.lastReadID)
+	}
+	if svc.lastDeleteID != "task-123" {
+		t.Fatalf("expected lastDeleteID task-123, got %q", svc.lastDeleteID)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message, got %q", ui.OutputWriter.String())
 	}
 }

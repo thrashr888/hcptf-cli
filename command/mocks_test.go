@@ -622,3 +622,61 @@ func (m *mockUserTokenListService) List(_ context.Context, userID string) (*tfe.
 	m.lastID = userID
 	return m.response, m.err
 }
+
+type mockSSHKeyDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockSSHKeyDeleteService) Delete(_ context.Context, sshKeyID string) error {
+	m.lastID = sshKeyID
+	return m.err
+}
+
+type mockOrganizationDeleteService struct {
+	err      error
+	lastName string
+}
+
+func (m *mockOrganizationDeleteService) Delete(_ context.Context, organization string) error {
+	m.lastName = organization
+	return m.err
+}
+
+type mockRunTaskDeleteReaderService struct {
+	readResponse *tfe.RunTask
+	readErr      error
+	deleteErr    error
+	lastReadID   string
+	lastDeleteID string
+}
+
+func (m *mockRunTaskDeleteReaderService) Read(_ context.Context, runTaskID string) (*tfe.RunTask, error) {
+	m.lastReadID = runTaskID
+	return m.readResponse, m.readErr
+}
+
+func (m *mockRunTaskDeleteReaderService) Delete(_ context.Context, runTaskID string) error {
+	m.lastDeleteID = runTaskID
+	return m.deleteErr
+}
+
+type mockAgentPoolDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockAgentPoolDeleteService) Delete(_ context.Context, agentPoolID string) error {
+	m.lastID = agentPoolID
+	return m.err
+}
+
+type mockNotificationDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockNotificationDeleteService) Delete(_ context.Context, notificationConfigurationID string) error {
+	m.lastID = notificationConfigurationID
+	return m.err
+}

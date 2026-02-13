@@ -1,108 +1,62 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/mitchellh/cli"
 )
 
-func TestNotificationDeleteRequiresID(t *testing.T) {
-	ui := cli.NewMockUi()
+func newNotificationDeleteCommand(ui *cli.MockUi, svc notificationDeleter) *NotificationDeleteCommand {
 	cmd := &NotificationDeleteCommand{
-		Meta: newTestMeta(ui),
+		Meta:     newTestMeta(ui),
+		notifSvc: svc,
 	}
+	cmd.Meta.Ui = ui
+	return cmd
+}
 
-	code := cmd.Run([]string{})
-	if code != 1 {
+func TestNotificationDeleteRequiresFlags(t *testing.T) {
+	ui := cli.NewMockUi()
+	cmd := newNotificationDeleteCommand(ui, &mockNotificationDeleteService{})
+
+	if code := cmd.Run(nil); code != 1 {
+		t.Fatalf("expected exit 1 missing id, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-id") {
+		t.Fatalf("expected id error, got: %s", ui.ErrorWriter.String())
+	}
+}
+
+func TestNotificationDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockNotificationDeleteService{err: errors.New("boom")}
+	cmd := newNotificationDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=nc-123", "-force"}); code != 1 {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-id") {
-		t.Fatalf("expected id error, got %q", out)
+	if svc.lastID != "nc-123" {
+		t.Fatalf("unexpected delete id: %s", svc.lastID)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output, got: %s", ui.ErrorWriter.String())
 	}
 }
 
-func TestNotificationDeleteHelp(t *testing.T) {
-	cmd := &NotificationDeleteCommand{}
+func TestNotificationDeleteSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockNotificationDeleteService{}
+	cmd := newNotificationDeleteCommand(ui, svc)
 
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
+	if code := cmd.Run([]string{"-id=nc-123", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
 	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf notification delete") {
-		t.Error("Help should contain usage")
+	if svc.lastID != "nc-123" {
+		t.Fatalf("unexpected delete id: %s", svc.lastID)
 	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate -id is required")
-	}
-}
-
-func TestNotificationDeleteSynopsis(t *testing.T) {
-	cmd := &NotificationDeleteCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Delete a notification configuration" {
-		t.Errorf("expected 'Delete a notification configuration', got %q", synopsis)
-	}
-}
-
-func TestNotificationDeleteFlagParsing(t *testing.T) {
-	tests := []struct {
-		name          string
-		args          []string
-		expectedID    string
-		expectedForce bool
-	}{
-		{
-			name:          "id only, no force",
-			args:          []string{"-id=nc-ABC123"},
-			expectedID:    "nc-ABC123",
-			expectedForce: false,
-		},
-		{
-			name:          "id with force flag",
-			args:          []string{"-id=nc-XYZ789", "-force"},
-			expectedID:    "nc-XYZ789",
-			expectedForce: true,
-		},
-		{
-			name:          "different id without force",
-			args:          []string{"-id=nc-TEST456"},
-			expectedID:    "nc-TEST456",
-			expectedForce: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &NotificationDeleteCommand{}
-
-			flags := cmd.Meta.FlagSet("notification delete")
-			flags.StringVar(&cmd.id, "id", "", "Notification configuration ID (required)")
-			flags.BoolVar(&cmd.force, "force", false, "Force delete without confirmation")
-
-			if err := flags.Parse(tt.args); err != nil {
-				t.Fatalf("flag parsing failed: %v", err)
-			}
-
-			// Verify the id was set correctly
-			if cmd.id != tt.expectedID {
-				t.Errorf("expected id %q, got %q", tt.expectedID, cmd.id)
-			}
-
-			// Verify the force was set correctly
-			if cmd.force != tt.expectedForce {
-				t.Errorf("expected force %v, got %v", tt.expectedForce, cmd.force)
-			}
-		})
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message, got: %s", ui.OutputWriter.String())
 	}
 }

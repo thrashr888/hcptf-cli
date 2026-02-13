@@ -13,3 +13,7 @@ type organizationLister interface {
 type organizationReader interface {
 	Read(ctx context.Context, organization string) (*tfe.Organization, error)
 }
+
+type organizationDeleter interface {
+	Delete(ctx context.Context, organization string) error
+}

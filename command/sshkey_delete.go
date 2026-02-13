@@ -3,13 +3,16 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // SSHKeyDeleteCommand is a command to delete an SSH key
 type SSHKeyDeleteCommand struct {
 	Meta
-	id    string
-	force bool
+	id        string
+	force     bool
+	sshKeySvc sshKeyDeleter
 }
 
 // Run executes the SSH key delete command
@@ -51,7 +54,7 @@ func (c *SSHKeyDeleteCommand) Run(args []string) int {
 	}
 
 	// Delete SSH key
-	err = client.SSHKeys.Delete(client.Context(), c.id)
+	err = c.sshKeyService(client).Delete(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting SSH key: %s", err))
 		return 1
@@ -59,6 +62,13 @@ func (c *SSHKeyDeleteCommand) Run(args []string) int {
 
 	c.Ui.Output(fmt.Sprintf("SSH key '%s' deleted successfully", c.id))
 	return 0
+}
+
+func (c *SSHKeyDeleteCommand) sshKeyService(client *client.Client) sshKeyDeleter {
+	if c.sshKeySvc != nil {
+		return c.sshKeySvc
+	}
+	return client.SSHKeys
 }
 
 // Help returns help text for the SSH key delete command
