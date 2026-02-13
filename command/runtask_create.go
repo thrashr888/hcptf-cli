@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -19,6 +20,7 @@ type RunTaskCreateCommand struct {
 	enabled      bool
 	description  string
 	format       string
+	runTaskSvc   runTaskCreator
 }
 
 // Run executes the run task create command
@@ -88,7 +90,7 @@ func (c *RunTaskCreateCommand) Run(args []string) int {
 	}
 
 	// Create run task
-	runTask, err := client.RunTasks.Create(client.Context(), c.organization, options)
+	runTask, err := c.runTaskService(client).Create(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating run task: %s", err))
 		return 1
@@ -118,6 +120,13 @@ func (c *RunTaskCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *RunTaskCreateCommand) runTaskService(client *client.Client) runTaskCreator {
+	if c.runTaskSvc != nil {
+		return c.runTaskSvc
+	}
+	return client.RunTasks
 }
 
 // Help returns help text for the run task create command

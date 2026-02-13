@@ -484,6 +484,19 @@ func (m *mockVariableSetListService) List(_ context.Context, organization string
 	return m.response, m.err
 }
 
+type mockVariableSetCreateService struct {
+	response    *tfe.VariableSet
+	err         error
+	lastOrg     string
+	lastOptions *tfe.VariableSetCreateOptions
+}
+
+func (m *mockVariableSetCreateService) Create(_ context.Context, organization string, options *tfe.VariableSetCreateOptions) (*tfe.VariableSet, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
 type mockStateVersionReadService struct {
 	response *tfe.StateVersion
 	err      error
@@ -493,4 +506,75 @@ type mockStateVersionReadService struct {
 func (m *mockStateVersionReadService) ReadCurrent(_ context.Context, workspaceID string) (*tfe.StateVersion, error) {
 	m.lastID = workspaceID
 	return m.response, m.err
+}
+
+type mockSSHKeyCreateService struct {
+	response    *tfe.SSHKey
+	err         error
+	lastOrg     string
+	lastOptions tfe.SSHKeyCreateOptions
+}
+
+func (m *mockSSHKeyCreateService) Create(_ context.Context, organization string, options tfe.SSHKeyCreateOptions) (*tfe.SSHKey, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockAccountReadService struct {
+	response *tfe.User
+	err      error
+}
+
+func (m *mockAccountReadService) ReadCurrent(_ context.Context) (*tfe.User, error) {
+	return m.response, m.err
+}
+
+type mockRunTaskCreateService struct {
+	response    *tfe.RunTask
+	err         error
+	lastOrg     string
+	lastOptions tfe.RunTaskCreateOptions
+}
+
+func (m *mockRunTaskCreateService) Create(_ context.Context, organization string, options tfe.RunTaskCreateOptions) (*tfe.RunTask, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRunTaskUpdateService struct {
+	response    *tfe.RunTask
+	err         error
+	lastID      string
+	lastOptions tfe.RunTaskUpdateOptions
+}
+
+func (m *mockRunTaskUpdateService) Update(_ context.Context, runTaskID string, options tfe.RunTaskUpdateOptions) (*tfe.RunTask, error) {
+	m.lastID = runTaskID
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRegistryProviderVersionCreateService struct {
+	response    *tfe.RegistryProviderVersion
+	err         error
+	lastID      tfe.RegistryProviderID
+	lastOptions tfe.RegistryProviderVersionCreateOptions
+}
+
+func (m *mockRegistryProviderVersionCreateService) Create(_ context.Context, providerID tfe.RegistryProviderID, options tfe.RegistryProviderVersionCreateOptions) (*tfe.RegistryProviderVersion, error) {
+	m.lastID = providerID
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRegistryProviderVersionDeleteService struct {
+	err    error
+	lastID tfe.RegistryProviderVersionID
+}
+
+func (m *mockRegistryProviderVersionDeleteService) Delete(_ context.Context, versionID tfe.RegistryProviderVersionID) error {
+	m.lastID = versionID
+	return m.err
 }

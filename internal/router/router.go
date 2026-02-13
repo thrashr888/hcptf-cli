@@ -89,10 +89,20 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 		return []string{"workspace:context", "-org=" + org, "-workspace=" + workspace}, nil
 	}
 
-	// 3+ args: org, workspace, resource
+	// 3+ args: org, workspace, resource/run-id
 	if len(args) >= 3 {
 		workspace := args[1]
 		third := args[2]
+
+		// Check if third arg is a run ID (format: run-xxx)
+		if strings.HasPrefix(third, "run-") {
+			runID := third
+			action := "show"
+			if len(args) >= 4 {
+				action = args[3]
+			}
+			return []string{"run", action, "-id=" + runID}, nil
+		}
 
 		switch third {
 		case "runs":
@@ -105,6 +115,13 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 				action := "show"
 				if len(args) >= 5 {
 					action = args[4]
+					// Special case: plan and logs are subcommands, not run actions
+					if action == "plan" {
+						return []string{"plan", "read", "-id=" + runID}, nil
+					}
+					if action == "logs" {
+						return []string{"plan", "logs", "-id=" + runID}, nil
+					}
 				}
 				return []string{"run", action, "-id=" + runID}, nil
 			}
@@ -118,6 +135,26 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 			}
 			if len(args) == 4 && args[3] == "outputs" {
 				return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "resources":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"workspaceresource", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "assessments":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "changerequests":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"changerequest", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "configversions":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"configversion", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "tags":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"workspacetag", "list", "-org=" + org, "-workspace=" + workspace}, nil
 			}
 		}
 	}
@@ -195,7 +232,8 @@ func (r *Router) hasHelpFlag(args []string) bool {
 func (r *Router) isResourceKeyword(arg string) bool {
 	resourceKeywords := []string{
 		"workspaces", "projects", "teams", "policies", "policysets",
-		"runs", "variables", "state",
+		"runs", "variables", "state", "resources", "assessments",
+		"changerequests", "configversions", "tags",
 	}
 	for _, keyword := range resourceKeywords {
 		if arg == keyword {

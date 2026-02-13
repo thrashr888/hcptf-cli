@@ -68,6 +68,86 @@ func TestJSONFallbackInTableMode(t *testing.T) {
 	}
 }
 
+func TestKeyValueTable(t *testing.T) {
+	formatter := NewFormatter("table")
+	out := captureStdout(t, func() {
+		formatter.KeyValue(map[string]interface{}{
+			"ID":   "ws-123",
+			"Name": "prod",
+		})
+	})
+
+	if out == "" {
+		t.Fatal("expected non-empty output")
+	}
+	if !contains(out, "ID") || !contains(out, "ws-123") {
+		t.Fatalf("expected key-value pairs in output, got %q", out)
+	}
+}
+
+func TestKeyValueJSON(t *testing.T) {
+	formatter := NewFormatter("json")
+	out := captureStdout(t, func() {
+		formatter.KeyValue(map[string]interface{}{
+			"ID":   "ws-123",
+			"Name": "prod",
+		})
+	})
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(out), &data); err != nil {
+		t.Fatalf("expected valid JSON, got %q: %v", out, err)
+	}
+	if data["ID"] != "ws-123" {
+		t.Fatalf("expected ID ws-123, got %v", data["ID"])
+	}
+}
+
+func TestTableRendersRows(t *testing.T) {
+	formatter := NewFormatter("table")
+	out := captureStdout(t, func() {
+		formatter.Table([]string{"Name", "ID"}, [][]string{
+			{"prod", "ws-1"},
+			{"staging", "ws-2"},
+		})
+	})
+
+	if out == "" {
+		t.Fatal("expected non-empty table output")
+	}
+	if !contains(out, "prod") || !contains(out, "staging") {
+		t.Fatalf("expected row data in output, got %q", out)
+	}
+}
+
+func TestJSONEncodesDirect(t *testing.T) {
+	formatter := NewFormatter("json")
+	out := captureStdout(t, func() {
+		formatter.JSON([]string{"a", "b"})
+	})
+
+	var decoded []string
+	if err := json.Unmarshal([]byte(out), &decoded); err != nil {
+		t.Fatalf("expected valid JSON array, got %q: %v", out, err)
+	}
+	if len(decoded) != 2 || decoded[0] != "a" {
+		t.Fatalf("unexpected data: %v", decoded)
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) > 0 && len(substr) > 0 && stringContains(s, substr)
+}
+
+func stringContains(s, sub string) bool {
+	for i := 0; i <= len(s)-len(sub); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
+}
+
 func TestListRespectsFormats(t *testing.T) {
 	list := []string{"one", "two"}
 

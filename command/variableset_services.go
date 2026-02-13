@@ -13,3 +13,7 @@ type variableSetReader interface {
 type variableSetLister interface {
 	List(ctx context.Context, organization string, options *tfe.VariableSetListOptions) (*tfe.VariableSetList, error)
 }
+
+type variableSetCreator interface {
+	Create(ctx context.Context, organization string, options *tfe.VariableSetCreateOptions) (*tfe.VariableSet, error)
+}

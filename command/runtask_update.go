@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -19,6 +20,7 @@ type RunTaskUpdateCommand struct {
 	enabled     string
 	description string
 	format      string
+	runTaskSvc  runTaskUpdater
 }
 
 // Run executes the run task update command
@@ -90,7 +92,7 @@ func (c *RunTaskUpdateCommand) Run(args []string) int {
 	}
 
 	// Update run task
-	runTask, err := client.RunTasks.Update(client.Context(), c.id, options)
+	runTask, err := c.runTaskService(client).Update(client.Context(), c.id, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error updating run task: %s", err))
 		return 1
@@ -119,6 +121,13 @@ func (c *RunTaskUpdateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *RunTaskUpdateCommand) runTaskService(client *client.Client) runTaskUpdater {
+	if c.runTaskSvc != nil {
+		return c.runTaskSvc
+	}
+	return client.RunTasks
 }
 
 // Help returns help text for the run task update command

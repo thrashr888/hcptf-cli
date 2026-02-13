@@ -11,24 +11,29 @@ import (
 // WorkspaceTagListCommand is a command to list tags for a workspace
 type WorkspaceTagListCommand struct {
 	Meta
-	workspaceID string
-	format      string
+	workspaceID  string
+	organization string
+	workspace    string
+	format       string
 }
 
 // Run executes the workspacetag list command
 func (c *WorkspaceTagListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspacetag list")
-	flags.StringVar(&c.workspaceID, "workspace-id", "", "Workspace ID (required)")
+	flags.StringVar(&c.workspaceID, "workspace-id", "", "Workspace ID")
 	flags.StringVar(&c.workspaceID, "id", "", "Workspace ID (alias)")
+	flags.StringVar(&c.organization, "organization", "", "Organization name")
+	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.workspace, "workspace", "", "Workspace name")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
-	// Validate required flags
-	if c.workspaceID == "" {
-		c.Ui.Error("Error: -workspace-id flag is required")
+	// Validate required flags - either workspace-id OR org+workspace
+	if c.workspaceID == "" && (c.organization == "" || c.workspace == "") {
+		c.Ui.Error("Error: either -workspace-id OR both -organization and -workspace flags are required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -40,8 +45,19 @@ func (c *WorkspaceTagListCommand) Run(args []string) int {
 		return 1
 	}
 
+	// If we don't have workspace ID, look it up from org/workspace name
+	workspaceID := c.workspaceID
+	if workspaceID == "" {
+		ws, err := client.Workspaces.Read(client.Context(), c.organization, c.workspace)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading workspace: %s", err))
+			return 1
+		}
+		workspaceID = ws.ID
+	}
+
 	// List workspace tags
-	tags, err := client.Workspaces.ListTags(client.Context(), c.workspaceID, &tfe.WorkspaceTagListOptions{
+	tags, err := client.Workspaces.ListTags(client.Context(), workspaceID, &tfe.WorkspaceTagListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -85,14 +101,25 @@ Usage: hcptf workspacetag list [options]
 
 Options:
 
-  -workspace-id=<id>   Workspace ID (required)
-  -id=<id>            Alias for -workspace-id
-  -output=<format>    Output format: table (default) or json
+  -workspace-id=<id>     Workspace ID (format: ws-xxx)
+  -id=<id>               Alias for -workspace-id
+  -organization=<name>   Organization name
+  -org=<name>            Alias for -organization
+  -workspace=<name>      Workspace name
+  -output=<format>       Output format: table (default) or json
 
-Example:
+  Either -workspace-id OR both -organization and -workspace are required.
 
+Examples:
+
+  # Using workspace ID
   hcptf workspacetag list -workspace-id=ws-ABC123
-  hcptf workspacetag list -id=ws-ABC123 -output=json
+
+  # Using org and workspace name
+  hcptf workspacetag list -org=my-org -workspace=prod
+
+  # URL-style
+  hcptf my-org prod tags
 `
 	return strings.TrimSpace(helpText)
 }

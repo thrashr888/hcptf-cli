@@ -128,6 +128,41 @@ func TestTranslateArgs(t *testing.T) {
 			input:    []string{"myorg", "myworkspace", "--help"},
 			expected: []string{"workspace:context", "-org=myorg", "-workspace=myworkspace"},
 		},
+		{
+			name:     "org workspace run-id (show)",
+			input:    []string{"myorg", "myworkspace", "run-abc123"},
+			expected: []string{"run", "show", "-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id apply",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "apply"},
+			expected: []string{"run", "apply", "-id=run-abc123"},
+		},
+		{
+			name:     "org workspace resources",
+			input:    []string{"myorg", "myworkspace", "resources"},
+			expected: []string{"workspaceresource", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace tags",
+			input:    []string{"myorg", "myworkspace", "tags"},
+			expected: []string{"workspacetag", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace configversions",
+			input:    []string{"myorg", "myworkspace", "configversions"},
+			expected: []string{"configversion", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace assessments",
+			input:    []string{"myorg", "myworkspace", "assessments"},
+			expected: []string{"assessmentresult", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace changerequests",
+			input:    []string{"myorg", "myworkspace", "changerequests"},
+			expected: []string{"changerequest", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
 	}
 
 	for _, tt := range tests {

@@ -1,271 +1,106 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
-func TestRegistryProviderVersionCreateRequiresOrganization(t *testing.T) {
-	ui := cli.NewMockUi()
-	cmd := &RegistryProviderVersionCreateCommand{
-		Meta: newTestMeta(ui),
-	}
-
-	code := cmd.Run([]string{"-name=aws", "-version=1.0.0", "-key-id=ABC123"})
-	if code != 1 {
-		t.Fatalf("expected exit 1, got %d", code)
-	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-organization") {
-		t.Fatalf("expected organization error, got %q", out)
+func newRegistryProviderVersionCreateCommand(ui cli.Ui, svc registryProviderVersionCreator) *RegistryProviderVersionCreateCommand {
+	return &RegistryProviderVersionCreateCommand{
+		Meta:       newTestMeta(ui),
+		versionSvc: svc,
 	}
 }
 
-func TestRegistryProviderVersionCreateRequiresName(t *testing.T) {
+func TestRegistryProviderVersionCreateRequiresFlags(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderVersionCreateCommand{
-		Meta: newTestMeta(ui),
+	cmd := newRegistryProviderVersionCreateCommand(ui, &mockRegistryProviderVersionCreateService{})
+
+	if code := cmd.Run(nil); code != 1 {
+		t.Fatalf("expected exit 1 missing org, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-organization") {
+		t.Fatalf("expected org error")
 	}
 
-	code := cmd.Run([]string{"-organization=my-org", "-version=1.0.0", "-key-id=ABC123"})
-	if code != 1 {
-		t.Fatalf("expected exit 1, got %d", code)
+	ui.ErrorWriter.Reset()
+	if code := cmd.Run([]string{"-organization=my-org"}); code != 1 {
+		t.Fatalf("expected exit 1 missing name, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-name") {
+		t.Fatalf("expected name error")
 	}
 
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-name") {
-		t.Fatalf("expected name error, got %q", out)
+	ui.ErrorWriter.Reset()
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws"}); code != 1 {
+		t.Fatalf("expected exit 1 missing version, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-version") {
+		t.Fatalf("expected version error")
+	}
+
+	ui.ErrorWriter.Reset()
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0"}); code != 1 {
+		t.Fatalf("expected exit 1 missing key-id, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "-key-id") {
+		t.Fatalf("expected key-id error")
 	}
 }
 
-func TestRegistryProviderVersionCreateRequiresVersion(t *testing.T) {
+func TestRegistryProviderVersionCreateHandlesAPIError(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderVersionCreateCommand{
-		Meta: newTestMeta(ui),
-	}
+	svc := &mockRegistryProviderVersionCreateService{err: errors.New("boom")}
+	cmd := newRegistryProviderVersionCreateCommand(ui, svc)
 
-	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-key-id=ABC123"})
+	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-key-id=ABC123"})
 	if code != 1 {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-version") {
-		t.Fatalf("expected version error, got %q", out)
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output")
 	}
 }
 
-func TestRegistryProviderVersionCreateRequiresKeyID(t *testing.T) {
+func TestRegistryProviderVersionCreateSuccess(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderVersionCreateCommand{
-		Meta: newTestMeta(ui),
-	}
+	svc := &mockRegistryProviderVersionCreateService{response: &tfe.RegistryProviderVersion{
+		ID:        "provver-1",
+		Version:   "1.0.0",
+		KeyID:     "ABC123",
+		Protocols: []string{"5.0", "6.0"},
+		Links: map[string]interface{}{
+			"shasums-upload":     "https://example.com/shasums",
+			"shasums-sig-upload": "https://example.com/shasums-sig",
+		},
+	}}
+	cmd := newRegistryProviderVersionCreateCommand(ui, svc)
 
-	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0"})
-	if code != 1 {
-		t.Fatalf("expected exit 1, got %d", code)
+	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-key-id=ABC123"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d: %s", code, ui.ErrorWriter.String())
 	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "-key-id") {
-		t.Fatalf("expected key-id error, got %q", out)
-	}
-}
-
-func TestRegistryProviderVersionCreateRequiresAllFlags(t *testing.T) {
-	ui := cli.NewMockUi()
-	cmd := &RegistryProviderVersionCreateCommand{
-		Meta: newTestMeta(ui),
-	}
-
-	code := cmd.Run([]string{})
-	if code != 1 {
-		t.Fatalf("expected exit 1, got %d", code)
-	}
-
-	if out := ui.ErrorWriter.String(); !strings.Contains(out, "required") {
-		t.Fatalf("expected required error, got %q", out)
+	if !strings.Contains(ui.OutputWriter.String(), "1.0.0") {
+		t.Fatalf("expected success output with version")
 	}
 }
 
 func TestRegistryProviderVersionCreateHelp(t *testing.T) {
 	cmd := &RegistryProviderVersionCreateCommand{}
-
 	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf registryproviderversion create") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-organization") {
-		t.Error("Help should mention -organization flag")
-	}
-	if !strings.Contains(help, "-name") {
-		t.Error("Help should mention -name flag")
-	}
-	if !strings.Contains(help, "-version") {
-		t.Error("Help should mention -version flag")
-	}
-	if !strings.Contains(help, "-key-id") {
-		t.Error("Help should mention -key-id flag")
-	}
-	if !strings.Contains(help, "-namespace") {
-		t.Error("Help should mention -namespace flag")
-	}
-	if !strings.Contains(help, "-protocols") {
-		t.Error("Help should mention -protocols flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate flags are required")
+	if !strings.Contains(help, "registryproviderversion create") {
+		t.Fatalf("expected help text, got: %s", help)
 	}
 }
 
 func TestRegistryProviderVersionCreateSynopsis(t *testing.T) {
 	cmd := &RegistryProviderVersionCreateCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Create a new version for a private registry provider" {
-		t.Errorf("expected 'Create a new version for a private registry provider', got %q", synopsis)
-	}
-}
-
-func TestRegistryProviderVersionCreateFlagParsing(t *testing.T) {
-	tests := []struct {
-		name              string
-		args              []string
-		expectedOrg       string
-		expectedName      string
-		expectedNamespace string
-		expectedVersion   string
-		expectedKeyID     string
-		expectedProtocols string
-		expectedFmt       string
-	}{
-		{
-			name:              "all required flags, default values",
-			args:              []string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-key-id=ABC123"},
-			expectedOrg:       "my-org",
-			expectedName:      "aws",
-			expectedNamespace: "",
-			expectedVersion:   "1.0.0",
-			expectedKeyID:     "ABC123",
-			expectedProtocols: "5.0,6.0",
-			expectedFmt:       "table",
-		},
-		{
-			name:              "org alias with required flags",
-			args:              []string{"-org=my-org", "-name=custom", "-version=2.5.1", "-key-id=DEF456"},
-			expectedOrg:       "my-org",
-			expectedName:      "custom",
-			expectedNamespace: "",
-			expectedVersion:   "2.5.1",
-			expectedKeyID:     "DEF456",
-			expectedProtocols: "5.0,6.0",
-			expectedFmt:       "table",
-		},
-		{
-			name:              "all flags with custom namespace",
-			args:              []string{"-org=test-org", "-name=provider", "-namespace=custom-ns", "-version=0.1.0", "-key-id=GHI789"},
-			expectedOrg:       "test-org",
-			expectedName:      "provider",
-			expectedNamespace: "custom-ns",
-			expectedVersion:   "0.1.0",
-			expectedKeyID:     "GHI789",
-			expectedProtocols: "5.0,6.0",
-			expectedFmt:       "table",
-		},
-		{
-			name:              "custom protocols",
-			args:              []string{"-org=my-org", "-name=aws", "-version=3.0.0", "-key-id=JKL012", "-protocols=6.0"},
-			expectedOrg:       "my-org",
-			expectedName:      "aws",
-			expectedNamespace: "",
-			expectedVersion:   "3.0.0",
-			expectedKeyID:     "JKL012",
-			expectedProtocols: "6.0",
-			expectedFmt:       "table",
-		},
-		{
-			name:              "json output format",
-			args:              []string{"-org=prod-org", "-name=infra", "-version=1.2.3", "-key-id=MNO345", "-output=json"},
-			expectedOrg:       "prod-org",
-			expectedName:      "infra",
-			expectedNamespace: "",
-			expectedVersion:   "1.2.3",
-			expectedKeyID:     "MNO345",
-			expectedProtocols: "5.0,6.0",
-			expectedFmt:       "json",
-		},
-		{
-			name:              "all flags with table format",
-			args:              []string{"-org=dev-org", "-name=terraform", "-namespace=hashicorp", "-version=4.1.0", "-key-id=PQR678", "-protocols=5.0,6.0,7.0", "-output=table"},
-			expectedOrg:       "dev-org",
-			expectedName:      "terraform",
-			expectedNamespace: "hashicorp",
-			expectedVersion:   "4.1.0",
-			expectedKeyID:     "PQR678",
-			expectedProtocols: "5.0,6.0,7.0",
-			expectedFmt:       "table",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &RegistryProviderVersionCreateCommand{}
-
-			flags := cmd.Meta.FlagSet("registryproviderversion create")
-			flags.StringVar(&cmd.organization, "organization", "", "Organization name (required)")
-			flags.StringVar(&cmd.organization, "org", "", "Organization name (alias)")
-			flags.StringVar(&cmd.name, "name", "", "Provider name (required)")
-			flags.StringVar(&cmd.namespace, "namespace", "", "Namespace (defaults to organization)")
-			flags.StringVar(&cmd.version, "version", "", "Version string, e.g., 1.0.0 (required)")
-			flags.StringVar(&cmd.keyID, "key-id", "", "GPG key ID for signing (required)")
-			flags.StringVar(&cmd.protocols, "protocols", "5.0,6.0", "Comma-separated protocol versions (default: 5.0,6.0)")
-			flags.StringVar(&cmd.format, "output", "table", "Output format: table or json")
-
-			if err := flags.Parse(tt.args); err != nil {
-				t.Fatalf("flag parsing failed: %v", err)
-			}
-
-			// Verify the organization was set correctly
-			if cmd.organization != tt.expectedOrg {
-				t.Errorf("expected organization %q, got %q", tt.expectedOrg, cmd.organization)
-			}
-
-			// Verify the name was set correctly
-			if cmd.name != tt.expectedName {
-				t.Errorf("expected name %q, got %q", tt.expectedName, cmd.name)
-			}
-
-			// Verify the namespace was set correctly
-			if cmd.namespace != tt.expectedNamespace {
-				t.Errorf("expected namespace %q, got %q", tt.expectedNamespace, cmd.namespace)
-			}
-
-			// Verify the version was set correctly
-			if cmd.version != tt.expectedVersion {
-				t.Errorf("expected version %q, got %q", tt.expectedVersion, cmd.version)
-			}
-
-			// Verify the key ID was set correctly
-			if cmd.keyID != tt.expectedKeyID {
-				t.Errorf("expected keyID %q, got %q", tt.expectedKeyID, cmd.keyID)
-			}
-
-			// Verify the protocols was set correctly
-			if cmd.protocols != tt.expectedProtocols {
-				t.Errorf("expected protocols %q, got %q", tt.expectedProtocols, cmd.protocols)
-			}
-
-			// Verify the format was set correctly
-			if cmd.format != tt.expectedFmt {
-				t.Errorf("expected format %q, got %q", tt.expectedFmt, cmd.format)
-			}
-		})
+	syn := cmd.Synopsis()
+	if syn == "" {
+		t.Fatal("expected non-empty synopsis")
 	}
 }

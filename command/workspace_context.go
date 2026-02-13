@@ -38,26 +38,43 @@ func (c *WorkspaceContextCommand) Run(args []string) int {
 Available commands for this workspace:
 
   Runs:
-    hcptf <org> <workspace> runs              List runs
-    hcptf <org> <workspace> runs <run-id>     Show run details
+    hcptf <org> <workspace> runs                 List runs
+    hcptf <org> <workspace> runs <run-id>        Show run details
 
   Variables:
-    hcptf <org> <workspace> variables         List variables
+    hcptf <org> <workspace> variables            List variables
 
   State:
-    hcptf <org> <workspace> state             List state versions
-    hcptf <org> <workspace> state outputs     Show state outputs
+    hcptf <org> <workspace> state                List state versions
+    hcptf <org> <workspace> state outputs        Show state outputs
+
+  Resources:
+    hcptf <org> <workspace> resources            List managed resources
 
   Configuration Versions:
-    configversion list -workspace=%s
+    hcptf <org> <workspace> configversions       List configuration versions
+
+  Tags:
+    hcptf <org> <workspace> tags                 List workspace tags
+
+  Assessment Results:
+    hcptf <org> <workspace> assessments          List assessment results
+
+  Change Requests:
+    hcptf <org> <workspace> changerequests       List change requests
 
 You can also use traditional command syntax:
     hcptf run list -org=%s -workspace=%s
     hcptf variable list -org=%s -workspace=%s
     hcptf state list -org=%s -workspace=%s
+    hcptf workspaceresource list -org=%s -workspace=%s
+    hcptf configversion list -org=%s -workspace=%s
+    hcptf workspacetag list -org=%s -workspace=%s
 `,
 		c.organization, c.workspace,
-		c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
 		c.organization, c.workspace,
 		c.organization, c.workspace,
 		c.organization, c.workspace)

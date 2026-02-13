@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -15,6 +16,7 @@ type SSHKeyCreateCommand struct {
 	name         string
 	value        string
 	format       string
+	sshKeySvc    sshKeyCreator
 }
 
 // Run executes the SSH key create command
@@ -62,7 +64,7 @@ func (c *SSHKeyCreateCommand) Run(args []string) int {
 		Value: tfe.String(c.value),
 	}
 
-	sshKey, err := client.SSHKeys.Create(client.Context(), c.organization, options)
+	sshKey, err := c.sshKeyService(client).Create(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating SSH key: %s", err))
 		return 1
@@ -81,6 +83,13 @@ func (c *SSHKeyCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *SSHKeyCreateCommand) sshKeyService(client *client.Client) sshKeyCreator {
+	if c.sshKeySvc != nil {
+		return c.sshKeySvc
+	}
+	return client.SSHKeys
 }
 
 // Help returns help text for the SSH key create command
