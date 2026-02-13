@@ -7,14 +7,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AssessmentResultReadCommand shows details of a specific assessment result
 type AssessmentResultReadCommand struct {
 	Meta
-	id     string
-	format string
+	id          string
+	format      string
+	showDrift   bool
+	summaryOnly bool
 }
 
 // AssessmentResult represents a health assessment result
@@ -47,11 +50,29 @@ type AssessmentResultResponse struct {
 	Data AssessmentResultData `json:"data"`
 }
 
+// TerraformPlan represents the Terraform JSON plan structure
+type TerraformPlan struct {
+	ResourceDrift []struct {
+		Address string `json:"address"`
+		Mode    string `json:"mode"`
+		Type    string `json:"type"`
+		Name    string `json:"name"`
+		Provider string `json:"provider_name"`
+		Change   struct {
+			Actions []string               `json:"actions"`
+			Before  map[string]interface{} `json:"before"`
+			After   map[string]interface{} `json:"after"`
+		} `json:"change"`
+	} `json:"resource_drift"`
+}
+
 // Run executes the assessmentresult read command
 func (c *AssessmentResultReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("assessmentresult read")
 	flags.StringVar(&c.id, "id", "", "Assessment result ID (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
+	flags.BoolVar(&c.showDrift, "show-drift", true, "Show detailed drift information (default: true)")
+	flags.BoolVar(&c.summaryOnly, "summary-only", false, "Show only summary without drift details")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -80,14 +101,8 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Get token from config for authorization
-	u := client.BaseURL()
-	cfg, err := c.Meta.Config()
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error loading config: %s", err))
-		return 1
-	}
-	token := cfg.GetToken(u.Hostname())
+	// Get token from client for authorization
+	token := client.Token()
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
@@ -161,8 +176,19 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 
-	// Provide helpful information about accessing detailed outputs
-	if ar.Attributes.Succeeded {
+	// Show drift details if requested and drift detected
+	if c.showDrift && !c.summaryOnly && ar.Attributes.Drifted && ar.Links.JSONOutput != "" {
+		c.Ui.Output("\n" + strings.Repeat("=", 80))
+		c.Ui.Output("DRIFT DETAILS")
+		c.Ui.Output(strings.Repeat("=", 80))
+
+		if err := c.showDriftDetails(client, ar.Links.JSONOutput); err != nil {
+			c.Ui.Warn(fmt.Sprintf("\nWarning: Could not fetch drift details: %s", err))
+			c.Ui.Output("\nTo retrieve detailed assessment outputs manually, use curl with your token:")
+			c.Ui.Output(fmt.Sprintf("  JSON Plan: curl -H 'Authorization: Bearer $TOKEN' '%s%s'",
+				client.GetAddress(), ar.Links.JSONOutput))
+		}
+	} else if ar.Attributes.Succeeded && !c.summaryOnly && !ar.Attributes.Drifted {
 		c.Ui.Output("\nTo retrieve detailed assessment outputs, use curl with your token:")
 		if ar.Links.JSONOutput != "" {
 			c.Ui.Output(fmt.Sprintf("  JSON Plan: curl -H 'Authorization: Bearer $TOKEN' '%s%s'",
@@ -175,6 +201,165 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 	}
 
 	return 0
+}
+
+// showDriftDetails fetches and displays detailed drift information
+func (c *AssessmentResultReadCommand) showDriftDetails(client *client.Client, jsonOutputPath string) error {
+	// Fetch the JSON plan output
+	fullURL := fmt.Sprintf("%s%s", client.GetAddress(), jsonOutputPath)
+
+	req, err := http.NewRequest("GET", fullURL, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+client.Token())
+	req.Header.Set("Accept", "application/json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	var plan TerraformPlan
+	if err := json.NewDecoder(resp.Body).Decode(&plan); err != nil {
+		return fmt.Errorf("parsing JSON plan: %w", err)
+	}
+
+	// Process drifted resources
+	if len(plan.ResourceDrift) == 0 {
+		c.Ui.Output("\nNo resource drift details available in the plan output.")
+		return nil
+	}
+
+	// Display drift summary
+	driftCount := 0
+	for _, res := range plan.ResourceDrift {
+		if len(res.Change.Actions) > 0 && res.Change.Actions[0] != "no-op" {
+			driftCount++
+		}
+	}
+
+	if driftCount == 0 {
+		c.Ui.Output("\nNo actual drift detected in resources (all resources are in sync).")
+		return nil
+	}
+
+	c.Ui.Output(fmt.Sprintf("\n%d resource(s) have drifted:\n", driftCount))
+
+	// Display each drifted resource
+	index := 1
+	for _, res := range plan.ResourceDrift {
+		if len(res.Change.Actions) == 0 || res.Change.Actions[0] == "no-op" {
+			continue
+		}
+
+		c.Ui.Output(fmt.Sprintf("%d. %s (%s.%s)", index, res.Address, res.Type, res.Name))
+		c.Ui.Output(fmt.Sprintf("   Provider: %s", res.Provider))
+		c.Ui.Output(fmt.Sprintf("   Action: %s", strings.Join(res.Change.Actions, ", ")))
+
+		// Find and display changed attributes
+		changedAttrs := c.findChangedAttributes(res.Change.Before, res.Change.After)
+		if len(changedAttrs) > 0 && len(changedAttrs) <= 10 {
+			c.Ui.Output("   Changed attributes:")
+			for _, attr := range changedAttrs {
+				prevVal := c.formatValue(res.Change.Before[attr])
+				newVal := c.formatValue(res.Change.After[attr])
+				c.Ui.Output(fmt.Sprintf("     • %s:", attr))
+				c.Ui.Output(fmt.Sprintf("       - Previous: %s", prevVal))
+				c.Ui.Output(fmt.Sprintf("       + Current:  %s", newVal))
+			}
+		} else if len(changedAttrs) > 10 {
+			c.Ui.Output(fmt.Sprintf("   Changed attributes: %d attributes changed (too many to display)", len(changedAttrs)))
+		}
+		c.Ui.Output("")
+		index++
+	}
+
+	// Provide summary interpretation
+	c.Ui.Output(strings.Repeat("=", 80))
+	c.Ui.Output("INTERPRETATION:")
+	c.Ui.Output("These resources have changed outside of Terraform. This drift means the actual")
+	c.Ui.Output("infrastructure no longer matches your Terraform configuration.")
+	c.Ui.Output("")
+	c.Ui.Output("To resolve drift:")
+	c.Ui.Output("  1. Run 'terraform apply' to update infrastructure to match configuration")
+	c.Ui.Output("  2. Or update your Terraform configuration to match current infrastructure")
+	c.Ui.Output("  3. Or use 'terraform refresh' to update state without making changes")
+
+	return nil
+}
+
+// findChangedAttributes compares before and after to find changed attributes
+func (c *AssessmentResultReadCommand) findChangedAttributes(before, after map[string]interface{}) []string {
+	changed := make([]string, 0)
+	seen := make(map[string]bool)
+
+	// Check all attributes in 'after'
+	for key, afterVal := range after {
+		beforeVal, exists := before[key]
+		if !exists || !c.valuesEqual(beforeVal, afterVal) {
+			changed = append(changed, key)
+			seen[key] = true
+		}
+	}
+
+	// Check for removed attributes (in before but not in after)
+	for key := range before {
+		if _, exists := after[key]; !exists && !seen[key] {
+			changed = append(changed, key)
+		}
+	}
+
+	return changed
+}
+
+// valuesEqual compares two values for equality
+func (c *AssessmentResultReadCommand) valuesEqual(a, b interface{}) bool {
+	// Simple comparison using JSON marshaling
+	aJSON, _ := json.Marshal(a)
+	bJSON, _ := json.Marshal(b)
+	return string(aJSON) == string(bJSON)
+}
+
+// formatValue formats a value for display
+func (c *AssessmentResultReadCommand) formatValue(val interface{}) string {
+	if val == nil {
+		return "<nil>"
+	}
+
+	switch v := val.(type) {
+	case string:
+		if len(v) > 100 {
+			return v[:97] + "..."
+		}
+		return fmt.Sprintf("%q", v)
+	case bool:
+		return fmt.Sprintf("%t", v)
+	case float64:
+		return fmt.Sprintf("%v", v)
+	case map[string]interface{}:
+		if len(v) == 0 {
+			return "{}"
+		}
+		jsonBytes, _ := json.Marshal(v)
+		return string(jsonBytes)
+	case []interface{}:
+		if len(v) == 0 {
+			return "[]"
+		}
+		jsonBytes, _ := json.Marshal(v)
+		return string(jsonBytes)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }
 
 // Help returns help text for the assessmentresult read command
@@ -195,10 +380,18 @@ Options:
 
   -id=<id>          Assessment result ID (required, format: asmtres-*)
   -output=<format>  Output format: table (default) or json
+  -show-drift       Show detailed drift information (default: true)
+  -summary-only     Show only summary without drift details
 
-Example:
+Examples:
 
+  # Show assessment with drift details
   hcptf assessmentresult read -id=asmtres-abc123
+
+  # Show summary only
+  hcptf assessmentresult read -id=asmtres-abc123 -summary-only
+
+  # JSON output
   hcptf assessmentresult read -id=asmtres-abc123 -output=json
 
 Assessment Result Details:
@@ -209,14 +402,11 @@ Assessment Result Details:
   - JSONSchema: Link to the provider schema used in the assessment
   - LogOutput: Link to Terraform JSON log output
 
-Retrieving Detailed Outputs:
+Drift Details:
 
-  The assessment result includes links to detailed outputs (JSON plan,
-  schema, and logs). These require admin-level workspace access and
-  must be retrieved using direct API calls with a user or team token.
-
-  Use curl or similar tools to fetch these outputs:
-    curl -H "Authorization: Bearer $TOKEN" <output-url>
+  When drift is detected and -show-drift is enabled (default), the command
+  will automatically fetch and display which resources have drifted and what
+  attributes have changed, making it easy to understand and remediate drift.
 `
 	return strings.TrimSpace(helpText)
 }
