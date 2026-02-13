@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -13,6 +14,7 @@ type TeamShowCommand struct {
 	organization string
 	name         string
 	format       string
+	teamSvc      teamReader
 }
 
 // Run executes the team show command
@@ -48,7 +50,7 @@ func (c *TeamShowCommand) Run(args []string) int {
 	}
 
 	// Read team
-	team, err := client.Teams.Read(client.Context(), c.name)
+	team, err := c.teamService(client).Read(client.Context(), c.name)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading team: %s", err))
 		return 1
@@ -95,6 +97,13 @@ Example:
   hcptf team show -org=my-org -name=admins -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *TeamShowCommand) teamService(client *client.Client) teamReader {
+	if c.teamSvc != nil {
+		return c.teamSvc
+	}
+	return client.Teams
 }
 
 // Synopsis returns a short synopsis for the team show command

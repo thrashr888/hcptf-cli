@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -12,6 +13,7 @@ type OrganizationShowCommand struct {
 	Meta
 	name   string
 	format string
+	orgSvc organizationReader
 }
 
 // Run executes the organization show command
@@ -39,7 +41,7 @@ func (c *OrganizationShowCommand) Run(args []string) int {
 	}
 
 	// Read organization
-	org, err := client.Organizations.Read(client.Context(), c.name)
+	org, err := c.orgService(client).Read(client.Context(), c.name)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading organization: %s", err))
 		return 1
@@ -85,6 +87,13 @@ Example:
   hcptf organization show -name=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *OrganizationShowCommand) orgService(client *client.Client) organizationReader {
+	if c.orgSvc != nil {
+		return c.orgSvc
+	}
+	return client.Organizations
 }
 
 // Synopsis returns a short synopsis for the organization show command

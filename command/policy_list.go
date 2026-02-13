@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -13,6 +14,7 @@ type PolicyListCommand struct {
 	Meta
 	organization string
 	format       string
+	policySvc    policyLister
 }
 
 // Run executes the policy list command
@@ -41,7 +43,7 @@ func (c *PolicyListCommand) Run(args []string) int {
 	}
 
 	// List policies
-	policies, err := client.Policies.List(client.Context(), c.organization, &tfe.PolicyListOptions{
+	policies, err := c.policyService(client).List(client.Context(), c.organization, &tfe.PolicyListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -96,6 +98,13 @@ Example:
   hcptf policy list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *PolicyListCommand) policyService(client *client.Client) policyLister {
+	if c.policySvc != nil {
+		return c.policySvc
+	}
+	return client.Policies
 }
 
 // Synopsis returns a short synopsis for the policy list command

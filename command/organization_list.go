@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -12,6 +13,7 @@ import (
 type OrganizationListCommand struct {
 	Meta
 	format string
+	orgSvc organizationLister
 }
 
 // Run executes the organization list command
@@ -31,7 +33,7 @@ func (c *OrganizationListCommand) Run(args []string) int {
 	}
 
 	// List organizations
-	orgs, err := client.Organizations.List(client.Context(), &tfe.OrganizationListOptions{
+	orgs, err := c.orgService(client).List(client.Context(), &tfe.OrganizationListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -83,6 +85,13 @@ Example:
   hcptf organization list -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *OrganizationListCommand) orgService(client *client.Client) organizationLister {
+	if c.orgSvc != nil {
+		return c.orgSvc
+	}
+	return client.Organizations
 }
 
 // Synopsis returns a short synopsis for the organization list command

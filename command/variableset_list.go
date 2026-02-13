@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -13,6 +14,7 @@ type VariableSetListCommand struct {
 	Meta
 	organization string
 	format       string
+	varSetSvc    variableSetLister
 }
 
 // Run executes the variable set list command
@@ -41,7 +43,7 @@ func (c *VariableSetListCommand) Run(args []string) int {
 	}
 
 	// List variable sets
-	variableSets, err := client.VariableSets.List(client.Context(), c.organization, &tfe.VariableSetListOptions{
+	variableSets, err := c.varSetService(client).List(client.Context(), c.organization, &tfe.VariableSetListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -111,6 +113,13 @@ Example:
   hcptf variableset list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *VariableSetListCommand) varSetService(client *client.Client) variableSetLister {
+	if c.varSetSvc != nil {
+		return c.varSetSvc
+	}
+	return client.VariableSets
 }
 
 // Synopsis returns a short synopsis for the variable set list command

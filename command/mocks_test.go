@@ -336,3 +336,161 @@ func (m *mockRegistryProviderDeleteService) Delete(_ context.Context, providerID
 	m.lastID = providerID
 	return m.err
 }
+type mockOrganizationListService struct {
+	response    *tfe.OrganizationList
+	err         error
+	lastOptions *tfe.OrganizationListOptions
+}
+
+func (m *mockOrganizationListService) List(_ context.Context, options *tfe.OrganizationListOptions) (*tfe.OrganizationList, error) {
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockTeamListService struct {
+	response *tfe.TeamList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockTeamListService) List(_ context.Context, organization string, _ *tfe.TeamListOptions) (*tfe.TeamList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockProjectListService struct {
+	response *tfe.ProjectList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockProjectListService) List(_ context.Context, organization string, _ *tfe.ProjectListOptions) (*tfe.ProjectList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockPolicyListService struct {
+	response *tfe.PolicyList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockPolicyListService) List(_ context.Context, organization string, _ *tfe.PolicyListOptions) (*tfe.PolicyList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockPolicySetListService struct {
+	response *tfe.PolicySetList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockPolicySetListService) List(_ context.Context, organization string, _ *tfe.PolicySetListOptions) (*tfe.PolicySetList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockOrganizationReadService struct {
+	response *tfe.Organization
+	err      error
+	lastName string
+}
+
+func (m *mockOrganizationReadService) Read(_ context.Context, organization string) (*tfe.Organization, error) {
+	m.lastName = organization
+	return m.response, m.err
+}
+
+type mockTeamReadService struct {
+	response *tfe.Team
+	err      error
+	lastName string
+}
+
+func (m *mockTeamReadService) Read(_ context.Context, teamName string) (*tfe.Team, error) {
+	m.lastName = teamName
+	return m.response, m.err
+}
+
+type mockProjectReadService struct {
+	response *tfe.Project
+	err      error
+	lastID   string
+}
+
+func (m *mockProjectReadService) Read(_ context.Context, projectID string) (*tfe.Project, error) {
+	m.lastID = projectID
+	return m.response, m.err
+}
+
+type mockPolicyReadService struct {
+	response *tfe.Policy
+	err      error
+	lastID   string
+}
+
+func (m *mockPolicyReadService) Read(_ context.Context, policyID string) (*tfe.Policy, error) {
+	m.lastID = policyID
+	return m.response, m.err
+}
+
+type mockPolicyDownloadService struct {
+	content []byte
+	err     error
+	lastID  string
+}
+
+func (m *mockPolicyDownloadService) Download(_ context.Context, policyID string) ([]byte, error) {
+	m.lastID = policyID
+	return m.content, m.err
+}
+
+type mockPolicySetReadService struct {
+	response *tfe.PolicySet
+	err      error
+	lastID   string
+}
+
+func (m *mockPolicySetReadService) Read(_ context.Context, policySetID string) (*tfe.PolicySet, error) {
+	m.lastID = policySetID
+	return m.response, m.err
+}
+
+type mockVariableSetReadService struct {
+	response *tfe.VariableSet
+	err      error
+	lastID   string
+}
+
+func (m *mockVariableSetReadService) Read(_ context.Context, variableSetID string, _ *tfe.VariableSetReadOptions) (*tfe.VariableSet, error) {
+	m.lastID = variableSetID
+	return m.response, m.err
+}
+
+type mockVariableSetListService struct {
+	response *tfe.VariableSetList
+	err      error
+	lastOrg  string
+	lastOpts *tfe.VariableSetListOptions
+}
+
+func (m *mockVariableSetListService) List(_ context.Context, organization string, options *tfe.VariableSetListOptions) (*tfe.VariableSetList, error) {
+	m.lastOrg = organization
+	if options != nil {
+		copy := *options
+		m.lastOpts = &copy
+	}
+	return m.response, m.err
+}
+
+type mockStateVersionReadService struct {
+	response *tfe.StateVersion
+	err      error
+	lastID   string
+}
+
+func (m *mockStateVersionReadService) ReadCurrent(_ context.Context, workspaceID string) (*tfe.StateVersion, error) {
+	m.lastID = workspaceID
+	return m.response, m.err
+}

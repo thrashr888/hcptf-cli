@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // VariableSetReadCommand is a command to read variable set details
 type VariableSetReadCommand struct {
 	Meta
-	id     string
-	format string
+	id         string
+	format     string
+	varSetSvc  variableSetReader
 }
 
 // Run executes the variable set read command
@@ -39,7 +41,7 @@ func (c *VariableSetReadCommand) Run(args []string) int {
 	}
 
 	// Read variable set
-	variableSet, err := client.VariableSets.Read(client.Context(), c.id, nil)
+	variableSet, err := c.varSetService(client).Read(client.Context(), c.id, nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading variable set: %s", err))
 		return 1
@@ -96,6 +98,13 @@ Example:
   hcptf variableset read -id=varset-12345 -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *VariableSetReadCommand) varSetService(client *client.Client) variableSetReader {
+	if c.varSetSvc != nil {
+		return c.varSetSvc
+	}
+	return client.VariableSets
 }
 
 // Synopsis returns a short synopsis for the variable set read command

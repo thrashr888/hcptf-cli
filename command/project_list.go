@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
@@ -13,6 +14,7 @@ type ProjectListCommand struct {
 	Meta
 	organization string
 	format       string
+	projectSvc   projectLister
 }
 
 // Run executes the project list command
@@ -41,7 +43,7 @@ func (c *ProjectListCommand) Run(args []string) int {
 	}
 
 	// List projects
-	projects, err := client.Projects.List(client.Context(), c.organization, &tfe.ProjectListOptions{
+	projects, err := c.projectService(client).List(client.Context(), c.organization, &tfe.ProjectListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -99,6 +101,13 @@ Example:
   hcptf project list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *ProjectListCommand) projectService(client *client.Client) projectLister {
+	if c.projectSvc != nil {
+		return c.projectSvc
+	}
+	return client.Projects
 }
 
 // Synopsis returns a short synopsis for the project list command
