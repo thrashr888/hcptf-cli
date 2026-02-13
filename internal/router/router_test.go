@@ -108,6 +108,26 @@ func TestTranslateArgs(t *testing.T) {
 			input:    []string{"myorg", "myworkspace", "state", "outputs"},
 			expected: []string{"state", "outputs", "-org=myorg", "-workspace=myworkspace"},
 		},
+		{
+			name:     "org with help flag",
+			input:    []string{"myorg", "-h"},
+			expected: []string{"organization:context", "-org=myorg"},
+		},
+		{
+			name:     "org with --help flag",
+			input:    []string{"myorg", "--help"},
+			expected: []string{"organization:context", "-org=myorg"},
+		},
+		{
+			name:     "org workspace with help flag",
+			input:    []string{"myorg", "myworkspace", "-h"},
+			expected: []string{"workspace:context", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace with --help flag",
+			input:    []string{"myorg", "myworkspace", "--help"},
+			expected: []string{"workspace:context", "-org=myorg", "-workspace=myworkspace"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -147,6 +167,63 @@ func TestIsKnownCommand(t *testing.T) {
 			result := r.isKnownCommand(tt.arg)
 			if result != tt.expected {
 				t.Errorf("isKnownCommand(%q) = %v, want %v", tt.arg, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestHasHelpFlag(t *testing.T) {
+	r := NewRouter(nil)
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected bool
+	}{
+		{"no flags", []string{"myorg", "myworkspace"}, false},
+		{"short help flag", []string{"myorg", "-h"}, true},
+		{"long help flag", []string{"myorg", "--help"}, true},
+		{"help flag", []string{"myorg", "-help"}, true},
+		{"help in middle", []string{"myorg", "-h", "workspace"}, true},
+		{"help at end", []string{"myorg", "workspace", "--help"}, true},
+		{"empty args", []string{}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := r.hasHelpFlag(tt.args)
+			if result != tt.expected {
+				t.Errorf("hasHelpFlag(%v) = %v, want %v", tt.args, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIsResourceKeyword(t *testing.T) {
+	r := NewRouter(nil)
+
+	tests := []struct {
+		arg      string
+		expected bool
+	}{
+		{"workspaces", true},
+		{"projects", true},
+		{"teams", true},
+		{"policies", true},
+		{"policysets", true},
+		{"runs", true},
+		{"variables", true},
+		{"state", true},
+		{"workspace", false},
+		{"myworkspace", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.arg, func(t *testing.T) {
+			result := r.isResourceKeyword(tt.arg)
+			if result != tt.expected {
+				t.Errorf("isResourceKeyword(%q) = %v, want %v", tt.arg, result, tt.expected)
 			}
 		})
 	}

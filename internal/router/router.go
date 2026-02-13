@@ -24,6 +24,8 @@ func NewRouter(client *tfe.Client) *Router {
 //   - "myorg workspaces" -> ["workspace", "list", "-org=myorg"]
 //   - "myorg myworkspace" -> ["workspace", "read", "-org=myorg", "-workspace=myworkspace"]
 //   - "myorg myworkspace runs list" -> ["run", "list", "-org=myorg", "-workspace=myworkspace"]
+//   - "myorg -h" -> ["organization:context", "-org=myorg"]
+//   - "myorg myworkspace -h" -> ["workspace:context", "-org=myorg", "-workspace=myworkspace"]
 func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	// If no args or first arg starts with "-", use default routing
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
@@ -38,9 +40,17 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	// URL-like pattern detected
 	org := args[0]
 
-	// Just org: show org details
+	// Check if help is requested at any position
+	hasHelp := r.hasHelpFlag(args)
+
+	// Just org: show org details or org context help
 	if len(args) == 1 {
 		return []string{"organization", "show", "-name=" + org}, nil
+	}
+
+	// org -h: show org context
+	if len(args) == 2 && hasHelp {
+		return []string{"organization:context", "-org=" + org}, nil
 	}
 
 	// Check for resource type as second arg
@@ -71,6 +81,12 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	if len(args) == 2 {
 		workspace := args[1]
 		return []string{"workspace", "read", "-org=" + org, "-name=" + workspace}, nil
+	}
+
+	// org workspace -h: show workspace context
+	if len(args) == 3 && hasHelp && !r.isResourceKeyword(args[1]) {
+		workspace := args[1]
+		return []string{"workspace:context", "-org=" + org, "-workspace=" + workspace}, nil
 	}
 
 	// 3+ args: org, workspace, resource
@@ -163,4 +179,28 @@ func (r *Router) ValidateWorkspace(ctx context.Context, org, workspace string) e
 		return fmt.Errorf("workspace %q not found in organization %q: %w", workspace, org, err)
 	}
 	return nil
+}
+
+// hasHelpFlag checks if help flag is present in args
+func (r *Router) hasHelpFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" || arg == "-help" {
+			return true
+		}
+	}
+	return false
+}
+
+// isResourceKeyword checks if arg is a resource type keyword
+func (r *Router) isResourceKeyword(arg string) bool {
+	resourceKeywords := []string{
+		"workspaces", "projects", "teams", "policies", "policysets",
+		"runs", "variables", "state",
+	}
+	for _, keyword := range resourceKeywords {
+		if arg == keyword {
+			return true
+		}
+	}
+	return false
 }

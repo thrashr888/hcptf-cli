@@ -13,6 +13,18 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Context help commands (internal, for URL-like arg support)
+		"organization:context": func() (cli.Command, error) {
+			return &OrganizationContextCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"workspace:context": func() (cli.Command, error) {
+			return &WorkspaceContextCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// Authentication commands
 		"login": func() (cli.Command, error) {
 			return &LoginCommand{
