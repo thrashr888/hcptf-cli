@@ -28,8 +28,11 @@ func realMain() int {
 
 	// Create the meta object for commands
 	meta := command.Meta{
-		Color: true,
+		Color:        true,
+		OutputWriter: os.Stdout,
+		ErrorWriter:  os.Stderr,
 	}
+	command.SetVersionProvider(GetVersion)
 
 	// Setup UI with color support
 	ui := &cli.ColoredUi{

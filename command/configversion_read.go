@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ConfigVersionReadCommand is a command to read configuration version details
@@ -69,7 +68,7 @@ func (c *ConfigVersionReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":           configVersion.ID,

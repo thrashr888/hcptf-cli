@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // AuditTrailTokenDeleteCommand is a command to delete an audit trail token
@@ -12,6 +13,7 @@ type AuditTrailTokenDeleteCommand struct {
 	Meta
 	organization string
 	force        bool
+	orgTokenSvc  auditTrailTokenDeleter
 }
 
 // Run executes the audit trail token delete command
@@ -59,7 +61,7 @@ func (c *AuditTrailTokenDeleteCommand) Run(args []string) int {
 		TokenType: &tokenType,
 	}
 
-	err = client.OrganizationTokens.DeleteWithOptions(client.Context(), c.organization, options)
+	err = c.auditTrailTokenService(client).DeleteWithOptions(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting audit trail token: %s", err))
 		return 1
@@ -67,6 +69,13 @@ func (c *AuditTrailTokenDeleteCommand) Run(args []string) int {
 
 	c.Ui.Output(fmt.Sprintf("Audit trail token for organization '%s' deleted successfully", c.organization))
 	return 0
+}
+
+func (c *AuditTrailTokenDeleteCommand) auditTrailTokenService(client *client.Client) auditTrailTokenDeleter {
+	if c.orgTokenSvc != nil {
+		return c.orgTokenSvc
+	}
+	return client.OrganizationTokens
 }
 
 // Help returns help text for the audit trail token delete command

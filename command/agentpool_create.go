@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AgentPoolCreateCommand is a command to create an agent pool
@@ -65,7 +64,7 @@ func (c *AgentPoolCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Agent pool '%s' created successfully", agentPool.Name))
 

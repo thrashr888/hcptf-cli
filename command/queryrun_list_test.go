@@ -1,9 +1,14 @@
 package command
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/hashicorp/hcptf-cli/internal/client"
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
@@ -273,4 +278,130 @@ func TestQueryRunListFlagParsing(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestQueryRunListRunNoRuns(t *testing.T) {
+	ui := cli.NewMockUi()
+	meta := newTestMeta(ui)
+	meta.client = &client.Client{
+		Client: &tfe.Client{
+			Runs: &mockRunsService{
+				listForOrganizationResponse: &tfe.OrganizationRunList{
+					Items: []*tfe.Run{},
+				},
+			},
+		},
+	}
+
+	cmd := &QueryRunListCommand{Meta: meta}
+	code := cmd.Run([]string{"-organization=my-org"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if !strings.Contains(ui.OutputWriter.String(), "No runs found") {
+		t.Fatalf("expected no runs output, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestQueryRunListRunListsRuns(t *testing.T) {
+	ui := cli.NewMockUi()
+	meta := newTestMeta(ui)
+	meta.client = &client.Client{
+		Client: &tfe.Client{
+			Runs: &mockRunsService{
+				listForOrganizationResponse: &tfe.OrganizationRunList{
+					Items: []*tfe.Run{
+						{
+							ID:       "run-001",
+							Message:  "initial apply",
+							Status:   tfe.RunApplied,
+							Source:   tfe.RunSourceUI,
+							CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC),
+							Workspace: &tfe.Workspace{
+								Name: "demo-workspace",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	cmd := &QueryRunListCommand{Meta: meta}
+	code := cmd.Run([]string{"-organization=my-org"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if !strings.Contains(ui.OutputWriter.String(), "run-001") {
+		t.Fatalf("expected run output, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestQueryRunListRunError(t *testing.T) {
+	ui := cli.NewMockUi()
+	meta := newTestMeta(ui)
+	meta.client = &client.Client{
+		Client: &tfe.Client{
+			Runs: &mockRunsService{
+				listForOrganizationErr: errors.New("backend failure"),
+			},
+		},
+	}
+
+	cmd := &QueryRunListCommand{Meta: meta}
+	code := cmd.Run([]string{"-organization=my-org"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "Error listing runs: backend failure") {
+		t.Fatalf("expected list error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+type mockRunsService struct {
+	listForOrganizationResponse *tfe.OrganizationRunList
+	listForOrganizationErr      error
+}
+
+func (m *mockRunsService) List(_ context.Context, workspaceID string, options *tfe.RunListOptions) (*tfe.RunList, error) {
+	return nil, nil
+}
+
+func (m *mockRunsService) ListForOrganization(_ context.Context, organization string, _ *tfe.RunListForOrganizationOptions) (*tfe.OrganizationRunList, error) {
+	return m.listForOrganizationResponse, m.listForOrganizationErr
+}
+
+func (m *mockRunsService) Create(_ context.Context, options tfe.RunCreateOptions) (*tfe.Run, error) {
+	return nil, nil
+}
+
+func (m *mockRunsService) Read(_ context.Context, runID string) (*tfe.Run, error) {
+	return nil, nil
+}
+
+func (m *mockRunsService) ReadWithOptions(_ context.Context, runID string, options *tfe.RunReadOptions) (*tfe.Run, error) {
+	return nil, nil
+}
+
+func (m *mockRunsService) Apply(_ context.Context, runID string, options tfe.RunApplyOptions) error {
+	return nil
+}
+
+func (m *mockRunsService) Cancel(_ context.Context, runID string, options tfe.RunCancelOptions) error {
+	return nil
+}
+
+func (m *mockRunsService) ForceCancel(_ context.Context, runID string, options tfe.RunForceCancelOptions) error {
+	return nil
+}
+
+func (m *mockRunsService) ForceExecute(_ context.Context, runID string) error {
+	return nil
+}
+
+func (m *mockRunsService) Discard(_ context.Context, runID string, options tfe.RunDiscardOptions) error {
+	return nil
 }

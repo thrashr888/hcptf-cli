@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // OrganizationUpdateCommand is a command to update an organization
@@ -17,6 +17,7 @@ type OrganizationUpdateCommand struct {
 	sessionRemember       int
 	costEstimationEnabled string
 	format                string
+	orgSvc                organizationUpdater
 }
 
 // Run executes the organization update command
@@ -74,14 +75,14 @@ func (c *OrganizationUpdateCommand) Run(args []string) int {
 	}
 
 	// Update organization
-	org, err := client.Organizations.Update(client.Context(), c.name, options)
+	org, err := c.organizationService(client).Update(client.Context(), c.name, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error updating organization: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Organization '%s' updated successfully", org.Name))
 
@@ -96,6 +97,13 @@ func (c *OrganizationUpdateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *OrganizationUpdateCommand) organizationService(client *client.Client) organizationUpdater {
+	if c.orgSvc != nil {
+		return c.orgSvc
+	}
+	return client.Organizations
 }
 
 // Help returns help text for the organization update command

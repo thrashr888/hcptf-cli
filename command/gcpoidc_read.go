@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // GCPoidcReadCommand is a command to read GCP OIDC configuration details
@@ -46,7 +45,7 @@ func (c *GCPoidcReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":                   config.ID,

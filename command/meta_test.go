@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/mitchellh/cli"
@@ -74,5 +75,39 @@ func TestMetaClientCachesResult(t *testing.T) {
 	}
 	if c1 != c2 {
 		t.Fatal("expected same client instance on second call")
+	}
+}
+
+func TestMetaNewFormatterUsesCustomWriters(t *testing.T) {
+	out := &bytes.Buffer{}
+	errOut := &bytes.Buffer{}
+
+	m := Meta{
+		Ui:          cli.NewMockUi(),
+		OutputWriter: out,
+		ErrorWriter:  errOut,
+	}
+
+	formatter := m.NewFormatter("table")
+	formatter.List([]string{"one", "two"})
+	if out.String() != "one\ntwo\n" {
+		t.Fatalf("expected formatter output on custom writer, got %q", out.String())
+	}
+	if errOut.Len() != 0 {
+		t.Fatalf("expected no error output for list, got %q", errOut.String())
+	}
+}
+
+func TestMetaNewFormatterFallsBackToMockUI(t *testing.T) {
+	ui := cli.NewMockUi()
+	m := Meta{
+		Ui: ui,
+	}
+
+	formatter := m.NewFormatter("table")
+	formatter.List([]string{"alpha"})
+
+	if got := ui.OutputWriter.String(); got != "alpha\n" {
+		t.Fatalf("expected output captured by mock UI writer, got %q", got)
 	}
 }

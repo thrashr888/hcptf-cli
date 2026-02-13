@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryProviderVersionReadCommand struct {
@@ -79,7 +78,7 @@ func (c *RegistryProviderVersionReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	// Show version details
 	data := map[string]interface{}{

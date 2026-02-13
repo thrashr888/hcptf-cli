@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicySetOutcomeReadCommand is a command to read policy set outcome details
@@ -46,7 +45,7 @@ func (c *PolicySetOutcomeReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	overridable := "Unknown"
 	if policySetOutcome.Overridable != nil {
@@ -90,7 +89,7 @@ func (c *PolicySetOutcomeReadCommand) Run(args []string) int {
 			})
 		}
 
-		outcomeFormatter := output.NewFormatter("table")
+	outcomeFormatter := c.Meta.NewFormatter("table")
 		outcomeFormatter.Table(outcomeHeaders, outcomeRows)
 	}
 

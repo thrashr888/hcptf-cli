@@ -99,3 +99,49 @@ func TestVersionRunWithArgs(t *testing.T) {
 		t.Fatalf("expected version output even with args, got %q", output)
 	}
 }
+
+func TestSetVersionProviderNilIsNoop(t *testing.T) {
+	original := func() string {
+		return "kept-version"
+	}
+	SetVersionProvider(original)
+
+	SetVersionProvider(nil)
+	defer SetVersionProvider(original)
+
+	ui := cli.NewMockUi()
+	cmd := &VersionCommand{
+		Meta: newTestMeta(ui),
+	}
+
+	code := cmd.Run([]string{})
+	if code != 0 {
+		t.Fatalf("expected exit code 0, got %d", code)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "kept-version") {
+		t.Fatalf("expected existing version to remain after nil provider, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestVersionRunUsesInjectedProvider(t *testing.T) {
+	original := versionFunc
+	SetVersionProvider(func() string {
+		return "custom-version"
+	})
+	defer SetVersionProvider(original)
+
+	ui := cli.NewMockUi()
+	cmd := &VersionCommand{
+		Meta: newTestMeta(ui),
+	}
+
+	code := cmd.Run([]string{})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	output := ui.OutputWriter.String()
+	if !strings.Contains(output, "custom-version") {
+		t.Fatalf("expected injected version, got %q", output)
+	}
+}

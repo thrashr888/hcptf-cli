@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryProviderVersionCreateCommand struct {
@@ -97,7 +96,7 @@ func (c *RegistryProviderVersionCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Provider version '%s' created successfully", providerVersion.Version))
 	c.Ui.Output("\nNext steps:")

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // UserTokenListCommand is a command to list user tokens
@@ -47,7 +46,7 @@ func (c *UserTokenListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(tokens.Items) == 0 {
 		c.Ui.Output("No user tokens found")

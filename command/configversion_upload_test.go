@@ -1,9 +1,13 @@
 package command
 
 import (
+	"context"
+	"errors"
+	"os"
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
@@ -87,95 +91,149 @@ func TestConfigVersionUploadRequiresPathExists(t *testing.T) {
 	}
 }
 
-func TestConfigVersionUploadHelp(t *testing.T) {
-	cmd := &ConfigVersionUploadCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
+func TestConfigVersionUploadSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	temp := t.TempDir()
+	path := temp + "/config.txt"
+	if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
 	}
 
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf configversion upload") {
-		t.Error("Help should contain usage")
+	reader := &mockConfigVersionReadService{
+		response: &tfe.ConfigurationVersion{
+			ID:        "cv-1",
+			UploadURL: "https://upload.example.com",
+		},
 	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
+	uploader := &mockConfigVersionUploader{}
+
+	cmd := &ConfigVersionUploadCommand{
+		Meta:         newTestMeta(ui),
+		configVerSvc: reader,
+		uploadSvc:    uploader,
 	}
-	if !strings.Contains(help, "Configuration version ID") {
-		t.Error("Help should mention configuration version ID")
+
+	code := cmd.Run([]string{"-id=cv-1", "-path=" + path})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
 	}
-	if !strings.Contains(help, "-path") {
-		t.Error("Help should mention -path flag")
+	if reader.lastID != "cv-1" {
+		t.Fatalf("expected read called for cv-1, got %q", reader.lastID)
 	}
-	if !strings.Contains(help, "configuration directory or tar.gz file") {
-		t.Error("Help should mention path types")
+	if uploader.lastURL != "https://upload.example.com" || uploader.lastPath != path {
+		t.Fatalf("expected upload called with url=%q path=%q, got url=%q path=%q",
+			"https://upload.example.com", path, uploader.lastURL, uploader.lastPath)
 	}
-	if !strings.Contains(help, "automatically archived") {
-		t.Error("Help should mention automatic archiving")
+	if !strings.Contains(ui.OutputWriter.String(), "Successfully uploaded configuration to version: cv-1") {
+		t.Fatalf("expected success output, got %q", ui.OutputWriter.String())
 	}
 }
 
-func TestConfigVersionUploadSynopsis(t *testing.T) {
-	cmd := &ConfigVersionUploadCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
+func TestConfigVersionUploadReadError(t *testing.T) {
+	ui := cli.NewMockUi()
+	temp := t.TempDir()
+	path := temp + "/config.txt"
+	if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	if synopsis != "Upload configuration files" {
-		t.Errorf("expected 'Upload configuration files', got %q", synopsis)
+
+	reader := &mockConfigVersionReadService{
+		err: errors.New("read failed"),
+	}
+	uploader := &mockConfigVersionUploader{}
+
+	cmd := &ConfigVersionUploadCommand{
+		Meta:         newTestMeta(ui),
+		configVerSvc: reader,
+		uploadSvc:    uploader,
+	}
+
+	code := cmd.Run([]string{"-id=cv-1", "-path=" + path})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "Error reading configuration version: read failed") {
+		t.Fatalf("expected read error output, got %q", ui.ErrorWriter.String())
+	}
+	if uploader.lastURL != "" {
+		t.Fatal("upload should not be called when read fails")
 	}
 }
 
-func TestConfigVersionUploadFlagParsing(t *testing.T) {
-	tests := []struct {
-		name               string
-		args               []string
-		expectedID         string
-		expectedPath       string
-	}{
-		{
-			name:               "directory path",
-			args:               []string{"-id=cv-abc123", "-path=./terraform"},
-			expectedID:         "cv-abc123",
-			expectedPath:       "./terraform",
-		},
-		{
-			name:               "tar.gz file path",
-			args:               []string{"-id=cv-xyz789", "-path=./config.tar.gz"},
-			expectedID:         "cv-xyz789",
-			expectedPath:       "./config.tar.gz",
-		},
-		{
-			name:               "absolute path",
-			args:               []string{"-id=cv-123456", "-path=/home/user/configs"},
-			expectedID:         "cv-123456",
-			expectedPath:       "/home/user/configs",
-		},
+func TestConfigVersionUploadMissingUploadURL(t *testing.T) {
+	ui := cli.NewMockUi()
+	temp := t.TempDir()
+	path := temp + "/config.txt"
+	if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &ConfigVersionUploadCommand{}
-
-			flags := cmd.Meta.FlagSet("configversion upload")
-			flags.StringVar(&cmd.configVersionID, "id", "", "Configuration version ID (required)")
-			flags.StringVar(&cmd.path, "path", "", "Path to configuration directory or tar.gz file (required)")
-
-			if err := flags.Parse(tt.args); err != nil {
-				t.Fatalf("flag parsing failed: %v", err)
-			}
-
-			// Verify the configVersionID was set correctly
-			if cmd.configVersionID != tt.expectedID {
-				t.Errorf("expected configVersionID %q, got %q", tt.expectedID, cmd.configVersionID)
-			}
-
-			// Verify the path was set correctly
-			if cmd.path != tt.expectedPath {
-				t.Errorf("expected path %q, got %q", tt.expectedPath, cmd.path)
-			}
-		})
+	reader := &mockConfigVersionReadService{
+		response: &tfe.ConfigurationVersion{
+			ID: "cv-1",
+		},
 	}
+	uploader := &mockConfigVersionUploader{}
+
+	cmd := &ConfigVersionUploadCommand{
+		Meta:         newTestMeta(ui),
+		configVerSvc: reader,
+		uploadSvc:    uploader,
+	}
+
+	code := cmd.Run([]string{"-id=cv-1", "-path=" + path})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "does not have an upload URL") {
+		t.Fatalf("expected missing upload URL output, got %q", ui.ErrorWriter.String())
+	}
+	if uploader.lastURL != "" {
+		t.Fatal("upload should not be called without upload URL")
+	}
+}
+
+func TestConfigVersionUploadUploadError(t *testing.T) {
+	ui := cli.NewMockUi()
+	temp := t.TempDir()
+	path := temp + "/config.txt"
+	if err := os.WriteFile(path, []byte("data"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	reader := &mockConfigVersionReadService{
+		response: &tfe.ConfigurationVersion{
+			ID:        "cv-1",
+			UploadURL: "https://upload.example.com",
+		},
+	}
+	uploader := &mockConfigVersionUploader{
+		err: errors.New("upload failed"),
+	}
+
+	cmd := &ConfigVersionUploadCommand{
+		Meta:         newTestMeta(ui),
+		configVerSvc: reader,
+		uploadSvc:    uploader,
+	}
+
+	code := cmd.Run([]string{"-id=cv-1", "-path=" + path})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "Error uploading configuration: upload failed") {
+		t.Fatalf("expected upload error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+type mockConfigVersionUploader struct {
+	lastURL  string
+	lastPath string
+	err      error
+}
+
+func (m *mockConfigVersionUploader) Upload(_ context.Context, url, path string) error {
+	m.lastURL = url
+	m.lastPath = path
+	return m.err
 }

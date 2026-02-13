@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // RunTaskAttachCommand is a command to attach a run task to a workspace
@@ -109,7 +108,7 @@ func (c *RunTaskAttachCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Run task attached to workspace '%s' successfully", c.workspace))
 

@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // RunListCommand is a command to list runs
@@ -70,7 +69,7 @@ func (c *RunListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(runs.Items) == 0 {
 		c.Ui.Output("No runs found")

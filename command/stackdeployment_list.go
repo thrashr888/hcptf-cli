@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // StackDeploymentListCommand is a command to list stack deployments
@@ -51,7 +50,7 @@ func (c *StackDeploymentListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(deployments.Items) == 0 {
 		c.Ui.Output("No stack deployments found")

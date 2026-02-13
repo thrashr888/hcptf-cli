@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryProviderCreateCommand struct {
@@ -72,15 +71,19 @@ func (c *RegistryProviderCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Registry provider '%s/%s' created successfully", provider.Namespace, provider.Name))
+	if c.format != "json" {
+		c.Ui.Output(fmt.Sprintf("Registry provider '%s/%s' created successfully", provider.Namespace, provider.Name))
+	}
 
 	if c.registryName == "private" {
-		c.Ui.Output("\nNext steps:")
-		c.Ui.Output("1. Create a provider version using 'registryproviderversion create'")
-		c.Ui.Output("2. Upload shasums and signature files")
-		c.Ui.Output("3. Create platform binaries using 'registryproviderplatform create'")
+		if c.format != "json" {
+			c.Ui.Output("\nNext steps:")
+			c.Ui.Output("1. Create a provider version using 'registryproviderversion create'")
+			c.Ui.Output("2. Upload shasums and signature files")
+			c.Ui.Output("3. Create platform binaries using 'registryproviderplatform create'")
+		}
 	}
 
 	// Show provider details

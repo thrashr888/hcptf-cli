@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AzureoidcCreateCommand is a command to create an Azure OIDC configuration
@@ -79,7 +78,7 @@ func (c *AzureoidcCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Azure OIDC configuration created successfully with ID: %s", config.ID))
 

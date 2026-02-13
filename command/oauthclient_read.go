@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // OAuthClientReadCommand is a command to read OAuth client details
@@ -46,7 +45,7 @@ func (c *OAuthClientReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	name := ""
 	if oauthClient.Name != nil && *oauthClient.Name != "" {

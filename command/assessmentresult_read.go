@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AssessmentResultReadCommand shows details of a specific assessment result
@@ -106,7 +105,7 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	httpClient := &http.Client{}
+	httpClient := newHTTPClient()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error making API request: %s", err))
@@ -139,7 +138,7 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	ar := assessmentResult.Data
 	driftStatus := "No drift detected"
@@ -216,7 +215,7 @@ func (c *AssessmentResultReadCommand) showDriftDetails(client *client.Client, js
 	req.Header.Set("Authorization", "Bearer "+client.Token())
 	req.Header.Set("Accept", "application/json")
 
-	httpClient := &http.Client{}
+	httpClient := newHTTPClient()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("making request: %w", err)

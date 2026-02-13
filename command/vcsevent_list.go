@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // VCSEventListCommand lists VCS events for an organization
@@ -136,7 +135,7 @@ func (c *VCSEventListCommand) Run(args []string) int {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	httpClient := &http.Client{}
+	httpClient := newHTTPClient()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error making API request: %s", err))
@@ -167,7 +166,7 @@ func (c *VCSEventListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(vcsEvents.Data) == 0 {
 		c.Ui.Output("No VCS events found")

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AgentListCommand is a command to list agents in an agent pool
@@ -52,7 +51,7 @@ func (c *AgentListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(agents.Items) == 0 {
 		c.Ui.Output("No agents found")

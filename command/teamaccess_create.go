@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type TeamAccessCreateCommand struct {
@@ -93,9 +92,11 @@ func (c *TeamAccessCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Team access created successfully"))
+	if c.format != "json" {
+		c.Ui.Output(fmt.Sprintf("Team access created successfully"))
+	}
 
 	// Show team access details
 	data := map[string]interface{}{

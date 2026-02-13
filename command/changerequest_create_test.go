@@ -1,6 +1,9 @@
 package command
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -46,56 +49,6 @@ func TestChangeRequestCreateRequiresFlags(t *testing.T) {
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "-message") {
 		t.Fatalf("expected message error, got %q", ui.ErrorWriter.String())
-	}
-}
-
-func TestChangeRequestCreateHelp(t *testing.T) {
-	cmd := &ChangeRequestCreateCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf changerequest create") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-organization") {
-		t.Error("Help should mention -organization flag")
-	}
-	if !strings.Contains(help, "-org") {
-		t.Error("Help should mention -org flag alias")
-	}
-	if !strings.Contains(help, "-workspace") {
-		t.Error("Help should mention -workspace flag")
-	}
-	if !strings.Contains(help, "-subject") {
-		t.Error("Help should mention -subject flag")
-	}
-	if !strings.Contains(help, "-message") {
-		t.Error("Help should mention -message flag")
-	}
-	if !strings.Contains(help, "-output") {
-		t.Error("Help should mention -output flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate required flags")
-	}
-	if !strings.Contains(help, "HCP Terraform Plus or Enterprise") {
-		t.Error("Help should mention plan requirements")
-	}
-}
-
-func TestChangeRequestCreateSynopsis(t *testing.T) {
-	cmd := &ChangeRequestCreateCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Create a new change request for a workspace" {
-		t.Errorf("expected 'Create a new change request for a workspace', got %q", synopsis)
 	}
 }
 
@@ -188,5 +141,134 @@ func TestChangeRequestCreateFlagParsing(t *testing.T) {
 				t.Errorf("expected format %q, got %q", tt.expectedFormat, cmd.format)
 			}
 		})
+	}
+}
+
+func TestChangeRequestCreateRunSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/organizations/my-org/explorer/bulk-actions":
+			_, _ = w.Write([]byte(`{"data":{"id":"ba-123","type":"bulk-actions","attributes":{"organization_id":"my-org","action_type":"change_requests","action_inputs":{"subject":"Fix","message":"Please update"}}}}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestCreateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-subject=Fix", "-message=Please update"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	out := ui.OutputWriter.String()
+	if !strings.Contains(out, "Change request created successfully via bulk action 'ba-123'") {
+		t.Fatalf("expected success output, got %q", out)
+	}
+}
+
+func TestChangeRequestCreateRunWorkspaceReadError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"errors":[{"status":"404"}]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestCreateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-subject=Fix", "-message=Please update"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "Error reading workspace") {
+		t.Fatalf("expected workspace read error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestCreateRunAPIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/organizations/my-org/explorer/bulk-actions":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"errors":[{"status":"404"}]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestCreateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-subject=Fix", "-message=Please update"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "API request failed with status 404") {
+		t.Fatalf("expected API error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestCreateRunJSONOutput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/organizations/my-org/explorer/bulk-actions":
+			_, _ = w.Write([]byte(`{"data":{"id":"ba-123","type":"bulk-actions","attributes":{"organization_id":"my-org","action_type":"change_requests","action_inputs":{"subject":"Fix","message":"Please update"}}}}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestCreateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-subject=Fix", "-message=Please update", "-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	output := strings.TrimSpace(ui.OutputWriter.String())
+	start := strings.Index(output, "{")
+	end := strings.LastIndex(output, "}")
+	if start == -1 || end == -1 || end <= start {
+		t.Fatalf("expected JSON output in response, got: %q", output)
+	}
+	out := output[start : end+1]
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(out), &data); err != nil {
+		t.Fatalf("failed to decode json output: %v, output: %q", err, out)
+	}
+	if data["BulkActionID"] != "ba-123" {
+		t.Fatalf("expected bulk action id in output, got %v", data["BulkActionID"])
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicyCheckListCommand is a command to list policy checks for a run
@@ -51,7 +50,7 @@ func (c *PolicyCheckListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(policyChecks.Items) == 0 {
 		c.Ui.Output("No policy checks found")

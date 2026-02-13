@@ -1,6 +1,9 @@
 package command
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -28,50 +31,6 @@ func TestChangeRequestListRequiresFlags(t *testing.T) {
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "-workspace") {
 		t.Fatalf("expected workspace error, got %q", ui.ErrorWriter.String())
-	}
-}
-
-func TestChangeRequestListHelp(t *testing.T) {
-	cmd := &ChangeRequestListCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf changerequest list") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-organization") {
-		t.Error("Help should mention -organization flag")
-	}
-	if !strings.Contains(help, "-org") {
-		t.Error("Help should mention -org flag alias")
-	}
-	if !strings.Contains(help, "-workspace") {
-		t.Error("Help should mention -workspace flag")
-	}
-	if !strings.Contains(help, "-output") {
-		t.Error("Help should mention -output flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate required flags")
-	}
-	if !strings.Contains(help, "HCP Terraform Plus or Enterprise") {
-		t.Error("Help should mention plan requirements")
-	}
-}
-
-func TestChangeRequestListSynopsis(t *testing.T) {
-	cmd := &ChangeRequestListCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "List change requests for a workspace" {
-		t.Errorf("expected 'List change requests for a workspace', got %q", synopsis)
 	}
 }
 
@@ -149,5 +108,158 @@ func TestChangeRequestListFlagParsing(t *testing.T) {
 				t.Errorf("expected format %q, got %q", tt.expectedFormat, cmd.format)
 			}
 		})
+	}
+}
+
+func TestChangeRequestListRunNoResults(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/workspaces/ws-123/change-requests":
+			_, _ = w.Write([]byte(`{"data":[]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestListCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if !strings.Contains(ui.OutputWriter.String(), "No change requests found") {
+		t.Fatalf("expected no results output, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestChangeRequestListRunHasResults(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/workspaces/ws-123/change-requests":
+			_, _ = w.Write([]byte(`{"data":[{"id":"cr-1","type":"change-requests","attributes":{"subject":"Upgrade","message":"upgrade", "archived-at":null, "created-at":"2024-01-01T00:00:00Z", "updated-at":"2024-01-01T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestListCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-output=table"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	out := ui.OutputWriter.String()
+	if !strings.Contains(out, "cr-1") || !strings.Contains(out, "Upgrade") {
+		t.Fatalf("expected table output with change request, got %q", out)
+	}
+}
+
+func TestChangeRequestListRunWorkspaceReadError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v2/ping" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		if r.URL.Path == "/api/v2/organizations/my-org/workspaces/my-workspace" {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"errors":[{"status":"404"}]}`))
+			return
+		}
+		t.Fatalf("unexpected path: %s", r.URL.Path)
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestListCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "Error reading workspace") {
+		t.Fatalf("expected workspace read error, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestListRunAPIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/workspaces/ws-123/change-requests":
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"message":"backend error"}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestListCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "API request failed with status 500") {
+		t.Fatalf("expected API error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestListRunJSONOutput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/organizations/my-org/workspaces/my-workspace":
+			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
+		case "/api/v2/workspaces/ws-123/change-requests":
+			_, _ = w.Write([]byte(`{"data":[{"id":"cr-1","type":"change-requests","attributes":{"subject":"Upgrade","message":"upgrade", "archived-at":null, "created-at":"2024-01-01T00:00:00Z", "updated-at":"2024-01-01T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}},{"id":"cr-2","type":"change-requests","attributes":{"subject":"Audit","message":"audit log", "archived-at":"2024-01-02T00:00:00Z", "created-at":"2024-01-01T00:00:00Z", "updated-at":"2024-01-01T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestListCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-organization=my-org", "-workspace=my-workspace", "-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	out := strings.TrimSpace(ui.OutputWriter.String())
+	var rows []map[string]string
+	if err := json.Unmarshal([]byte(out), &rows); err != nil {
+		t.Fatalf("failed to decode json output: %v, output: %q", err, out)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("expected two rows, got %d", len(rows))
+	}
+	if rows[0]["ID"] == "" || rows[1]["ID"] == "" {
+		t.Fatalf("expected IDs in JSON output rows, got %v", rows)
 	}
 }

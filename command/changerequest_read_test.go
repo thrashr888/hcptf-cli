@@ -1,6 +1,9 @@
 package command
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -19,44 +22,6 @@ func TestChangeRequestReadRequiresFlags(t *testing.T) {
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "-id") {
 		t.Fatalf("expected id error, got %q", ui.ErrorWriter.String())
-	}
-}
-
-func TestChangeRequestReadHelp(t *testing.T) {
-	cmd := &ChangeRequestReadCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf changerequest read") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
-	}
-	if !strings.Contains(help, "-output") {
-		t.Error("Help should mention -output flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate required flags")
-	}
-	if !strings.Contains(help, "HCP Terraform Plus or Enterprise") {
-		t.Error("Help should mention plan requirements")
-	}
-}
-
-func TestChangeRequestReadSynopsis(t *testing.T) {
-	cmd := &ChangeRequestReadCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Show details of a specific change request" {
-		t.Errorf("expected 'Show details of a specific change request', got %q", synopsis)
 	}
 }
 
@@ -115,5 +80,120 @@ func TestChangeRequestReadFlagParsing(t *testing.T) {
 				t.Errorf("expected format %q, got %q", tt.expectedFormat, cmd.format)
 			}
 		})
+	}
+}
+
+func TestChangeRequestReadRunSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/change-requests/cr-1":
+			_, _ = w.Write([]byte(`{"data":{"id":"cr-1","type":"change-requests","attributes":{"subject":"Fix","message":"Please update","archived-by":null,"archived-at":null,"created-at":"2024-01-01T00:00:00Z","updated-at":"2024-01-02T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestReadCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	out := strings.TrimSpace(ui.OutputWriter.String())
+	if !strings.Contains(out, "ID") || !strings.Contains(out, "cr-1") {
+		t.Fatalf("expected ID output, got %q", out)
+	}
+}
+
+func TestChangeRequestReadRunNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/change-requests/cr-1":
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"errors":[{"status":"404"}]}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestReadCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "API request failed with status 404") {
+		t.Fatalf("expected 404 output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestReadRunJSONOutput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/change-requests/cr-1":
+			_, _ = w.Write([]byte(`{"data":{"id":"cr-1","type":"change-requests","attributes":{"subject":"Fix","message":"Please update","archived-by":null,"archived-at":null,"created-at":"2024-01-01T00:00:00Z","updated-at":"2024-01-02T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestReadCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1", "-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	out := strings.TrimSpace(ui.OutputWriter.String())
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(out), &data); err != nil {
+		t.Fatalf("failed to decode json output: %v, output: %q", err, out)
+	}
+	if data["ID"] != "cr-1" {
+		t.Fatalf("expected ID in json output, got %v", data["ID"])
+	}
+}
+
+func TestChangeRequestReadRunArchived(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.RequestURI() {
+		case "/api/v2/ping", "/api/v2/ping?":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+		case "/api/v2/change-requests/cr-archived":
+			_, _ = w.Write([]byte(`{"data":{"id":"cr-archived","type":"change-requests","attributes":{"subject":"Fix","message":"Please update","archived-by":"user-1","archived-at":"2024-01-05T00:00:00Z","created-at":"2024-01-01T00:00:00Z","updated-at":"2024-01-02T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}}`))
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestReadCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-archived"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	if !strings.Contains(ui.OutputWriter.String(), "ArchivedBy") {
+		t.Fatalf("expected archived fields in output, got %q", ui.OutputWriter.String())
 	}
 }

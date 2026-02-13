@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AccountCreateCommand is a command to create a new user account
@@ -81,7 +80,7 @@ func (c *AccountCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output("Account created successfully!")
 	c.Ui.Output("")
@@ -181,7 +180,7 @@ func createAccountDirectly(address, email, username, password string) (string, s
 
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	client := &http.Client{}
+	client := newHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", "", "", fmt.Errorf("failed to make request: %w", err)

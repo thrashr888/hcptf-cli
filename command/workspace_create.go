@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // WorkspaceCreateCommand is a command to create a workspace
@@ -77,9 +76,11 @@ func (c *WorkspaceCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Workspace '%s' created successfully", workspace.Name))
+	if c.format != "json" {
+		c.Ui.Output(fmt.Sprintf("Workspace '%s' created successfully", workspace.Name))
+	}
 
 	// Show workspace details
 	data := map[string]interface{}{

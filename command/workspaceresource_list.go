@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // WorkspaceResourceListCommand is a command to list workspace resources
@@ -67,7 +66,7 @@ func (c *WorkspaceResourceListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(resources.Items) == 0 {
 		c.Ui.Output("No resources found in workspace state")

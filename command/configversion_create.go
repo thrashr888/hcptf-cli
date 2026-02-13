@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ConfigVersionCreateCommand is a command to create a configuration version
@@ -78,9 +77,11 @@ func (c *ConfigVersionCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output("Configuration version created successfully")
+	if c.format != "json" {
+		c.Ui.Output("Configuration version created successfully")
+	}
 
 	data := map[string]interface{}{
 		"ID":            configVersion.ID,

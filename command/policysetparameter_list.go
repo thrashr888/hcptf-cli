@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicySetParameterListCommand is a command to list policy set parameters
@@ -51,7 +50,7 @@ func (c *PolicySetParameterListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(parameters.Items) == 0 {
 		c.Ui.Output("No policy set parameters found")

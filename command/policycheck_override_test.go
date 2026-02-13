@@ -1,6 +1,9 @@
 package command
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -151,5 +154,139 @@ func TestPolicyCheckOverrideFlagParsing(t *testing.T) {
 				t.Errorf("expected autoApprove %v, got %v", tt.expectedAutoApprove, cmd.autoApprove)
 			}
 		})
+	}
+}
+
+func TestPolicyCheckOverrideRunAutoApproveSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		case "/api/v2/policy-checks/pc-1":
+			body := map[string]interface{}{
+				"data": map[string]interface{}{
+					"id":   "pc-1",
+					"type": "policy-checks",
+					"attributes": map[string]interface{}{
+						"actions": map[string]interface{}{
+							"is-overridable": true,
+						},
+						"permissions": map[string]interface{}{
+							"can-override": true,
+						},
+						"scope":  "organization",
+						"status": "passed",
+						"result": map[string]interface{}{
+							"soft-failed": 0,
+						},
+					},
+				},
+			}
+			if encoded, err := json.Marshal(body); err == nil {
+				_, _ = w.Write(encoded)
+			}
+			return
+		case "/api/v2/policy-checks/pc-1/actions/override":
+			body := map[string]interface{}{
+				"data": map[string]interface{}{
+					"id":   "pc-1",
+					"type": "policy-checks",
+					"attributes": map[string]interface{}{
+						"actions": map[string]interface{}{
+							"is-overridable": true,
+						},
+						"permissions": map[string]interface{}{
+							"can-override": true,
+						},
+						"scope":  "organization",
+						"status": "overridden",
+						"result": map[string]interface{}{
+							"soft-failed": 0,
+						},
+					},
+				},
+			}
+			if encoded, err := json.Marshal(body); err == nil {
+				_, _ = w.Write(encoded)
+			}
+			return
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &PolicyCheckOverrideCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=pc-1", "-auto-approve", "-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	out := strings.TrimSpace(ui.OutputWriter.String())
+	var data map[string]interface{}
+	start := strings.Index(out, "{")
+	end := strings.LastIndex(out, "}")
+	if start == -1 || end == -1 || end <= start {
+		t.Fatalf("expected JSON output in response, got %q", out)
+	}
+	jsonOutput := out[start : end+1]
+	if err := json.Unmarshal([]byte(jsonOutput), &data); err != nil {
+		t.Fatalf("failed to decode json output: %v, output: %q", err, jsonOutput)
+	}
+	if data["Status"] != "overridden" {
+		t.Fatalf("expected status overridden, got %v", data["Status"])
+	}
+}
+
+func TestPolicyCheckOverrideRunCannotOverride(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		case "/api/v2/policy-checks/pc-1":
+			body := map[string]interface{}{
+				"data": map[string]interface{}{
+					"id":   "pc-1",
+					"type": "policy-checks",
+					"attributes": map[string]interface{}{
+						"actions": map[string]interface{}{
+							"is-overridable": false,
+						},
+						"permissions": map[string]interface{}{
+							"can-override": true,
+						},
+						"scope":  "organization",
+						"status": "soft_failed",
+						"result": map[string]interface{}{
+							"soft-failed": 1,
+						},
+					},
+				},
+			}
+			if encoded, err := json.Marshal(body); err == nil {
+				_, _ = w.Write(encoded)
+			}
+			return
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &PolicyCheckOverrideCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=pc-1", "-auto-approve"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "cannot be overridden") {
+		t.Fatalf("expected cannot be overridden error, got %q", ui.ErrorWriter.String())
 	}
 }

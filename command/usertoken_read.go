@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // UserTokenReadCommand is a command to read a user token
@@ -46,7 +45,7 @@ func (c *UserTokenReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	// Show token details (without the secret)
 	data := map[string]interface{}{

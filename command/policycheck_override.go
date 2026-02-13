@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicyCheckOverrideCommand is a command to override a soft-mandatory policy check
@@ -91,7 +90,7 @@ func (c *PolicyCheckOverrideCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output("Policy check overridden successfully")
 

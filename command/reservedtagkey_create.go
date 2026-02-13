@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // ReservedTagKeyCreateCommand is a command to create a reserved tag key
@@ -15,6 +15,7 @@ type ReservedTagKeyCreateCommand struct {
 	key              string
 	disableOverrides bool
 	format           string
+	reservedTagKeySvc reservedTagKeyCreator
 }
 
 // Run executes the reservedtagkey create command
@@ -57,14 +58,14 @@ func (c *ReservedTagKeyCreateCommand) Run(args []string) int {
 	}
 
 	// Create reserved tag key
-	reservedKey, err := client.ReservedTagKeys.Create(client.Context(), c.organization, options)
+	reservedKey, err := c.reservedTagKeyService(client).Create(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating reserved tag key: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Reserved tag key '%s' created successfully", reservedKey.Key))
 
@@ -78,6 +79,13 @@ func (c *ReservedTagKeyCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *ReservedTagKeyCreateCommand) reservedTagKeyService(client *client.Client) reservedTagKeyCreator {
+	if c.reservedTagKeySvc != nil {
+		return c.reservedTagKeySvc
+	}
+	return client.ReservedTagKeys
 }
 
 // Help returns help text for the reservedtagkey create command

@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // RunCreateCommand is a command to create a run
@@ -80,9 +79,11 @@ func (c *RunCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Run created successfully"))
+	if c.format != "json" {
+		c.Ui.Output("Run created successfully")
+	}
 
 	// Show run details
 	data := map[string]interface{}{

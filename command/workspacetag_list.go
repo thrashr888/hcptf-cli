@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // WorkspaceTagListCommand is a command to list tags for a workspace
@@ -68,7 +67,7 @@ func (c *WorkspaceTagListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(tags.Items) == 0 {
 		c.Ui.Output("No tags found for this workspace")

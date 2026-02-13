@@ -6,7 +6,6 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AuditTrailTokenCreateCommand is a command to create an audit trail token
@@ -69,7 +68,7 @@ func (c *AuditTrailTokenCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output("Audit trail token created successfully")
 

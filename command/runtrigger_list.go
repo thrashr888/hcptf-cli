@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // RunTriggerListCommand is a command to list run triggers
@@ -80,7 +79,7 @@ func (c *RunTriggerListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(runTriggers.Items) == 0 {
 		c.Ui.Output(fmt.Sprintf("No %s run triggers found", c.triggerType))

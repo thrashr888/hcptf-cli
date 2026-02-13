@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,22 @@ func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
 
 	if len(cfg.Credentials) != 0 {
 		t.Fatalf("expected no credentials, got %d", len(cfg.Credentials))
+	}
+}
+
+func TestLoadInvalidTerraformCredentialsReturnsError(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	writeFile(t, filepath.Join(home, ".terraform.d", "credentials.tfrc.json"), `{"credentials": invalid-json}`)
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error loading invalid terraform credentials")
+	}
+
+	if !strings.Contains(err.Error(), "failed to load Terraform credentials") {
+		t.Fatalf("expected parse-related error, got %v", err)
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // GCPoidcUpdateCommand is a command to update a GCP OIDC configuration
@@ -68,7 +67,7 @@ func (c *GCPoidcUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("GCP OIDC configuration '%s' updated successfully", config.ID))
 

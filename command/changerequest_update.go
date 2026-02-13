@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ChangeRequestUpdateCommand archives a change request
@@ -63,7 +62,7 @@ func (c *ChangeRequestUpdateCommand) Run(args []string) int {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	httpClient := &http.Client{}
+	httpClient := newHTTPClient()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error making API request: %s", err))
@@ -93,7 +92,7 @@ func (c *ChangeRequestUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Change request '%s' archived successfully", c.id))
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryProviderPlatformReadCommand struct {
@@ -99,7 +98,7 @@ func (c *RegistryProviderPlatformReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	// Show platform details
 	data := map[string]interface{}{

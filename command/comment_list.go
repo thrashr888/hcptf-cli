@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // CommentListCommand is a command to list comments for a run
@@ -48,7 +47,7 @@ func (c *CommentListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(comments.Items) == 0 {
 		c.Ui.Output("No comments found for this run")

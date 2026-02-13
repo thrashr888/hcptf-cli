@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // VariableCreateCommand is a command to create a variable
@@ -113,9 +112,11 @@ func (c *VariableCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Variable '%s' created successfully", variable.Key))
+	if c.format != "json" {
+		c.Ui.Output(fmt.Sprintf("Variable '%s' created successfully", variable.Key))
+	}
 
 	// Show variable details
 	value := variable.Value

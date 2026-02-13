@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryProviderPlatformCreateCommand struct {
@@ -118,7 +117,7 @@ func (c *RegistryProviderPlatformCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Provider platform '%s/%s' created successfully", c.os, c.arch))
 

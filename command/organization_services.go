@@ -17,3 +17,7 @@ type organizationReader interface {
 type organizationDeleter interface {
 	Delete(ctx context.Context, organization string) error
 }
+
+type organizationUpdater interface {
+	Update(ctx context.Context, organization string, options tfe.OrganizationUpdateOptions) (*tfe.Organization, error)
+}

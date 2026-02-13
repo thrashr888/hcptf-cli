@@ -3,6 +3,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -23,10 +24,25 @@ const (
 // Formatter handles output formatting
 type Formatter struct {
 	format Format
+	out io.Writer
+	err  io.Writer
 }
 
 // NewFormatter creates a new output formatter
 func NewFormatter(format string) *Formatter {
+	return NewFormatterWithWriters(format, os.Stdout, os.Stderr)
+}
+
+// NewFormatterWithWriters creates a new output formatter with explicit output streams.
+func NewFormatterWithWriters(format string, out io.Writer, err io.Writer) *Formatter {
+	if out == nil {
+		out = os.Stdout
+	}
+
+	if err == nil {
+		err = os.Stderr
+	}
+
 	f := Format(format)
 	if f != FormatTable && f != FormatJSON {
 		f = FormatTable // Default to table
@@ -34,6 +50,8 @@ func NewFormatter(format string) *Formatter {
 
 	return &Formatter{
 		format: f,
+		out:    out,
+		err:    err,
 	}
 }
 
@@ -56,7 +74,7 @@ func (f *Formatter) Table(headers []string, rows [][]string) {
 	}
 
 	// Table format with tablewriter
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(f.out)
 	table.Header(headers)
 	for _, row := range rows {
 		table.Append(row)
@@ -70,16 +88,16 @@ func (f *Formatter) JSON(data interface{}) {
 		// If table format requested but JSON called, print simple key-value
 		if m, ok := data.(map[string]interface{}); ok {
 			for k, v := range m {
-				fmt.Printf("%s: %v\n", k, v)
+				fmt.Fprintf(f.out, "%s: %v\n", k, v)
 			}
 			return
 		}
 	}
 
-	encoder := json.NewEncoder(os.Stdout)
+	encoder := json.NewEncoder(f.out)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(data); err != nil {
-		fmt.Fprintf(os.Stderr, "Error encoding JSON: %v\n", err)
+		fmt.Fprintf(f.err, "Error encoding JSON: %v\n", err)
 	}
 }
 
@@ -102,7 +120,7 @@ func (f *Formatter) KeyValue(data map[string]interface{}) {
 
 	for _, k := range keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k))
-		fmt.Printf("%s:%s %v\n", k, padding, data[k])
+		fmt.Fprintf(f.out, "%s:%s %v\n", k, padding, data[k])
 	}
 }
 
@@ -114,7 +132,7 @@ func (f *Formatter) List(items []string) {
 	}
 
 	for _, item := range items {
-		fmt.Println(item)
+		fmt.Fprintln(f.out, item)
 	}
 }
 

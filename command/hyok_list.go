@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // HYOKListCommand is a command to list HYOK configurations
@@ -51,7 +50,7 @@ func (c *HYOKListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(configs.Items) == 0 {
 		c.Ui.Output("No HYOK configurations found")

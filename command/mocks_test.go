@@ -680,3 +680,41 @@ func (m *mockNotificationDeleteService) Delete(_ context.Context, notificationCo
 	m.lastID = notificationConfigurationID
 	return m.err
 }
+
+type mockAuditTrailTokenDeleteService struct {
+	err      error
+	lastOrg  string
+	lastOpts tfe.OrganizationTokenDeleteOptions
+}
+
+func (m *mockAuditTrailTokenDeleteService) DeleteWithOptions(_ context.Context, organization string, options tfe.OrganizationTokenDeleteOptions) error {
+	m.lastOrg = organization
+	m.lastOpts = options
+	return m.err
+}
+
+type mockOrganizationUpdateService struct {
+	response    *tfe.Organization
+	err         error
+	lastName    string
+	lastOptions tfe.OrganizationUpdateOptions
+}
+
+func (m *mockOrganizationUpdateService) Update(_ context.Context, organization string, options tfe.OrganizationUpdateOptions) (*tfe.Organization, error) {
+	m.lastName = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockReservedTagKeyCreateService struct {
+	response    *tfe.ReservedTagKey
+	err         error
+	lastOrg     string
+	lastOptions tfe.ReservedTagKeyCreateOptions
+}
+
+func (m *mockReservedTagKeyCreateService) Create(_ context.Context, organization string, options tfe.ReservedTagKeyCreateOptions) (*tfe.ReservedTagKey, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}

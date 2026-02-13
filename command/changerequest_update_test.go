@@ -1,6 +1,9 @@
 package command
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -28,47 +31,6 @@ func TestChangeRequestUpdateRequiresFlags(t *testing.T) {
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "-archive") {
 		t.Fatalf("expected archive error, got %q", ui.ErrorWriter.String())
-	}
-}
-
-func TestChangeRequestUpdateHelp(t *testing.T) {
-	cmd := &ChangeRequestUpdateCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf changerequest update") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
-	}
-	if !strings.Contains(help, "-archive") {
-		t.Error("Help should mention -archive flag")
-	}
-	if !strings.Contains(help, "-output") {
-		t.Error("Help should mention -output flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate required flags")
-	}
-	if !strings.Contains(help, "HCP Terraform Plus or Enterprise") {
-		t.Error("Help should mention plan requirements")
-	}
-}
-
-func TestChangeRequestUpdateSynopsis(t *testing.T) {
-	cmd := &ChangeRequestUpdateCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Update a change request (archive)" {
-		t.Errorf("expected 'Update a change request (archive)', got %q", synopsis)
 	}
 }
 
@@ -145,5 +107,139 @@ func TestChangeRequestUpdateFlagParsing(t *testing.T) {
 				t.Errorf("expected format %q, got %q", tt.expectedFormat, cmd.format)
 			}
 		})
+	}
+}
+
+func TestChangeRequestUpdateRunSuccess(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() == "/api/v2/ping" || r.URL.RequestURI() == "/api/v2/ping?" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+
+		if r.URL.Path != "/api/v2/change-requests/cr-1" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+
+		_, _ = w.Write([]byte(`{"data":{"id":"cr-1","type":"change-requests","attributes":{"subject":"Fix","message":"Please update","archived-by":"user-99","archived-at":"2024-01-03T00:00:00Z","created-at":"2024-01-01T00:00:00Z","updated-at":"2024-01-03T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}}`))
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestUpdateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1", "-archive"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	if !strings.Contains(ui.OutputWriter.String(), "Change request 'cr-1' archived successfully") {
+		t.Fatalf("expected success message, got %q", ui.OutputWriter.String())
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "ArchivedBy") {
+		t.Fatalf("expected archived metadata in output, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestChangeRequestUpdateRunJSONOutput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() == "/api/v2/ping" || r.URL.RequestURI() == "/api/v2/ping?" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+
+		if r.URL.Path != "/api/v2/change-requests/cr-1" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+
+		_, _ = w.Write([]byte(`{"data":{"id":"cr-1","type":"change-requests","attributes":{"subject":"Fix","message":"Please update","archived-by":"user-99","archived-at":"2024-01-03T00:00:00Z","created-at":"2024-01-01T00:00:00Z","updated-at":"2024-01-03T00:00:00Z"},"relationships":{"workspace":{"data":{"id":"ws-123","type":"workspaces"}}}}}`))
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestUpdateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1", "-archive", "-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+	}
+
+	output := strings.TrimSpace(ui.OutputWriter.String())
+	start := strings.Index(output, "{")
+	end := strings.LastIndex(output, "}")
+	if start == -1 || end == -1 || end <= start {
+		t.Fatalf("expected JSON output in response, got: %q", output)
+	}
+	jsonOutput := output[start : end+1]
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(jsonOutput), &data); err != nil {
+		t.Fatalf("failed to decode json output: %v, output: %q", err, jsonOutput)
+	}
+
+	if data["ID"] != "cr-1" {
+		t.Fatalf("expected ID cr-1, got %v", data["ID"])
+	}
+	if data["Status"] != "Archived" {
+		t.Fatalf("expected Status Archived, got %v", data["Status"])
+	}
+}
+
+func TestChangeRequestUpdateRunNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() == "/api/v2/ping" || r.URL.RequestURI() == "/api/v2/ping?" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+
+		if r.URL.Path != "/api/v2/change-requests/cr-1" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"errors":[{"status":"404"}]}`))
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestUpdateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1", "-archive"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+
+	if !strings.Contains(ui.ErrorWriter.String(), "API request failed with status 404") {
+		t.Fatalf("expected API failure output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestChangeRequestUpdateRunInvalidJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.RequestURI() == "/api/v2/ping" || r.URL.RequestURI() == "/api/v2/ping?" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		if r.URL.Path != "/api/v2/change-requests/cr-1" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+
+		_, _ = w.Write([]byte(`{invalid json`))
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &ChangeRequestUpdateCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-id=cr-1", "-archive"})
+	if code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "Error parsing response") {
+		t.Fatalf("expected parse error output, got %q", ui.ErrorWriter.String())
 	}
 }

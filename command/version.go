@@ -4,6 +4,17 @@ import (
 	"fmt"
 )
 
+var versionFunc = func() string {
+	return "0.1.0-dev"
+}
+
+// SetVersionProvider allows main() to inject the runtime version value.
+func SetVersionProvider(fn func() string) {
+	if fn != nil {
+		versionFunc = fn
+	}
+}
+
 // VersionCommand is a Command implementation that prints the version
 type VersionCommand struct {
 	Meta
@@ -11,7 +22,7 @@ type VersionCommand struct {
 
 // Run executes the version command
 func (c *VersionCommand) Run(args []string) int {
-	version := "0.1.0-dev"
+	version := versionFunc()
 	c.Ui.Output(fmt.Sprintf("hcptf version %s", version))
 	return 0
 }

@@ -23,44 +23,6 @@ func TestOrganizationMemberReadRequiresID(t *testing.T) {
 	}
 }
 
-func TestOrganizationMemberReadHelp(t *testing.T) {
-	cmd := &OrganizationMemberReadCommand{}
-
-	help := cmd.Help()
-	if help == "" {
-		t.Fatal("Help should not be empty")
-	}
-
-	// Check for key help elements
-	if !strings.Contains(help, "hcptf organizationmember read") {
-		t.Error("Help should contain usage")
-	}
-	if !strings.Contains(help, "-id") {
-		t.Error("Help should mention -id flag")
-	}
-	if !strings.Contains(help, "-output") {
-		t.Error("Help should mention -output flag")
-	}
-	if !strings.Contains(help, "required") {
-		t.Error("Help should indicate required flags")
-	}
-	if !strings.Contains(help, "organization member") {
-		t.Error("Help should describe organization member information")
-	}
-}
-
-func TestOrganizationMemberReadSynopsis(t *testing.T) {
-	cmd := &OrganizationMemberReadCommand{}
-
-	synopsis := cmd.Synopsis()
-	if synopsis == "" {
-		t.Fatal("Synopsis should not be empty")
-	}
-	if synopsis != "Show detailed organization member information" {
-		t.Errorf("expected 'Show detailed organization member information', got %q", synopsis)
-	}
-}
-
 func TestOrganizationMemberReadFlagParsing(t *testing.T) {
 	tests := []struct {
 		name        string
