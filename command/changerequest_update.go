@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
 )
 
 // ChangeRequestUpdateCommand archives a change request

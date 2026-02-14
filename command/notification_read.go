@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // NotificationReadCommand is a command to read notification configuration details

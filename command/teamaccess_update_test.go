@@ -260,13 +260,13 @@ func TestTeamAccessUpdateCustomAccess(t *testing.T) {
 			Workspace: &tfe.Workspace{
 				ID: "ws-1",
 			},
-			Access:            "custom",
-			Runs:              tfe.RunsPermissionRead,
-			Variables:         tfe.VariablesPermissionWrite,
-			StateVersions:     tfe.StateVersionsPermissionReadOutputs,
-			SentinelMocks:     tfe.SentinelMocksPermissionRead,
-			WorkspaceLocking:  false,
-			RunTasks:          true,
+			Access:           "custom",
+			Runs:             tfe.RunsPermissionRead,
+			Variables:        tfe.VariablesPermissionWrite,
+			StateVersions:    tfe.StateVersionsPermissionReadOutputs,
+			SentinelMocks:    tfe.SentinelMocksPermissionRead,
+			WorkspaceLocking: false,
+			RunTasks:         true,
 		},
 	}
 	cmd := newTeamAccessUpdateCommand(ui, svc)

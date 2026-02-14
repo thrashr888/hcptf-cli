@@ -111,34 +111,34 @@ func TestWorkspaceTagRemoveSynopsis(t *testing.T) {
 
 func TestWorkspaceTagRemoveFlagParsing(t *testing.T) {
 	tests := []struct {
-		name           string
-		args           []string
-		expectedWsID   string
-		expectedTags   string
+		name         string
+		args         []string
+		expectedWsID string
+		expectedTags string
 	}{
 		{
-			name:           "workspace-id flag",
-			args:           []string{"-workspace-id=ws-123", "-tags=prod"},
-			expectedWsID:   "ws-123",
-			expectedTags:   "prod",
+			name:         "workspace-id flag",
+			args:         []string{"-workspace-id=ws-123", "-tags=prod"},
+			expectedWsID: "ws-123",
+			expectedTags: "prod",
 		},
 		{
-			name:           "id alias flag",
-			args:           []string{"-id=ws-456", "-tags=staging"},
-			expectedWsID:   "ws-456",
-			expectedTags:   "staging",
+			name:         "id alias flag",
+			args:         []string{"-id=ws-456", "-tags=staging"},
+			expectedWsID: "ws-456",
+			expectedTags: "staging",
 		},
 		{
-			name:           "multiple tags comma-separated",
-			args:           []string{"-workspace-id=ws-789", "-tags=prod,us-west-2,team-a"},
-			expectedWsID:   "ws-789",
-			expectedTags:   "prod,us-west-2,team-a",
+			name:         "multiple tags comma-separated",
+			args:         []string{"-workspace-id=ws-789", "-tags=prod,us-west-2,team-a"},
+			expectedWsID: "ws-789",
+			expectedTags: "prod,us-west-2,team-a",
 		},
 		{
-			name:           "tags with spaces",
-			args:           []string{"-id=ws-abc", "-tags=prod, staging, dev"},
-			expectedWsID:   "ws-abc",
-			expectedTags:   "prod, staging, dev",
+			name:         "tags with spaces",
+			args:         []string{"-id=ws-abc", "-tags=prod, staging, dev"},
+			expectedWsID: "ws-abc",
+			expectedTags: "prod, staging, dev",
 		},
 	}
 

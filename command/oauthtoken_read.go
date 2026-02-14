@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // OAuthTokenReadCommand is a command to read OAuth token details

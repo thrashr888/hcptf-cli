@@ -184,11 +184,3 @@ func TestAWSOIDCCreateFlagParsing(t *testing.T) {
 		})
 	}
 }
-
-
-
-
-
-
-
-

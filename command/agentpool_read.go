@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // AgentPoolReadCommand is a command to read agent pool details

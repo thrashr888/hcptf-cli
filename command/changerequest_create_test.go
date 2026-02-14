@@ -54,49 +54,49 @@ func TestChangeRequestCreateRequiresFlags(t *testing.T) {
 
 func TestChangeRequestCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedOrg      string
+		name              string
+		args              []string
+		expectedOrg       string
 		expectedWorkspace string
-		expectedSubject  string
-		expectedMessage  string
-		expectedFormat   string
+		expectedSubject   string
+		expectedMessage   string
+		expectedFormat    string
 	}{
 		{
-			name:             "all required flags with default format",
-			args:             []string{"-organization=my-org", "-workspace=prod", "-subject=test subject", "-message=test message"},
-			expectedOrg:      "my-org",
+			name:              "all required flags with default format",
+			args:              []string{"-organization=my-org", "-workspace=prod", "-subject=test subject", "-message=test message"},
+			expectedOrg:       "my-org",
 			expectedWorkspace: "prod",
-			expectedSubject:  "test subject",
-			expectedMessage:  "test message",
-			expectedFormat:   "table",
+			expectedSubject:   "test subject",
+			expectedMessage:   "test message",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "org alias flag",
-			args:             []string{"-org=test-org", "-workspace=staging", "-subject=fix bug", "-message=urgent fix"},
-			expectedOrg:      "test-org",
+			name:              "org alias flag",
+			args:              []string{"-org=test-org", "-workspace=staging", "-subject=fix bug", "-message=urgent fix"},
+			expectedOrg:       "test-org",
 			expectedWorkspace: "staging",
-			expectedSubject:  "fix bug",
-			expectedMessage:  "urgent fix",
-			expectedFormat:   "table",
+			expectedSubject:   "fix bug",
+			expectedMessage:   "urgent fix",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "all flags with json format",
-			args:             []string{"-organization=my-org", "-workspace=dev", "-subject=update", "-message=details", "-output=json"},
-			expectedOrg:      "my-org",
+			name:              "all flags with json format",
+			args:              []string{"-organization=my-org", "-workspace=dev", "-subject=update", "-message=details", "-output=json"},
+			expectedOrg:       "my-org",
 			expectedWorkspace: "dev",
-			expectedSubject:  "update",
-			expectedMessage:  "details",
-			expectedFormat:   "json",
+			expectedSubject:   "update",
+			expectedMessage:   "details",
+			expectedFormat:    "json",
 		},
 		{
-			name:             "org alias with json format",
-			args:             []string{"-org=acme", "-workspace=prod", "-subject=security", "-message=patch required", "-output=json"},
-			expectedOrg:      "acme",
+			name:              "org alias with json format",
+			args:              []string{"-org=acme", "-workspace=prod", "-subject=security", "-message=patch required", "-output=json"},
+			expectedOrg:       "acme",
 			expectedWorkspace: "prod",
-			expectedSubject:  "security",
-			expectedMessage:  "patch required",
-			expectedFormat:   "json",
+			expectedSubject:   "security",
+			expectedMessage:   "patch required",
+			expectedFormat:    "json",
 		},
 	}
 

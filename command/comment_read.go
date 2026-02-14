@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // CommentReadCommand is a command to show comment details

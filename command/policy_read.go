@@ -10,10 +10,10 @@ import (
 // PolicyReadCommand is a command to read policy details
 type PolicyReadCommand struct {
 	Meta
-	policyID      string
-	format        string
-	policySvc     policyReader
-	downloadSvc   policyDownloader
+	policyID    string
+	format      string
+	policySvc   policyReader
+	downloadSvc policyDownloader
 }
 
 // Run executes the policy read command

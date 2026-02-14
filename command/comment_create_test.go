@@ -98,11 +98,11 @@ func TestCommentCreateSynopsis(t *testing.T) {
 
 func TestCommentCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name            string
-		args            []string
-		expectedRunID   string
-		expectedBody    string
-		expectedFormat  string
+		name           string
+		args           []string
+		expectedRunID  string
+		expectedBody   string
+		expectedFormat string
 	}{
 		{
 			name:           "all required flags, default format",

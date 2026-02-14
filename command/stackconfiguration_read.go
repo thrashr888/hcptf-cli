@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // StackConfigurationReadCommand is a command to read stack configuration details

@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
 )
 
 // ChangeRequestListCommand lists change requests for a workspace

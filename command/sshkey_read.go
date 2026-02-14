@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // SSHKeyReadCommand is a command to read SSH key details

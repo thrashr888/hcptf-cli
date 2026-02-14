@@ -332,4 +332,3 @@ func TestOAuthClientCreateFlagParsing(t *testing.T) {
 		})
 	}
 }
-

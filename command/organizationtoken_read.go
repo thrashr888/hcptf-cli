@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // OrganizationTokenReadCommand is a command to read an organization token

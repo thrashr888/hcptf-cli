@@ -50,14 +50,14 @@ func TestStateReadOutputsJSON(t *testing.T) {
 	ui := cli.NewMockUi()
 	svc := &mockStateVersionReadService{
 		response: &tfe.StateVersion{
-			ID:                "sv-123",
-			Serial:            5,
-			CreatedAt:         time.Unix(0, 0),
-			DownloadURL:       "https://example.com/state",
-			Resources:         []*tfe.StateVersionResources{{Name: "resource1"}, {Name: "resource2"}},
+			ID:                 "sv-123",
+			Serial:             5,
+			CreatedAt:          time.Unix(0, 0),
+			DownloadURL:        "https://example.com/state",
+			Resources:          []*tfe.StateVersionResources{{Name: "resource1"}, {Name: "resource2"}},
 			ResourcesProcessed: true,
-			StateVersion:      4,
-			TerraformVersion:  "1.5.0",
+			StateVersion:       4,
+			TerraformVersion:   "1.5.0",
 		},
 	}
 	cmd := newStateReadCommand(ui, svc)

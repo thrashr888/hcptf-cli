@@ -283,14 +283,6 @@ func TestGCPOIDCCreateFlagParsing(t *testing.T) {
 	}
 }
 
-
-
-
-
-
-
-
-
 func TestGCPOIDCCreatePartialRequiredFlagsRun(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -331,4 +323,3 @@ func TestGCPOIDCCreatePartialRequiredFlagsRun(t *testing.T) {
 		})
 	}
 }
-

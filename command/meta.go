@@ -1,10 +1,10 @@
 package command
 
 import (
-	"io"
-	"os"
 	"flag"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/config"

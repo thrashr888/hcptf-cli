@@ -407,52 +407,52 @@ func TestTeamAccessCreateSynopsis(t *testing.T) {
 
 func TestTeamAccessCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedWSID     string
-		expectedTeamID   string
-		expectedAccess   string
-		expectedFmt      string
+		name           string
+		args           []string
+		expectedWSID   string
+		expectedTeamID string
+		expectedAccess string
+		expectedFmt    string
 	}{
 		{
-			name:             "all required flags with defaults",
-			args:             []string{"-workspace-id=ws-123", "-team-id=team-456", "-access=read"},
-			expectedWSID:     "ws-123",
-			expectedTeamID:   "team-456",
-			expectedAccess:   "read",
-			expectedFmt:      "table",
+			name:           "all required flags with defaults",
+			args:           []string{"-workspace-id=ws-123", "-team-id=team-456", "-access=read"},
+			expectedWSID:   "ws-123",
+			expectedTeamID: "team-456",
+			expectedAccess: "read",
+			expectedFmt:    "table",
 		},
 		{
-			name:             "all flags with json output",
-			args:             []string{"-workspace-id=ws-abc", "-team-id=team-xyz", "-access=write", "-output=json"},
-			expectedWSID:     "ws-abc",
-			expectedTeamID:   "team-xyz",
-			expectedAccess:   "write",
-			expectedFmt:      "json",
+			name:           "all flags with json output",
+			args:           []string{"-workspace-id=ws-abc", "-team-id=team-xyz", "-access=write", "-output=json"},
+			expectedWSID:   "ws-abc",
+			expectedTeamID: "team-xyz",
+			expectedAccess: "write",
+			expectedFmt:    "json",
 		},
 		{
-			name:             "plan access level",
-			args:             []string{"-workspace-id=ws-111", "-team-id=team-222", "-access=plan"},
-			expectedWSID:     "ws-111",
-			expectedTeamID:   "team-222",
-			expectedAccess:   "plan",
-			expectedFmt:      "table",
+			name:           "plan access level",
+			args:           []string{"-workspace-id=ws-111", "-team-id=team-222", "-access=plan"},
+			expectedWSID:   "ws-111",
+			expectedTeamID: "team-222",
+			expectedAccess: "plan",
+			expectedFmt:    "table",
 		},
 		{
-			name:             "admin access level with json",
-			args:             []string{"-workspace-id=ws-aaa", "-team-id=team-bbb", "-access=admin", "-output=json"},
-			expectedWSID:     "ws-aaa",
-			expectedTeamID:   "team-bbb",
-			expectedAccess:   "admin",
-			expectedFmt:      "json",
+			name:           "admin access level with json",
+			args:           []string{"-workspace-id=ws-aaa", "-team-id=team-bbb", "-access=admin", "-output=json"},
+			expectedWSID:   "ws-aaa",
+			expectedTeamID: "team-bbb",
+			expectedAccess: "admin",
+			expectedFmt:    "json",
 		},
 		{
-			name:             "custom access level",
-			args:             []string{"-workspace-id=ws-custom", "-team-id=team-custom", "-access=custom"},
-			expectedWSID:     "ws-custom",
-			expectedTeamID:   "team-custom",
-			expectedAccess:   "custom",
-			expectedFmt:      "table",
+			name:           "custom access level",
+			args:           []string{"-workspace-id=ws-custom", "-team-id=team-custom", "-access=custom"},
+			expectedWSID:   "ws-custom",
+			expectedTeamID: "team-custom",
+			expectedAccess: "custom",
+			expectedFmt:    "table",
 		},
 	}
 

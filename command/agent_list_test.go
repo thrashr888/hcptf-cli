@@ -57,40 +57,40 @@ func TestAgentListSynopsis(t *testing.T) {
 
 func TestAgentListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name            string
-		args            []string
-		expectedPoolID  string
-		expectedFmt     string
+		name           string
+		args           []string
+		expectedPoolID string
+		expectedFmt    string
 	}{
 		{
-			name:            "agent-pool-id, default format",
-			args:            []string{"-agent-pool-id=apool-123abc"},
-			expectedPoolID:  "apool-123abc",
-			expectedFmt:     "table",
+			name:           "agent-pool-id, default format",
+			args:           []string{"-agent-pool-id=apool-123abc"},
+			expectedPoolID: "apool-123abc",
+			expectedFmt:    "table",
 		},
 		{
-			name:            "pool alias",
-			args:            []string{"-pool=apool-456def"},
-			expectedPoolID:  "apool-456def",
-			expectedFmt:     "table",
+			name:           "pool alias",
+			args:           []string{"-pool=apool-456def"},
+			expectedPoolID: "apool-456def",
+			expectedFmt:    "table",
 		},
 		{
-			name:            "agent-pool-id, table format",
-			args:            []string{"-agent-pool-id=apool-789ghi", "-output=table"},
-			expectedPoolID:  "apool-789ghi",
-			expectedFmt:     "table",
+			name:           "agent-pool-id, table format",
+			args:           []string{"-agent-pool-id=apool-789ghi", "-output=table"},
+			expectedPoolID: "apool-789ghi",
+			expectedFmt:    "table",
 		},
 		{
-			name:            "agent-pool-id, json format",
-			args:            []string{"-agent-pool-id=apool-xyz123", "-output=json"},
-			expectedPoolID:  "apool-xyz123",
-			expectedFmt:     "json",
+			name:           "agent-pool-id, json format",
+			args:           []string{"-agent-pool-id=apool-xyz123", "-output=json"},
+			expectedPoolID: "apool-xyz123",
+			expectedFmt:    "json",
 		},
 		{
-			name:            "pool alias, json format",
-			args:            []string{"-pool=apool-abc789", "-output=json"},
-			expectedPoolID:  "apool-abc789",
-			expectedFmt:     "json",
+			name:           "pool alias, json format",
+			args:           []string{"-pool=apool-abc789", "-output=json"},
+			expectedPoolID: "apool-abc789",
+			expectedFmt:    "json",
 		},
 	}
 

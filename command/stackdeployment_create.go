@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // StackDeploymentCreateCommand is a command to create/trigger a stack deployment

@@ -92,12 +92,12 @@ func TestProjectCreateSynopsis(t *testing.T) {
 
 func TestProjectCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name               string
-		args               []string
-		expectedOrg        string
-		expectedName       string
-		expectedDesc       string
-		expectedFmt        string
+		name         string
+		args         []string
+		expectedOrg  string
+		expectedName string
+		expectedDesc string
+		expectedFmt  string
 	}{
 		{
 			name:         "org and name, default format",

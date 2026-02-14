@@ -63,10 +63,10 @@ func TestPolicyEvaluationListSynopsis(t *testing.T) {
 
 func TestPolicyEvaluationListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name              string
-		args              []string
-		expectedStageID   string
-		expectedFmt       string
+		name            string
+		args            []string
+		expectedStageID string
+		expectedFmt     string
 	}{
 		{
 			name:            "task-stage-id flag",

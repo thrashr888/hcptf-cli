@@ -113,38 +113,38 @@ func TestPolicySetParameterDeleteSynopsis(t *testing.T) {
 
 func TestPolicySetParameterDeleteFlagParsing(t *testing.T) {
 	tests := []struct {
-		name              string
-		args              []string
-		expectedPolicySet string
-		expectedID        string
+		name                string
+		args                []string
+		expectedPolicySet   string
+		expectedID          string
 		expectedAutoApprove bool
 	}{
 		{
-			name:              "required flags only, default values",
-			args:              []string{"-policy-set-id=polset-abc123", "-id=var-xyz789"},
-			expectedPolicySet: "polset-abc123",
-			expectedID:        "var-xyz789",
+			name:                "required flags only, default values",
+			args:                []string{"-policy-set-id=polset-abc123", "-id=var-xyz789"},
+			expectedPolicySet:   "polset-abc123",
+			expectedID:          "var-xyz789",
 			expectedAutoApprove: false,
 		},
 		{
-			name:              "with auto-approve flag",
-			args:              []string{"-policy-set-id=polset-123", "-id=var-456", "-auto-approve"},
-			expectedPolicySet: "polset-123",
-			expectedID:        "var-456",
+			name:                "with auto-approve flag",
+			args:                []string{"-policy-set-id=polset-123", "-id=var-456", "-auto-approve"},
+			expectedPolicySet:   "polset-123",
+			expectedID:          "var-456",
 			expectedAutoApprove: true,
 		},
 		{
-			name:              "different policy set and parameter",
-			args:              []string{"-policy-set-id=polset-prod", "-id=var-prod-123"},
-			expectedPolicySet: "polset-prod",
-			expectedID:        "var-prod-123",
+			name:                "different policy set and parameter",
+			args:                []string{"-policy-set-id=polset-prod", "-id=var-prod-123"},
+			expectedPolicySet:   "polset-prod",
+			expectedID:          "var-prod-123",
 			expectedAutoApprove: false,
 		},
 		{
-			name:              "all flags set",
-			args:              []string{"-policy-set-id=polset-full", "-id=var-full", "-auto-approve"},
-			expectedPolicySet: "polset-full",
-			expectedID:        "var-full",
+			name:                "all flags set",
+			args:                []string{"-policy-set-id=polset-full", "-id=var-full", "-auto-approve"},
+			expectedPolicySet:   "polset-full",
+			expectedID:          "var-full",
 			expectedAutoApprove: true,
 		},
 	}

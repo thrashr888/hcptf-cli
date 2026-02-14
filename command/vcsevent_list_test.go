@@ -140,7 +140,7 @@ func TestVCSEventListCommand_RunQueryFilters(t *testing.T) {
 			_, _ = w.Write([]byte(`{"data":[]}`))
 			return
 		}
-			t.Fatalf("unexpected path: %s", r.URL.RequestURI())
+		t.Fatalf("unexpected path: %s", r.URL.RequestURI())
 	}))
 	defer server.Close()
 

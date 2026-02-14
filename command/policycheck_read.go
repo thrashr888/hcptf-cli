@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // PolicyCheckReadCommand is a command to read policy check details

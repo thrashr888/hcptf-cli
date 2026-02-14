@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // HYOKReadCommand is a command to show HYOK configuration details

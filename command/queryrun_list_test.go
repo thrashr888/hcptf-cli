@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/hcptf-cli/internal/client"
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/mitchellh/cli"
 )
 
@@ -157,11 +157,11 @@ func TestQueryRunListFlagParsing(t *testing.T) {
 			expectedFmt:   "table",
 		},
 		{
-			name:          "with status group filter",
-			args:          []string{"-org=my-org", "-status-group=final"},
-			expectedOrg:   "my-org",
+			name:           "with status group filter",
+			args:           []string{"-org=my-org", "-status-group=final"},
+			expectedOrg:    "my-org",
 			expectedSGroup: "final",
-			expectedFmt:   "table",
+			expectedFmt:    "table",
 		},
 		{
 			name:          "with search user",
@@ -313,10 +313,10 @@ func TestQueryRunListRunListsRuns(t *testing.T) {
 				listForOrganizationResponse: &tfe.OrganizationRunList{
 					Items: []*tfe.Run{
 						{
-							ID:       "run-001",
-							Message:  "initial apply",
-							Status:   tfe.RunApplied,
-							Source:   tfe.RunSourceUI,
+							ID:        "run-001",
+							Message:   "initial apply",
+							Status:    tfe.RunApplied,
+							Source:    tfe.RunSourceUI,
 							CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC),
 							Workspace: &tfe.Workspace{
 								Name: "demo-workspace",

@@ -11,10 +11,10 @@ import (
 // ReservedTagKeyCreateCommand is a command to create a reserved tag key
 type ReservedTagKeyCreateCommand struct {
 	Meta
-	organization     string
-	key              string
-	disableOverrides bool
-	format           string
+	organization      string
+	key               string
+	disableOverrides  bool
+	format            string
 	reservedTagKeySvc reservedTagKeyCreator
 }
 

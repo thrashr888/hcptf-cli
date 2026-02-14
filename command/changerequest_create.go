@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
 )
 
 // ChangeRequestCreateCommand creates a new change request

@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // PolicyCheckOverrideCommand is a command to override a soft-mandatory policy check

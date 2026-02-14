@@ -336,6 +336,7 @@ func (m *mockRegistryProviderDeleteService) Delete(_ context.Context, providerID
 	m.lastID = providerID
 	return m.err
 }
+
 type mockOrganizationListService struct {
 	response    *tfe.OrganizationList
 	err         error

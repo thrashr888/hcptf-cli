@@ -2,21 +2,21 @@ package command
 
 import (
 	"encoding/json"
-	"net/url"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/hashicorp/hcptf-cli/internal/config"
 	"github.com/hashicorp/hcptf-cli/internal/client"
+	"github.com/hashicorp/hcptf-cli/internal/config"
 	"github.com/mitchellh/cli"
 )
 
 func TestAssessmentResultFindChangedAttributes(t *testing.T) {
 	cmd := AssessmentResultReadCommand{}
 	before := map[string]interface{}{
-		"name": "old",
+		"name":  "old",
 		"count": float64(1),
 	}
 	after := map[string]interface{}{
@@ -61,21 +61,21 @@ func TestAssessmentResultShowDriftDetails(t *testing.T) {
 		case "/plan":
 			plan := TerraformPlan{
 				ResourceDrift: []struct {
-					Address string `json:"address"`
-					Mode    string `json:"mode"`
-					Type    string `json:"type"`
-					Name    string `json:"name"`
+					Address  string `json:"address"`
+					Mode     string `json:"mode"`
+					Type     string `json:"type"`
+					Name     string `json:"name"`
 					Provider string `json:"provider_name"`
-					Change struct {
+					Change   struct {
 						Actions []string               `json:"actions"`
 						Before  map[string]interface{} `json:"before"`
 						After   map[string]interface{} `json:"after"`
 					} `json:"change"`
 				}{
 					{
-						Address: "module.test.aws_instance.example",
-						Type:    "aws_instance",
-						Name:    "example",
+						Address:  "module.test.aws_instance.example",
+						Type:     "aws_instance",
+						Name:     "example",
 						Provider: "registry.terraform.io/hashicorp/aws",
 						Change: struct {
 							Actions []string               `json:"actions"`
@@ -137,12 +137,12 @@ func TestAssessmentResultShowDriftDetailsNoActualDrift(t *testing.T) {
 		case "/plan":
 			plan := TerraformPlan{
 				ResourceDrift: []struct {
-					Address string `json:"address"`
-					Mode    string `json:"mode"`
-					Type    string `json:"type"`
-					Name    string `json:"name"`
+					Address  string `json:"address"`
+					Mode     string `json:"mode"`
+					Type     string `json:"type"`
+					Name     string `json:"name"`
 					Provider string `json:"provider_name"`
-					Change struct {
+					Change   struct {
 						Actions []string               `json:"actions"`
 						Before  map[string]interface{} `json:"before"`
 						After   map[string]interface{} `json:"after"`
@@ -166,11 +166,11 @@ func TestAssessmentResultShowDriftDetailsNoActualDrift(t *testing.T) {
 					},
 				},
 			}
-				data, err := json.Marshal(plan)
-				if err != nil {
-					t.Fatalf("failed to marshal plan: %v", err)
-				}
-				_, _ = w.Write(data)
+			data, err := json.Marshal(plan)
+			if err != nil {
+				t.Fatalf("failed to marshal plan: %v", err)
+			}
+			_, _ = w.Write(data)
 		default:
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write([]byte("not found"))
@@ -197,31 +197,31 @@ func TestAssessmentResultShowDriftDetailsTooManyChangedAttributes(t *testing.T) 
 		if r.URL.Path == "/plan" {
 			plan := TerraformPlan{
 				ResourceDrift: []struct {
-					Address string `json:"address"`
-					Mode    string `json:"mode"`
-					Type    string `json:"type"`
-					Name    string `json:"name"`
+					Address  string `json:"address"`
+					Mode     string `json:"mode"`
+					Type     string `json:"type"`
+					Name     string `json:"name"`
 					Provider string `json:"provider_name"`
-					Change struct {
+					Change   struct {
 						Actions []string               `json:"actions"`
 						Before  map[string]interface{} `json:"before"`
 						After   map[string]interface{} `json:"after"`
 					} `json:"change"`
 				}{
 					{
-						Address: "module.test.aws_instance.example",
-						Mode:    "managed",
-						Type:    "aws_instance",
-						Name:    "example",
-						Provider:"registry.terraform.io/hashicorp/aws",
+						Address:  "module.test.aws_instance.example",
+						Mode:     "managed",
+						Type:     "aws_instance",
+						Name:     "example",
+						Provider: "registry.terraform.io/hashicorp/aws",
 						Change: struct {
 							Actions []string               `json:"actions"`
 							Before  map[string]interface{} `json:"before"`
 							After   map[string]interface{} `json:"after"`
 						}{
 							Actions: []string{"update"},
-							Before:  map[string]interface{}{"a":"old","b":"old","c":"old","d":"old","e":"old","f":"old","g":"old","h":"old","i":"old","j":"old","k":"old"},
-							After:   map[string]interface{}{"a":"new","b":"new","c":"new","d":"new","e":"new","f":"new","g":"new","h":"new","i":"new","j":"new","k":"new"},
+							Before:  map[string]interface{}{"a": "old", "b": "old", "c": "old", "d": "old", "e": "old", "f": "old", "g": "old", "h": "old", "i": "old", "j": "old", "k": "old"},
+							After:   map[string]interface{}{"a": "new", "b": "new", "c": "new", "d": "new", "e": "new", "f": "new", "g": "new", "h": "new", "i": "new", "j": "new", "k": "new"},
 						},
 					},
 				},
@@ -280,8 +280,8 @@ func newAssessmentResultTestClient(t *testing.T, serverURL string) *client.Clien
 
 	cfg := &config.Config{
 		Credentials: map[string]*config.Credential{
-			parsed.Host: {
-				Hostname: parsed.Host,
+			parsed.Hostname(): {
+				Hostname: parsed.Hostname(),
 				Token:    "test-token",
 			},
 		},

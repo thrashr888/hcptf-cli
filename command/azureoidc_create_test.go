@@ -274,12 +274,6 @@ func TestAzureOIDCCreateFlagParsing(t *testing.T) {
 	}
 }
 
-
-
-
-
-
-
 func TestAzureOIDCCreatePartialRequiredFlagsRun(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -320,4 +314,3 @@ func TestAzureOIDCCreatePartialRequiredFlagsRun(t *testing.T) {
 		})
 	}
 }
-

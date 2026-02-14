@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // PolicySetOutcomeReadCommand is a command to read policy set outcome details
@@ -89,7 +88,7 @@ func (c *PolicySetOutcomeReadCommand) Run(args []string) int {
 			})
 		}
 
-	outcomeFormatter := c.Meta.NewFormatter("table")
+		outcomeFormatter := c.Meta.NewFormatter("table")
 		outcomeFormatter.Table(outcomeHeaders, outcomeRows)
 	}
 

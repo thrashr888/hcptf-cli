@@ -124,10 +124,10 @@ func TestVaultOIDCUpdateFlagParsing(t *testing.T) {
 			expectedFmt:  "table",
 		},
 		{
-			name:       "id and namespace",
-			args:       []string{"-id=voidc-ABC123", "-namespace=admin"},
-			expectedID: "voidc-ABC123",
-			expectedNS: "admin",
+			name:        "id and namespace",
+			args:        []string{"-id=voidc-ABC123", "-namespace=admin"},
+			expectedID:  "voidc-ABC123",
+			expectedNS:  "admin",
 			expectedFmt: "table",
 		},
 		{
@@ -154,11 +154,11 @@ func TestVaultOIDCUpdateFlagParsing(t *testing.T) {
 			expectedFmt:     "json",
 		},
 		{
-			name:        "with table output",
-			args:        []string{"-id=voidc-ABC123", "-role=test-role", "-output=table"},
-			expectedID:  "voidc-ABC123",
+			name:         "with table output",
+			args:         []string{"-id=voidc-ABC123", "-role=test-role", "-output=table"},
+			expectedID:   "voidc-ABC123",
 			expectedRole: "test-role",
-			expectedFmt: "table",
+			expectedFmt:  "table",
 		},
 	}
 

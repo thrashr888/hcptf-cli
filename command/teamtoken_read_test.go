@@ -57,27 +57,27 @@ func TestTeamTokenReadSynopsis(t *testing.T) {
 
 func TestTeamTokenReadFlagParsing(t *testing.T) {
 	tests := []struct {
-		name       string
-		args       []string
-		expectedID string
+		name        string
+		args        []string
+		expectedID  string
 		expectedFmt string
 	}{
 		{
-			name:       "id, default format",
-			args:       []string{"-id=at-123abc"},
-			expectedID: "at-123abc",
+			name:        "id, default format",
+			args:        []string{"-id=at-123abc"},
+			expectedID:  "at-123abc",
 			expectedFmt: "table",
 		},
 		{
-			name:       "id, table format",
-			args:       []string{"-id=at-456def", "-output=table"},
-			expectedID: "at-456def",
+			name:        "id, table format",
+			args:        []string{"-id=at-456def", "-output=table"},
+			expectedID:  "at-456def",
 			expectedFmt: "table",
 		},
 		{
-			name:       "id, json format",
-			args:       []string{"-id=at-789ghi", "-output=json"},
-			expectedID: "at-789ghi",
+			name:        "id, json format",
+			args:        []string{"-id=at-789ghi", "-output=json"},
+			expectedID:  "at-789ghi",
 			expectedFmt: "json",
 		},
 	}

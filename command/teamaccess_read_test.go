@@ -105,14 +105,14 @@ func TestTeamAccessReadSuccessCustomAccess(t *testing.T) {
 	ui := cli.NewMockUi()
 	taSvc := &mockTeamAccessReadService{
 		response: &tfe.TeamAccess{
-			ID:                "tws-custom123",
-			Access:            "custom",
-			Runs:              "apply",
-			Variables:         "write",
-			StateVersions:     "read",
-			SentinelMocks:     "read",
-			WorkspaceLocking:  true,
-			RunTasks:          false,
+			ID:               "tws-custom123",
+			Access:           "custom",
+			Runs:             "apply",
+			Variables:        "write",
+			StateVersions:    "read",
+			SentinelMocks:    "read",
+			WorkspaceLocking: true,
+			RunTasks:         false,
 			Team: &tfe.Team{
 				ID: "team-789",
 			},

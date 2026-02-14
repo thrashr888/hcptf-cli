@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // AssessmentResultListCommand lists assessment results for a workspace

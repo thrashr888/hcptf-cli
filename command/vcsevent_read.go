@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
 )
 
 // VCSEventReadCommand shows details of a specific VCS event

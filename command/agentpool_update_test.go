@@ -95,32 +95,32 @@ func TestAgentPoolUpdateSynopsis(t *testing.T) {
 
 func TestAgentPoolUpdateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name        string
-		args        []string
-		expectedID  string
+		name         string
+		args         []string
+		expectedID   string
 		expectedName string
-		expectedFmt string
+		expectedFmt  string
 	}{
 		{
-			name:        "id with name update",
-			args:        []string{"-id=apool-123abc", "-name=new-pool-name"},
-			expectedID:  "apool-123abc",
+			name:         "id with name update",
+			args:         []string{"-id=apool-123abc", "-name=new-pool-name"},
+			expectedID:   "apool-123abc",
 			expectedName: "new-pool-name",
-			expectedFmt: "table",
+			expectedFmt:  "table",
 		},
 		{
-			name:        "id with name and table format",
-			args:        []string{"-id=apool-456def", "-name=updated-pool", "-output=table"},
-			expectedID:  "apool-456def",
+			name:         "id with name and table format",
+			args:         []string{"-id=apool-456def", "-name=updated-pool", "-output=table"},
+			expectedID:   "apool-456def",
 			expectedName: "updated-pool",
-			expectedFmt: "table",
+			expectedFmt:  "table",
 		},
 		{
-			name:        "id with name and json format",
-			args:        []string{"-id=apool-789ghi", "-name=prod-pool", "-output=json"},
-			expectedID:  "apool-789ghi",
+			name:         "id with name and json format",
+			args:         []string{"-id=apool-789ghi", "-name=prod-pool", "-output=json"},
+			expectedID:   "apool-789ghi",
 			expectedName: "prod-pool",
-			expectedFmt: "json",
+			expectedFmt:  "json",
 		},
 	}
 

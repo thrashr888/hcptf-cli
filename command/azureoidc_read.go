@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // AzureoidcReadCommand is a command to read Azure OIDC configuration details

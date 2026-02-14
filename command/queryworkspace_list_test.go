@@ -75,14 +75,14 @@ func TestQueryWorkspaceListSynopsis(t *testing.T) {
 
 func TestQueryWorkspaceListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name              string
-		args              []string
-		expectedOrg       string
-		expectedSearch    string
-		expectedTags      string
-		expectedExclTags  string
-		expectedWildcard  string
-		expectedFmt       string
+		name             string
+		args             []string
+		expectedOrg      string
+		expectedSearch   string
+		expectedTags     string
+		expectedExclTags string
+		expectedWildcard string
+		expectedFmt      string
 	}{
 		{
 			name:        "organization flag only",

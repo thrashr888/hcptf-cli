@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // HYOKKeyReadCommand is a command to show HYOK customer key version details

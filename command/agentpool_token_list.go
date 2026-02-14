@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // AgentPoolTokenListCommand is a command to list agent tokens

@@ -63,10 +63,10 @@ func TestPolicySetOutcomeListSynopsis(t *testing.T) {
 
 func TestPolicySetOutcomeListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name                   string
-		args                   []string
-		expectedPolicyEvalID   string
-		expectedFmt            string
+		name                 string
+		args                 []string
+		expectedPolicyEvalID string
+		expectedFmt          string
 	}{
 		{
 			name:                 "policy-evaluation-id flag",

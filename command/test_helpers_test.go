@@ -3,9 +3,9 @@ package command
 import (
 	"bytes"
 	"io"
-	"sync"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
@@ -14,7 +14,7 @@ import (
 
 var (
 	mockOutputWriterMu sync.Mutex
-	lastMockOutput    io.Writer
+	lastMockOutput     io.Writer
 )
 
 func newTestMeta(ui cli.Ui) Meta {

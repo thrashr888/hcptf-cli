@@ -116,4 +116,3 @@ func TestProjectTeamAccessListRequiresProjectID(t *testing.T) {
 		t.Fatalf("expected project-id error, got %q", out)
 	}
 }
-

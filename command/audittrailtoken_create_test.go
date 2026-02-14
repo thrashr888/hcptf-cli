@@ -69,46 +69,46 @@ func TestAuditTrailTokenCreateSynopsis(t *testing.T) {
 
 func TestAuditTrailTokenCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedOrg      string
+		name              string
+		args              []string
+		expectedOrg       string
 		expectedExpiredAt string
-		expectedFormat   string
+		expectedFormat    string
 	}{
 		{
-			name:             "organization and default format",
-			args:             []string{"-organization=test-org"},
-			expectedOrg:      "test-org",
+			name:              "organization and default format",
+			args:              []string{"-organization=test-org"},
+			expectedOrg:       "test-org",
 			expectedExpiredAt: "",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "org alias and default format",
-			args:             []string{"-org=my-org"},
-			expectedOrg:      "my-org",
+			name:              "org alias and default format",
+			args:              []string{"-org=my-org"},
+			expectedOrg:       "my-org",
 			expectedExpiredAt: "",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "organization with expiration",
-			args:             []string{"-organization=test-org", "-expired-at=2025-12-31T23:59:59.000Z"},
-			expectedOrg:      "test-org",
+			name:              "organization with expiration",
+			args:              []string{"-organization=test-org", "-expired-at=2025-12-31T23:59:59.000Z"},
+			expectedOrg:       "test-org",
 			expectedExpiredAt: "2025-12-31T23:59:59.000Z",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "organization with json format",
-			args:             []string{"-org=prod-org", "-output=json"},
-			expectedOrg:      "prod-org",
+			name:              "organization with json format",
+			args:              []string{"-org=prod-org", "-output=json"},
+			expectedOrg:       "prod-org",
 			expectedExpiredAt: "",
-			expectedFormat:   "json",
+			expectedFormat:    "json",
 		},
 		{
-			name:             "all flags",
-			args:             []string{"-org=full-org", "-expired-at=2026-01-01T00:00:00.000Z", "-output=json"},
-			expectedOrg:      "full-org",
+			name:              "all flags",
+			args:              []string{"-org=full-org", "-expired-at=2026-01-01T00:00:00.000Z", "-output=json"},
+			expectedOrg:       "full-org",
 			expectedExpiredAt: "2026-01-01T00:00:00.000Z",
-			expectedFormat:   "json",
+			expectedFormat:    "json",
 		},
 	}
 

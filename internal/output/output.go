@@ -24,8 +24,8 @@ const (
 // Formatter handles output formatting
 type Formatter struct {
 	format Format
-	out io.Writer
-	err  io.Writer
+	out    io.Writer
+	err    io.Writer
 }
 
 // NewFormatter creates a new output formatter

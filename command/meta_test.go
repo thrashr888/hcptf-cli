@@ -83,7 +83,7 @@ func TestMetaNewFormatterUsesCustomWriters(t *testing.T) {
 	errOut := &bytes.Buffer{}
 
 	m := Meta{
-		Ui:          cli.NewMockUi(),
+		Ui:           cli.NewMockUi(),
 		OutputWriter: out,
 		ErrorWriter:  errOut,
 	}

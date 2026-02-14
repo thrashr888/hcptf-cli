@@ -10,9 +10,9 @@ import (
 // VariableSetReadCommand is a command to read variable set details
 type VariableSetReadCommand struct {
 	Meta
-	id         string
-	format     string
-	varSetSvc  variableSetReader
+	id        string
+	format    string
+	varSetSvc variableSetReader
 }
 
 // Run executes the variable set read command

@@ -92,8 +92,8 @@ func TestPolicySetRemovePolicySynopsis(t *testing.T) {
 
 func TestPolicySetRemovePolicyFlagParsing(t *testing.T) {
 	tests := []struct {
-		name               string
-		args               []string
+		name                string
+		args                []string
 		expectedPolicySetID string
 		expectedPolicyID    string
 	}{

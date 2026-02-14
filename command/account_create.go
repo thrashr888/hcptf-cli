@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
 )
 
 // AccountCreateCommand is a command to create a new user account

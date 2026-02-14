@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // OrganizationTokenListCommand is a command to list organization tokens

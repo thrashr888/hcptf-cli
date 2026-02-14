@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // GCPoidcReadCommand is a command to read GCP OIDC configuration details

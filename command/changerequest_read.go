@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
 )
 
 // ChangeRequestReadCommand shows details of a specific change request

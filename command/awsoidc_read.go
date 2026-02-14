@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // AWSoidcReadCommand is a command to read AWS OIDC configuration details

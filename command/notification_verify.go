@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // NotificationVerifyCommand is a command to verify a notification configuration

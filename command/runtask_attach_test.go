@@ -127,54 +127,54 @@ func TestRunTaskAttachValidatesStage(t *testing.T) {
 
 func TestRunTaskAttachFlagParsing(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedOrg      string
-		expectedWS       string
-		expectedTaskID   string
-		expectedEnforce  string
-		expectedStage    string
-		expectedFormat   string
+		name            string
+		args            []string
+		expectedOrg     string
+		expectedWS      string
+		expectedTaskID  string
+		expectedEnforce string
+		expectedStage   string
+		expectedFormat  string
 	}{
 		{
-			name:             "required flags only, default values",
-			args:             []string{"-organization=my-org", "-workspace=my-ws", "-runtask-id=task-123"},
-			expectedOrg:      "my-org",
-			expectedWS:       "my-ws",
-			expectedTaskID:   "task-123",
-			expectedEnforce:  "advisory",
-			expectedStage:    "post_plan",
-			expectedFormat:   "table",
+			name:            "required flags only, default values",
+			args:            []string{"-organization=my-org", "-workspace=my-ws", "-runtask-id=task-123"},
+			expectedOrg:     "my-org",
+			expectedWS:      "my-ws",
+			expectedTaskID:  "task-123",
+			expectedEnforce: "advisory",
+			expectedStage:   "post_plan",
+			expectedFormat:  "table",
 		},
 		{
-			name:             "org alias with mandatory enforcement",
-			args:             []string{"-org=test-org", "-workspace=test-ws", "-runtask-id=task-456", "-enforcement-level=mandatory"},
-			expectedOrg:      "test-org",
-			expectedWS:       "test-ws",
-			expectedTaskID:   "task-456",
-			expectedEnforce:  "mandatory",
-			expectedStage:    "post_plan",
-			expectedFormat:   "table",
+			name:            "org alias with mandatory enforcement",
+			args:            []string{"-org=test-org", "-workspace=test-ws", "-runtask-id=task-456", "-enforcement-level=mandatory"},
+			expectedOrg:     "test-org",
+			expectedWS:      "test-ws",
+			expectedTaskID:  "task-456",
+			expectedEnforce: "mandatory",
+			expectedStage:   "post_plan",
+			expectedFormat:  "table",
 		},
 		{
-			name:             "pre_plan stage with json output",
-			args:             []string{"-org=prod-org", "-workspace=prod-ws", "-runtask-id=task-789", "-stage=pre_plan", "-output=json"},
-			expectedOrg:      "prod-org",
-			expectedWS:       "prod-ws",
-			expectedTaskID:   "task-789",
-			expectedEnforce:  "advisory",
-			expectedStage:    "pre_plan",
-			expectedFormat:   "json",
+			name:            "pre_plan stage with json output",
+			args:            []string{"-org=prod-org", "-workspace=prod-ws", "-runtask-id=task-789", "-stage=pre_plan", "-output=json"},
+			expectedOrg:     "prod-org",
+			expectedWS:      "prod-ws",
+			expectedTaskID:  "task-789",
+			expectedEnforce: "advisory",
+			expectedStage:   "pre_plan",
+			expectedFormat:  "json",
 		},
 		{
-			name:             "all options specified",
-			args:             []string{"-organization=dev-org", "-workspace=dev-ws", "-runtask-id=task-012", "-enforcement-level=mandatory", "-stage=pre_apply", "-output=json"},
-			expectedOrg:      "dev-org",
-			expectedWS:       "dev-ws",
-			expectedTaskID:   "task-012",
-			expectedEnforce:  "mandatory",
-			expectedStage:    "pre_apply",
-			expectedFormat:   "json",
+			name:            "all options specified",
+			args:            []string{"-organization=dev-org", "-workspace=dev-ws", "-runtask-id=task-012", "-enforcement-level=mandatory", "-stage=pre_apply", "-output=json"},
+			expectedOrg:     "dev-org",
+			expectedWS:      "dev-ws",
+			expectedTaskID:  "task-012",
+			expectedEnforce: "mandatory",
+			expectedStage:   "pre_apply",
+			expectedFormat:  "json",
 		},
 	}
 

@@ -52,10 +52,10 @@ type AssessmentResultResponse struct {
 // TerraformPlan represents the Terraform JSON plan structure
 type TerraformPlan struct {
 	ResourceDrift []struct {
-		Address string `json:"address"`
-		Mode    string `json:"mode"`
-		Type    string `json:"type"`
-		Name    string `json:"name"`
+		Address  string `json:"address"`
+		Mode     string `json:"mode"`
+		Type     string `json:"type"`
+		Name     string `json:"name"`
 		Provider string `json:"provider_name"`
 		Change   struct {
 			Actions []string               `json:"actions"`

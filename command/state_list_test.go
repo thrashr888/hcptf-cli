@@ -92,11 +92,11 @@ func TestStateListSynopsis(t *testing.T) {
 
 func TestStateListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name         string
-		args         []string
-		expectedOrg  string
-		expectedWS   string
-		expectedFmt  string
+		name        string
+		args        []string
+		expectedOrg string
+		expectedWS  string
+		expectedFmt string
 	}{
 		{
 			name:        "org and workspace, default format",

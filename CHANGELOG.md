@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected command test helpers to construct mock API clients with hostname-based credentials so new command tests can run reliably in CI without external credentials.
+- Added missing changelog entries and follow-up test refactors for command coverage-focused changes.
+
 ## [0.1.0] - 2025-02-11
 
 Initial release of the HCP Terraform CLI with comprehensive API coverage.

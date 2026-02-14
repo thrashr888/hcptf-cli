@@ -92,32 +92,32 @@ func TestAgentPoolTokenCreateSynopsis(t *testing.T) {
 
 func TestAgentPoolTokenCreateFlagParsing(t *testing.T) {
 	tests := []struct {
-		name        string
-		args        []string
-		expectedID  string
+		name         string
+		args         []string
+		expectedID   string
 		expectedDesc string
-		expectedFmt string
+		expectedFmt  string
 	}{
 		{
-			name:        "all required flags, default format",
-			args:        []string{"-agent-pool-id=apool-123abc", "-description=Production agent token"},
-			expectedID:  "apool-123abc",
+			name:         "all required flags, default format",
+			args:         []string{"-agent-pool-id=apool-123abc", "-description=Production agent token"},
+			expectedID:   "apool-123abc",
 			expectedDesc: "Production agent token",
-			expectedFmt: "table",
+			expectedFmt:  "table",
 		},
 		{
-			name:        "required flags with table format",
-			args:        []string{"-agent-pool-id=apool-456def", "-description=Dev agent", "-output=table"},
-			expectedID:  "apool-456def",
+			name:         "required flags with table format",
+			args:         []string{"-agent-pool-id=apool-456def", "-description=Dev agent", "-output=table"},
+			expectedID:   "apool-456def",
 			expectedDesc: "Dev agent",
-			expectedFmt: "table",
+			expectedFmt:  "table",
 		},
 		{
-			name:        "required flags with json format",
-			args:        []string{"-agent-pool-id=apool-789ghi", "-description=CI agent token", "-output=json"},
-			expectedID:  "apool-789ghi",
+			name:         "required flags with json format",
+			args:         []string{"-agent-pool-id=apool-789ghi", "-description=CI agent token", "-output=json"},
+			expectedID:   "apool-789ghi",
 			expectedDesc: "CI agent token",
-			expectedFmt: "json",
+			expectedFmt:  "json",
 		},
 	}
 

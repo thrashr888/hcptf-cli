@@ -314,4 +314,3 @@ func TestNotificationCreateFlagParsing(t *testing.T) {
 		})
 	}
 }
-

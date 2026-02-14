@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
 )
 
 // VaultoidcReadCommand is a command to read Vault OIDC configuration details

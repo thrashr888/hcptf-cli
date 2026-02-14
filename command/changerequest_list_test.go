@@ -36,46 +36,46 @@ func TestChangeRequestListRequiresFlags(t *testing.T) {
 
 func TestChangeRequestListFlagParsing(t *testing.T) {
 	tests := []struct {
-		name             string
-		args             []string
-		expectedOrg      string
+		name              string
+		args              []string
+		expectedOrg       string
 		expectedWorkspace string
-		expectedFormat   string
+		expectedFormat    string
 	}{
 		{
-			name:             "organization and workspace with default format",
-			args:             []string{"-organization=my-org", "-workspace=prod"},
-			expectedOrg:      "my-org",
+			name:              "organization and workspace with default format",
+			args:              []string{"-organization=my-org", "-workspace=prod"},
+			expectedOrg:       "my-org",
 			expectedWorkspace: "prod",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "org alias flag",
-			args:             []string{"-org=test-org", "-workspace=staging"},
-			expectedOrg:      "test-org",
+			name:              "org alias flag",
+			args:              []string{"-org=test-org", "-workspace=staging"},
+			expectedOrg:       "test-org",
 			expectedWorkspace: "staging",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "organization and workspace with table format",
-			args:             []string{"-organization=my-org", "-workspace=dev", "-output=table"},
-			expectedOrg:      "my-org",
+			name:              "organization and workspace with table format",
+			args:              []string{"-organization=my-org", "-workspace=dev", "-output=table"},
+			expectedOrg:       "my-org",
 			expectedWorkspace: "dev",
-			expectedFormat:   "table",
+			expectedFormat:    "table",
 		},
 		{
-			name:             "organization and workspace with json format",
-			args:             []string{"-organization=acme", "-workspace=prod", "-output=json"},
-			expectedOrg:      "acme",
+			name:              "organization and workspace with json format",
+			args:              []string{"-organization=acme", "-workspace=prod", "-output=json"},
+			expectedOrg:       "acme",
 			expectedWorkspace: "prod",
-			expectedFormat:   "json",
+			expectedFormat:    "json",
 		},
 		{
-			name:             "org alias with json format",
-			args:             []string{"-org=test-org", "-workspace=qa", "-output=json"},
-			expectedOrg:      "test-org",
+			name:              "org alias with json format",
+			args:              []string{"-org=test-org", "-workspace=qa", "-output=json"},
+			expectedOrg:       "test-org",
 			expectedWorkspace: "qa",
-			expectedFormat:   "json",
+			expectedFormat:    "json",
 		},
 	}
 
