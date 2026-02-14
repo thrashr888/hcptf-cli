@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/cli"
 )
 
-func newNotificationDeleteCommand(ui *cli.MockUi, svc notificationDeleter) *NotificationDeleteCommand {
+func newNotificationDeleteCommand(ui *cli.MockUi, svc notificationReadDeleter) *NotificationDeleteCommand {
 	cmd := &NotificationDeleteCommand{
 		Meta:     newTestMeta(ui),
 		notifSvc: svc,
