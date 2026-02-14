@@ -14,6 +14,7 @@ type ApplyReadCommand struct {
 	runID    string
 	format   string
 	applySvc applyReader
+	runSvc   runReader
 }
 
 // Run executes the apply read command
@@ -48,7 +49,7 @@ func (c *ApplyReadCommand) Run(args []string) int {
 	// If ID starts with "run-", get the apply ID from the run
 	applyID := id
 	if strings.HasPrefix(id, "run-") {
-		run, err := client.Runs.Read(client.Context(), id)
+		run, err := c.runService(client).Read(client.Context(), id)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
 			return 1
@@ -131,9 +132,16 @@ Examples:
   hcptf apply read -run-id=run-xyz789
 
   # URL-style
-  hcptf my-org my-workspace runs run-xyz789 applyread
+  hcptf my-org my-workspace runs run-xyz789 apply read
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *ApplyReadCommand) runService(client *client.Client) runReader {
+	if c.runSvc != nil {
+		return c.runSvc
+	}
+	return client.Runs
 }
 
 // Synopsis returns a short synopsis for the apply read command

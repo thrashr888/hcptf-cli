@@ -12,7 +12,7 @@ type NotificationDeleteCommand struct {
 	Meta
 	id       string
 	force    bool
-	notifSvc notificationDeleter
+	notifSvc notificationReadDeleter
 }
 
 // Run executes the notification delete command
@@ -42,7 +42,7 @@ func (c *NotificationDeleteCommand) Run(args []string) int {
 	// Confirm deletion unless force flag is set
 	if !c.force {
 		// Read notification configuration to get its name for confirmation
-		notification, err := client.NotificationConfigurations.Read(client.Context(), c.id)
+		notification, err := c.notificationService(client).Read(client.Context(), c.id)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading notification configuration: %s", err))
 			return 1
@@ -71,7 +71,7 @@ func (c *NotificationDeleteCommand) Run(args []string) int {
 	return 0
 }
 
-func (c *NotificationDeleteCommand) notificationService(client *client.Client) notificationDeleter {
+func (c *NotificationDeleteCommand) notificationService(client *client.Client) notificationReadDeleter {
 	if c.notifSvc != nil {
 		return c.notifSvc
 	}

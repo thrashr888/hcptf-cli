@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
@@ -58,5 +59,49 @@ func TestNotificationDeleteSuccess(t *testing.T) {
 	}
 	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
 		t.Fatalf("expected success message, got: %s", ui.OutputWriter.String())
+	}
+}
+
+func TestNotificationDeleteReadsNotificationForConfirmation(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("yes\n")
+	svc := &mockNotificationDeleteService{
+		response: &tfe.NotificationConfiguration{
+			ID:   "nc-123",
+			Name: "Deploy Alerts",
+		},
+	}
+	cmd := newNotificationDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=nc-123"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if svc.lastRead != "nc-123" {
+		t.Fatalf("expected read id recorded: %s", svc.lastRead)
+	}
+	if svc.lastID != "nc-123" {
+		t.Fatalf("unexpected delete id: %s", svc.lastID)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Deploy Alerts") {
+		t.Fatalf("expected confirmation name in output, got: %s", ui.OutputWriter.String())
+	}
+}
+
+func TestNotificationDeleteReadFails(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockNotificationDeleteService{
+		response: &tfe.NotificationConfiguration{},
+		readErr:  errors.New("read failed"),
+	}
+	cmd := newNotificationDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=nc-123"}); code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if svc.lastRead != "nc-123" {
+		t.Fatalf("expected read id recorded: %s", svc.lastRead)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "Error reading notification configuration: read failed") {
+		t.Fatalf("expected read error output, got: %s", ui.ErrorWriter.String())
 	}
 }

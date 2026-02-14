@@ -127,7 +127,7 @@ Examples:
   hcptf apply logs -run-id=run-xyz789
 
   # URL-style
-  hcptf my-org my-workspace runs run-xyz789 applylogs
+  hcptf my-org my-workspace runs run-xyz789 apply logs
 `
 	return strings.TrimSpace(helpText)
 }

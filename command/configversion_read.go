@@ -14,6 +14,7 @@ type ConfigVersionReadCommand struct {
 	runID           string
 	format          string
 	configVerSvc    configVersionReader
+	runSvc          runReader
 }
 
 // Run executes the configversion read command
@@ -48,7 +49,7 @@ func (c *ConfigVersionReadCommand) Run(args []string) int {
 	// If ID starts with "run-", get the config version ID from the run
 	configVersionID := id
 	if strings.HasPrefix(id, "run-") {
-		run, err := client.Runs.Read(client.Context(), id)
+		run, err := c.runService(client).Read(client.Context(), id)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
 			return 1
@@ -93,6 +94,13 @@ func (c *ConfigVersionReadCommand) configVersionService(client *client.Client) c
 		return c.configVerSvc
 	}
 	return client.ConfigurationVersions
+}
+
+func (c *ConfigVersionReadCommand) runService(client *client.Client) runReader {
+	if c.runSvc != nil {
+		return c.runSvc
+	}
+	return client.Runs
 }
 
 // Help returns help text for the configversion read command

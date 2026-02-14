@@ -14,6 +14,7 @@ type PlanReadCommand struct {
 	runID   string
 	format  string
 	planSvc planReader
+	runSvc  runReader
 }
 
 // Run executes the plan read command
@@ -48,7 +49,7 @@ func (c *PlanReadCommand) Run(args []string) int {
 	// If ID starts with "run-", get the plan ID from the run
 	planID := id
 	if strings.HasPrefix(id, "run-") {
-		run, err := client.Runs.Read(client.Context(), id)
+		run, err := c.runService(client).Read(client.Context(), id)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
 			return 1
@@ -99,6 +100,13 @@ func (c *PlanReadCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *PlanReadCommand) runService(client *client.Client) runReader {
+	if c.runSvc != nil {
+		return c.runSvc
+	}
+	return client.Runs
 }
 
 func (c *PlanReadCommand) planService(client *client.Client) planReader {

@@ -673,13 +673,24 @@ func (m *mockAgentPoolDeleteService) Delete(_ context.Context, agentPoolID strin
 }
 
 type mockNotificationDeleteService struct {
-	err    error
-	lastID string
+	response *tfe.NotificationConfiguration
+	err      error
+	readErr  error
+	lastID   string
+	lastRead string
 }
 
 func (m *mockNotificationDeleteService) Delete(_ context.Context, notificationConfigurationID string) error {
 	m.lastID = notificationConfigurationID
 	return m.err
+}
+
+func (m *mockNotificationDeleteService) Read(_ context.Context, notificationConfigurationID string) (*tfe.NotificationConfiguration, error) {
+	m.lastRead = notificationConfigurationID
+	if m.response != nil {
+		return m.response, m.readErr
+	}
+	return &tfe.NotificationConfiguration{}, m.readErr
 }
 
 type mockAuditTrailTokenDeleteService struct {
