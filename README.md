@@ -97,6 +97,19 @@ hcptf variable create -org=my-org -workspace=staging \
 
 # JSON output for scripting
 hcptf workspace list -org=my-org -output=json
+
+# Registry commands (hierarchical namespace)
+hcptf registry module list -org=my-org
+hcptf registry provider create -org=my-org -name=custom-provider
+hcptf registry provider version create -org=my-org -name=aws -version=3.1.1 -key-id=GPG_KEY_ID
+
+# Stack commands (hierarchical namespace)
+hcptf stack list -org=my-org -project=prj-abc123
+hcptf stack configuration list -stack-id=stk-abc123
+hcptf stack deployment create -stack-id=stk-abc123
+
+# Explorer API (query resources across organization)
+hcptf explorer query -org=my-org -type=providers -sort=-version
 ```
 
 ### URL-Style Navigation
@@ -138,9 +151,29 @@ hcptf my-org policies
 
 Both styles work interchangeably - use whichever you prefer!
 
+### Hierarchical Command Namespaces
+
+Registry and stack commands use a hierarchical namespace structure for better organization:
+
+```bash
+# Registry commands
+hcptf registry                                    # Show all registry commands
+hcptf registry module list -org=my-org           # List modules
+hcptf registry provider create -org=my-org       # Create provider
+hcptf registry provider version create ...        # Create provider version
+hcptf registry provider platform create ...       # Add platform binary
+
+# Stack commands
+hcptf stack                                       # Show all stack commands
+hcptf stack list -org=my-org                     # List stacks
+hcptf stack configuration list -stack-id=stk-123  # List configurations
+hcptf stack deployment create -stack-id=stk-123   # Create deployment
+hcptf stack state list -stack-id=stk-123         # List state versions
+```
+
 ## Commands
 
-229 commands across 59 resource types. See [docs/COMMANDS.md](docs/COMMANDS.md) for the full reference.
+100+ commands across 50+ resource types organized in hierarchical namespaces.
 
 | Group | Commands | Description |
 |-------|----------|-------------|
@@ -168,17 +201,19 @@ Both styles work interchangeably - use whichever you prefer!
 | `configversion` | 4 | Configuration versions |
 | `teamaccess` | 5 | Team workspace permissions |
 | `projectteamaccess` | 5 | Team project permissions |
-| `registrymodule` | 6 | Private registry modules |
-| `registryprovider` | 4 | Private registry providers |
-| `registryproviderversion` | 3 | Provider versions |
-| `registryproviderplatform` | 3 | Provider platforms |
+| `registry` | 1 | Private registry parent |
+| `registry module` | 6 | Private registry modules |
+| `registry provider` | 4 | Private registry providers |
+| `registry provider version` | 3 | Provider versions |
+| `registry provider platform` | 3 | Provider platforms |
 | `gpgkey` | 5 | GPG keys for providers |
-| `stack` | 5 | Terraform Stacks |
-| `stackconfiguration` | 5 | Stack configurations |
-| `stackdeployment` | 3 | Stack deployments |
-| `stackstate` | 2 | Stack states |
+| `stack` | 6 | Terraform Stacks management |
+| `stack configuration` | 5 | Stack configurations |
+| `stack deployment` | 3 | Stack deployments |
+| `stack state` | 2 | Stack states |
 | `audittrail` | 2 | Audit trail events |
 | `audittrailtoken` | 4 | Audit trail tokens |
+| `explorer` | 1 | Query resources across org |
 | `version` | 1 | CLI version |
 
 ### Common flags

@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected command test helpers to construct mock API clients with hostname-based credentials so new command tests can run reliably in CI without external credentials.
 - Added missing changelog entries and follow-up test refactors for command coverage-focused changes.
 
+### Changed
+
+- **BREAKING**: Replaced flat command structure with hierarchical namespaces for registry and stack commands
+  - Registry commands now use: `registry module`, `registry provider`, `registry provider version`, `registry provider platform`
+  - Stack commands now use: `stack`, `stack configuration`, `stack deployment`, `stack state`
+  - Removed legacy commands: `registrymodule`, `registryprovider`, `registryproviderversion`, `registryproviderplatform`, `stackconfiguration`, `stackdeployment`, `stackstate`
+  - Benefits: Cleaner command structure, better discoverability, follows HashiCorp CLI best practices
+
+### Added
+
+- Parent commands for hierarchical navigation: `hcptf registry` and `hcptf stack`
+- Explorer API support: `hcptf explorer query` for querying resources across organizations
+- Enhanced assessment result output with drift detection and analysis
+
+
 ## [0.1.0] - 2025-02-11
 
 Initial release of the HCP Terraform CLI with comprehensive API coverage.
