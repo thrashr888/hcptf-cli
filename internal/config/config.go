@@ -89,15 +89,17 @@ func Load() (*Config, error) {
 	tfCredsPath := GetTerraformCredentialsPath()
 	if _, err := os.Stat(tfCredsPath); err == nil {
 		tfCreds, err := loadTerraformCredentials(tfCredsPath)
-		if err == nil {
-			// Merge Terraform credentials into config
-			// hcptfrc credentials take precedence
-			for hostname, cred := range tfCreds.Credentials {
-				if _, exists := config.Credentials[hostname]; !exists {
-					config.Credentials[hostname] = &Credential{
-						Hostname: hostname,
-						Token:    cred.Token,
-					}
+		if err != nil {
+			return nil, fmt.Errorf("failed to load Terraform credentials from %q: %w", tfCredsPath, err)
+		}
+
+		// Merge Terraform credentials into config
+		// hcptfrc credentials take precedence
+		for hostname, cred := range tfCreds.Credentials {
+			if _, exists := config.Credentials[hostname]; !exists {
+				config.Credentials[hostname] = &Credential{
+					Hostname: hostname,
+					Token:    cred.Token,
 				}
 			}
 		}

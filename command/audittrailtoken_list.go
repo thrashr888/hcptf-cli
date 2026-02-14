@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AuditTrailTokenListCommand is a command to list audit trail tokens
@@ -58,7 +57,7 @@ func (c *AuditTrailTokenListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	// Prepare table data
 	headers := []string{"ID", "Description", "Created At", "Last Used At", "Expired At"}

@@ -1,0 +1,100 @@
+package command
+
+import (
+	"fmt"
+	"strings"
+)
+
+// WorkspaceContextCommand shows help for workspace context
+type WorkspaceContextCommand struct {
+	Meta
+	organization string
+	workspace    string
+}
+
+// Run shows workspace-specific subcommands
+func (c *WorkspaceContextCommand) Run(args []string) int {
+	// Parse the org and workspace from args if provided via flags
+	for i, arg := range args {
+		if strings.HasPrefix(arg, "-org=") {
+			c.organization = strings.TrimPrefix(arg, "-org=")
+		} else if arg == "-org" && i+1 < len(args) {
+			c.organization = args[i+1]
+		}
+		if strings.HasPrefix(arg, "-workspace=") {
+			c.workspace = strings.TrimPrefix(arg, "-workspace=")
+		} else if arg == "-workspace" && i+1 < len(args) {
+			c.workspace = args[i+1]
+		}
+	}
+
+	if c.organization == "" || c.workspace == "" {
+		c.Ui.Error("No organization or workspace specified")
+		return 1
+	}
+
+	help := fmt.Sprintf(`Workspace: %s/%s
+
+Available commands for this workspace:
+
+  Runs:
+    hcptf <org> <workspace> runs                    List runs
+    hcptf <org> <workspace> <run-id>                Show run details
+    hcptf <org> <workspace> runs <run-id> plan      Show plan
+    hcptf <org> <workspace> runs <run-id> logs      Show plan logs
+    hcptf <org> <workspace> runs <run-id> applyread Show apply details
+    hcptf <org> <workspace> runs <run-id> applylogs Show apply logs
+    hcptf <org> <workspace> runs <run-id> comments  List run comments
+    hcptf <org> <workspace> runs <run-id> policychecks List policy checks
+
+  Variables:
+    hcptf <org> <workspace> variables               List variables
+
+  State:
+    hcptf <org> <workspace> state                   List state versions
+    hcptf <org> <workspace> state outputs           Show state outputs
+
+  Resources:
+    hcptf <org> <workspace> resources               List managed resources
+
+  Configuration Versions:
+    hcptf <org> <workspace> configversions          List configuration versions
+
+  Tags:
+    hcptf <org> <workspace> tags                    List workspace tags
+
+  Assessment Results:
+    hcptf <org> <workspace> assessments             List assessment results
+
+  Change Requests:
+    hcptf <org> <workspace> changerequests          List change requests
+
+You can also use traditional command syntax:
+    hcptf run list -org=%s -workspace=%s
+    hcptf variable list -org=%s -workspace=%s
+    hcptf state list -org=%s -workspace=%s
+    hcptf workspaceresource list -org=%s -workspace=%s
+    hcptf configversion list -org=%s -workspace=%s
+    hcptf workspacetag list -org=%s -workspace=%s
+`,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace,
+		c.organization, c.workspace)
+
+	c.Ui.Output(help)
+	return 0
+}
+
+// Help returns help text
+func (c *WorkspaceContextCommand) Help() string {
+	return "Show workspace context help"
+}
+
+// Synopsis returns a one-line synopsis
+func (c *WorkspaceContextCommand) Synopsis() string {
+	return "Show workspace context help"
+}

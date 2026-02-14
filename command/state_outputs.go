@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // StateOutputsCommand is a command to display state outputs
@@ -74,7 +72,7 @@ func (c *StateOutputsCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(outputsList.Items) == 0 {
 		c.Ui.Output("No outputs found in current state")

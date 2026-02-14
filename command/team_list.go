@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // TeamListCommand is a command to list teams
@@ -13,6 +13,7 @@ type TeamListCommand struct {
 	Meta
 	organization string
 	format       string
+	teamSvc      teamLister
 }
 
 // Run executes the team list command
@@ -41,7 +42,7 @@ func (c *TeamListCommand) Run(args []string) int {
 	}
 
 	// List teams
-	teams, err := client.Teams.List(client.Context(), c.organization, &tfe.TeamListOptions{
+	teams, err := c.teamService(client).List(client.Context(), c.organization, &tfe.TeamListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -52,7 +53,7 @@ func (c *TeamListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(teams.Items) == 0 {
 		c.Ui.Output("No teams found")
@@ -94,6 +95,13 @@ Example:
   hcptf team list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *TeamListCommand) teamService(client *client.Client) teamLister {
+	if c.teamSvc != nil {
+		return c.teamSvc
+	}
+	return client.Teams
 }
 
 // Synopsis returns a short synopsis for the team list command

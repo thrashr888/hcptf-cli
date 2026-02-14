@@ -6,8 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ChangeRequestListCommand lists change requests for a workspace
@@ -107,18 +105,12 @@ func (c *ChangeRequestListCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Get token from config for authorization
-	u := client.BaseURL()
-	cfg, err := c.Meta.Config()
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error loading config: %s", err))
-		return 1
-	}
-	token := cfg.GetToken(u.Hostname())
+	// Get token from client for authorization
+	token := client.Token()
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/vnd.api+json")
 
-	httpClient := &http.Client{}
+	httpClient := newHTTPClient()
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error making API request: %s", err))
@@ -148,7 +140,7 @@ func (c *ChangeRequestListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(changeRequests.Data) == 0 {
 		c.Ui.Output("No change requests found")

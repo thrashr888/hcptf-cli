@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AssessmentResultListCommand lists assessment results for a workspace
@@ -55,7 +53,7 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	// Since the go-tfe library doesn't have direct support for listing assessment results yet,
 	// we provide guidance to the user

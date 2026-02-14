@@ -1,6 +1,6 @@
 module github.com/hashicorp/hcptf-cli
 
-go 1.25.7
+go 1.24.0
 
 require (
 	github.com/hashicorp/go-tfe v1.101.0

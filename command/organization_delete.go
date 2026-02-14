@@ -3,13 +3,16 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // OrganizationDeleteCommand is a command to delete an organization
 type OrganizationDeleteCommand struct {
 	Meta
-	name  string
-	force bool
+	name   string
+	force  bool
+	orgSvc organizationDeleter
 }
 
 // Run executes the organization delete command
@@ -51,7 +54,7 @@ func (c *OrganizationDeleteCommand) Run(args []string) int {
 	}
 
 	// Delete organization
-	err = client.Organizations.Delete(client.Context(), c.name)
+	err = c.organizationService(client).Delete(client.Context(), c.name)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting organization: %s", err))
 		return 1
@@ -59,6 +62,13 @@ func (c *OrganizationDeleteCommand) Run(args []string) int {
 
 	c.Ui.Output(fmt.Sprintf("Organization '%s' deleted successfully", c.name))
 	return 0
+}
+
+func (c *OrganizationDeleteCommand) organizationService(client *client.Client) organizationDeleter {
+	if c.orgSvc != nil {
+		return c.orgSvc
+	}
+	return client.Organizations
 }
 
 // Help returns help text for the organization delete command

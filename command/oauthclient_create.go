@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // OAuthClientCreateCommand is a command to create an OAuth client
@@ -132,7 +131,7 @@ func (c *OAuthClientCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("OAuth client '%s' created successfully", oauthClient.ID))
 

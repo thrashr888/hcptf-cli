@@ -3,9 +3,12 @@ package command
 import (
 	"flag"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/config"
+	"github.com/hashicorp/hcptf-cli/internal/output"
 	"github.com/mitchellh/cli"
 )
 
@@ -13,6 +16,12 @@ import (
 type Meta struct {
 	// Color enables colorized output
 	Color bool
+
+	// OutputWriter is the destination for table and plain-text formatter output.
+	OutputWriter io.Writer
+
+	// ErrorWriter is the destination for formatter JSON encoding errors.
+	ErrorWriter io.Writer
 
 	// Ui is the CLI user interface
 	Ui cli.Ui
@@ -44,6 +53,32 @@ func (m *Meta) Client() (*client.Client, error) {
 
 	m.client, m.clientErr = client.New(cfg)
 	return m.client, m.clientErr
+}
+
+func (m *Meta) formatterWriter() io.Writer {
+	if m.OutputWriter != nil {
+		return m.OutputWriter
+	}
+	if mock, ok := m.Ui.(*cli.MockUi); ok && mock.OutputWriter != nil {
+		return mock.OutputWriter
+	}
+
+	return os.Stdout
+}
+
+func (m *Meta) formatterErrorWriter() io.Writer {
+	if m.ErrorWriter != nil {
+		return m.ErrorWriter
+	}
+	if mock, ok := m.Ui.(*cli.MockUi); ok && mock.ErrorWriter != nil {
+		return mock.ErrorWriter
+	}
+
+	return os.Stderr
+}
+
+func (m *Meta) NewFormatter(format string) *output.Formatter {
+	return output.NewFormatterWithWriters(format, m.formatterWriter(), m.formatterErrorWriter())
 }
 
 // Config returns the CLI configuration, loading it if necessary

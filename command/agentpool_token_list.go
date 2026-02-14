@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AgentPoolTokenListCommand is a command to list agent tokens
@@ -46,7 +44,7 @@ func (c *AgentPoolTokenListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(agentTokens.Items) == 0 {
 		c.Ui.Output("No agent tokens found")

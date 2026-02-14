@@ -336,3 +336,397 @@ func (m *mockRegistryProviderDeleteService) Delete(_ context.Context, providerID
 	m.lastID = providerID
 	return m.err
 }
+
+type mockOrganizationListService struct {
+	response    *tfe.OrganizationList
+	err         error
+	lastOptions *tfe.OrganizationListOptions
+}
+
+func (m *mockOrganizationListService) List(_ context.Context, options *tfe.OrganizationListOptions) (*tfe.OrganizationList, error) {
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockTeamListService struct {
+	response *tfe.TeamList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockTeamListService) List(_ context.Context, organization string, _ *tfe.TeamListOptions) (*tfe.TeamList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockProjectListService struct {
+	response *tfe.ProjectList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockProjectListService) List(_ context.Context, organization string, _ *tfe.ProjectListOptions) (*tfe.ProjectList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockPolicyListService struct {
+	response *tfe.PolicyList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockPolicyListService) List(_ context.Context, organization string, _ *tfe.PolicyListOptions) (*tfe.PolicyList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockPolicySetListService struct {
+	response *tfe.PolicySetList
+	err      error
+	lastOrg  string
+}
+
+func (m *mockPolicySetListService) List(_ context.Context, organization string, _ *tfe.PolicySetListOptions) (*tfe.PolicySetList, error) {
+	m.lastOrg = organization
+	return m.response, m.err
+}
+
+type mockOrganizationReadService struct {
+	response *tfe.Organization
+	err      error
+	lastName string
+}
+
+func (m *mockOrganizationReadService) Read(_ context.Context, organization string) (*tfe.Organization, error) {
+	m.lastName = organization
+	return m.response, m.err
+}
+
+type mockTeamReadService struct {
+	response *tfe.Team
+	err      error
+	lastName string
+}
+
+func (m *mockTeamReadService) Read(_ context.Context, teamName string) (*tfe.Team, error) {
+	m.lastName = teamName
+	return m.response, m.err
+}
+
+type mockProjectReadService struct {
+	response *tfe.Project
+	err      error
+	lastID   string
+}
+
+func (m *mockProjectReadService) Read(_ context.Context, projectID string) (*tfe.Project, error) {
+	m.lastID = projectID
+	return m.response, m.err
+}
+
+type mockPolicyReadService struct {
+	response *tfe.Policy
+	err      error
+	lastID   string
+}
+
+func (m *mockPolicyReadService) Read(_ context.Context, policyID string) (*tfe.Policy, error) {
+	m.lastID = policyID
+	return m.response, m.err
+}
+
+type mockPolicyDownloadService struct {
+	content []byte
+	err     error
+	lastID  string
+}
+
+func (m *mockPolicyDownloadService) Download(_ context.Context, policyID string) ([]byte, error) {
+	m.lastID = policyID
+	return m.content, m.err
+}
+
+type mockPolicySetReadService struct {
+	response *tfe.PolicySet
+	err      error
+	lastID   string
+}
+
+func (m *mockPolicySetReadService) Read(_ context.Context, policySetID string) (*tfe.PolicySet, error) {
+	m.lastID = policySetID
+	return m.response, m.err
+}
+
+type mockVariableSetReadService struct {
+	response *tfe.VariableSet
+	err      error
+	lastID   string
+}
+
+func (m *mockVariableSetReadService) Read(_ context.Context, variableSetID string, _ *tfe.VariableSetReadOptions) (*tfe.VariableSet, error) {
+	m.lastID = variableSetID
+	return m.response, m.err
+}
+
+type mockVariableSetListService struct {
+	response *tfe.VariableSetList
+	err      error
+	lastOrg  string
+	lastOpts *tfe.VariableSetListOptions
+}
+
+func (m *mockVariableSetListService) List(_ context.Context, organization string, options *tfe.VariableSetListOptions) (*tfe.VariableSetList, error) {
+	m.lastOrg = organization
+	if options != nil {
+		copy := *options
+		m.lastOpts = &copy
+	}
+	return m.response, m.err
+}
+
+type mockVariableSetCreateService struct {
+	response    *tfe.VariableSet
+	err         error
+	lastOrg     string
+	lastOptions *tfe.VariableSetCreateOptions
+}
+
+func (m *mockVariableSetCreateService) Create(_ context.Context, organization string, options *tfe.VariableSetCreateOptions) (*tfe.VariableSet, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockStateVersionReadService struct {
+	response *tfe.StateVersion
+	err      error
+	lastID   string
+}
+
+func (m *mockStateVersionReadService) ReadCurrent(_ context.Context, workspaceID string) (*tfe.StateVersion, error) {
+	m.lastID = workspaceID
+	return m.response, m.err
+}
+
+type mockSSHKeyCreateService struct {
+	response    *tfe.SSHKey
+	err         error
+	lastOrg     string
+	lastOptions tfe.SSHKeyCreateOptions
+}
+
+func (m *mockSSHKeyCreateService) Create(_ context.Context, organization string, options tfe.SSHKeyCreateOptions) (*tfe.SSHKey, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockAccountReadService struct {
+	response *tfe.User
+	err      error
+}
+
+func (m *mockAccountReadService) ReadCurrent(_ context.Context) (*tfe.User, error) {
+	return m.response, m.err
+}
+
+type mockRunTaskCreateService struct {
+	response    *tfe.RunTask
+	err         error
+	lastOrg     string
+	lastOptions tfe.RunTaskCreateOptions
+}
+
+func (m *mockRunTaskCreateService) Create(_ context.Context, organization string, options tfe.RunTaskCreateOptions) (*tfe.RunTask, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRunTaskUpdateService struct {
+	response    *tfe.RunTask
+	err         error
+	lastID      string
+	lastOptions tfe.RunTaskUpdateOptions
+}
+
+func (m *mockRunTaskUpdateService) Update(_ context.Context, runTaskID string, options tfe.RunTaskUpdateOptions) (*tfe.RunTask, error) {
+	m.lastID = runTaskID
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRegistryProviderVersionCreateService struct {
+	response    *tfe.RegistryProviderVersion
+	err         error
+	lastID      tfe.RegistryProviderID
+	lastOptions tfe.RegistryProviderVersionCreateOptions
+}
+
+func (m *mockRegistryProviderVersionCreateService) Create(_ context.Context, providerID tfe.RegistryProviderID, options tfe.RegistryProviderVersionCreateOptions) (*tfe.RegistryProviderVersion, error) {
+	m.lastID = providerID
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockRegistryProviderVersionDeleteService struct {
+	err    error
+	lastID tfe.RegistryProviderVersionID
+}
+
+func (m *mockRegistryProviderVersionDeleteService) Delete(_ context.Context, versionID tfe.RegistryProviderVersionID) error {
+	m.lastID = versionID
+	return m.err
+}
+
+type mockCommentListService struct {
+	response *tfe.CommentList
+	err      error
+	lastID   string
+}
+
+func (m *mockCommentListService) List(_ context.Context, runID string) (*tfe.CommentList, error) {
+	m.lastID = runID
+	return m.response, m.err
+}
+
+type mockAgentPoolCreateService struct {
+	response    *tfe.AgentPool
+	err         error
+	lastOrg     string
+	lastOptions tfe.AgentPoolCreateOptions
+}
+
+func (m *mockAgentPoolCreateService) Create(_ context.Context, organization string, options tfe.AgentPoolCreateOptions) (*tfe.AgentPool, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockUserReadService struct {
+	response *tfe.User
+	err      error
+}
+
+func (m *mockUserReadService) ReadCurrent(_ context.Context) (*tfe.User, error) {
+	return m.response, m.err
+}
+
+type mockUserTokenListService struct {
+	response *tfe.UserTokenList
+	err      error
+	lastID   string
+}
+
+func (m *mockUserTokenListService) List(_ context.Context, userID string) (*tfe.UserTokenList, error) {
+	m.lastID = userID
+	return m.response, m.err
+}
+
+type mockSSHKeyDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockSSHKeyDeleteService) Delete(_ context.Context, sshKeyID string) error {
+	m.lastID = sshKeyID
+	return m.err
+}
+
+type mockOrganizationDeleteService struct {
+	err      error
+	lastName string
+}
+
+func (m *mockOrganizationDeleteService) Delete(_ context.Context, organization string) error {
+	m.lastName = organization
+	return m.err
+}
+
+type mockRunTaskDeleteReaderService struct {
+	readResponse *tfe.RunTask
+	readErr      error
+	deleteErr    error
+	lastReadID   string
+	lastDeleteID string
+}
+
+func (m *mockRunTaskDeleteReaderService) Read(_ context.Context, runTaskID string) (*tfe.RunTask, error) {
+	m.lastReadID = runTaskID
+	return m.readResponse, m.readErr
+}
+
+func (m *mockRunTaskDeleteReaderService) Delete(_ context.Context, runTaskID string) error {
+	m.lastDeleteID = runTaskID
+	return m.deleteErr
+}
+
+type mockAgentPoolDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockAgentPoolDeleteService) Delete(_ context.Context, agentPoolID string) error {
+	m.lastID = agentPoolID
+	return m.err
+}
+
+type mockNotificationDeleteService struct {
+	response *tfe.NotificationConfiguration
+	err      error
+	readErr  error
+	lastID   string
+	lastRead string
+}
+
+func (m *mockNotificationDeleteService) Delete(_ context.Context, notificationConfigurationID string) error {
+	m.lastID = notificationConfigurationID
+	return m.err
+}
+
+func (m *mockNotificationDeleteService) Read(_ context.Context, notificationConfigurationID string) (*tfe.NotificationConfiguration, error) {
+	m.lastRead = notificationConfigurationID
+	if m.response != nil {
+		return m.response, m.readErr
+	}
+	return &tfe.NotificationConfiguration{}, m.readErr
+}
+
+type mockAuditTrailTokenDeleteService struct {
+	err      error
+	lastOrg  string
+	lastOpts tfe.OrganizationTokenDeleteOptions
+}
+
+func (m *mockAuditTrailTokenDeleteService) DeleteWithOptions(_ context.Context, organization string, options tfe.OrganizationTokenDeleteOptions) error {
+	m.lastOrg = organization
+	m.lastOpts = options
+	return m.err
+}
+
+type mockOrganizationUpdateService struct {
+	response    *tfe.Organization
+	err         error
+	lastName    string
+	lastOptions tfe.OrganizationUpdateOptions
+}
+
+func (m *mockOrganizationUpdateService) Update(_ context.Context, organization string, options tfe.OrganizationUpdateOptions) (*tfe.Organization, error) {
+	m.lastName = organization
+	m.lastOptions = options
+	return m.response, m.err
+}
+
+type mockReservedTagKeyCreateService struct {
+	response    *tfe.ReservedTagKey
+	err         error
+	lastOrg     string
+	lastOptions tfe.ReservedTagKeyCreateOptions
+}
+
+func (m *mockReservedTagKeyCreateService) Create(_ context.Context, organization string, options tfe.ReservedTagKeyCreateOptions) (*tfe.ReservedTagKey, error) {
+	m.lastOrg = organization
+	m.lastOptions = options
+	return m.response, m.err
+}

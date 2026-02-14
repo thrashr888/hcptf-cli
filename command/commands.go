@@ -13,6 +13,18 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Context help commands (internal, for URL-like arg support)
+		"organization:context": func() (cli.Command, error) {
+			return &OrganizationContextCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"workspace:context": func() (cli.Command, error) {
+			return &WorkspaceContextCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// Authentication commands
 		"login": func() (cli.Command, error) {
 			return &LoginCommand{
@@ -769,7 +781,70 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Stack commands (orchestrate deployments across multiple workspaces)
+		// Stack parent command
+		"stack": func() (cli.Command, error) {
+			return &StackCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Stack configuration commands (new hierarchical namespace)
+		"stack configuration list": func() (cli.Command, error) {
+			return &StackConfigurationListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack configuration create": func() (cli.Command, error) {
+			return &StackConfigurationCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack configuration read": func() (cli.Command, error) {
+			return &StackConfigurationReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack configuration update": func() (cli.Command, error) {
+			return &StackConfigurationUpdateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack configuration delete": func() (cli.Command, error) {
+			return &StackConfigurationDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Stack deployment commands (new hierarchical namespace)
+		"stack deployment list": func() (cli.Command, error) {
+			return &StackDeploymentListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack deployment create": func() (cli.Command, error) {
+			return &StackDeploymentCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack deployment read": func() (cli.Command, error) {
+			return &StackDeploymentReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Stack state commands (new hierarchical namespace)
+		"stack state list": func() (cli.Command, error) {
+			return &StackStateListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack state read": func() (cli.Command, error) {
+			return &StackStateReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Stack commands (legacy, kept for backwards compatibility)
 		"stack list": func() (cli.Command, error) {
 			return &StackListCommand{
 				Meta: *meta,
@@ -796,7 +871,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Stack Configuration commands (manage stack configuration versions)
+		// Stack Configuration commands (legacy, kept for backwards compatibility)
 		"stackconfiguration list": func() (cli.Command, error) {
 			return &StackConfigurationListCommand{
 				Meta: *meta,
@@ -823,7 +898,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Stack Deployment commands (manage stack deployment runs)
+		// Stack Deployment commands (legacy, kept for backwards compatibility)
 		"stackdeployment list": func() (cli.Command, error) {
 			return &StackDeploymentListCommand{
 				Meta: *meta,
@@ -840,7 +915,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Stack State commands (view stack state and resources)
+		// Stack State commands (legacy, kept for backwards compatibility)
 		"stackstate list": func() (cli.Command, error) {
 			return &StackStateListCommand{
 				Meta: *meta,
@@ -852,7 +927,98 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Registry Module commands (publish and manage private modules)
+		// Registry parent command
+		"registry": func() (cli.Command, error) {
+			return &RegistryCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Registry Module commands (new hierarchical namespace)
+		"registry module list": func() (cli.Command, error) {
+			return &RegistryModuleListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry module create": func() (cli.Command, error) {
+			return &RegistryModuleCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry module read": func() (cli.Command, error) {
+			return &RegistryModuleReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry module delete": func() (cli.Command, error) {
+			return &RegistryModuleDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry module version create": func() (cli.Command, error) {
+			return &RegistryModuleCreateVersionCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry module version delete": func() (cli.Command, error) {
+			return &RegistryModuleDeleteVersionCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Registry Provider commands (new hierarchical namespace)
+		"registry provider list": func() (cli.Command, error) {
+			return &RegistryProviderListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider create": func() (cli.Command, error) {
+			return &RegistryProviderCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider read": func() (cli.Command, error) {
+			return &RegistryProviderReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider delete": func() (cli.Command, error) {
+			return &RegistryProviderDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider version create": func() (cli.Command, error) {
+			return &RegistryProviderVersionCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider version read": func() (cli.Command, error) {
+			return &RegistryProviderVersionReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider version delete": func() (cli.Command, error) {
+			return &RegistryProviderVersionDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider platform create": func() (cli.Command, error) {
+			return &RegistryProviderPlatformCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider platform read": func() (cli.Command, error) {
+			return &RegistryProviderPlatformReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"registry provider platform delete": func() (cli.Command, error) {
+			return &RegistryProviderPlatformDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Registry Module commands (legacy, kept for backwards compatibility)
 		"registrymodule list": func() (cli.Command, error) {
 			return &RegistryModuleListCommand{
 				Meta: *meta,
@@ -884,7 +1050,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Registry Provider commands (publish and manage private providers)
+		// Registry Provider commands (legacy, kept for backwards compatibility)
 		"registryprovider list": func() (cli.Command, error) {
 			return &RegistryProviderListCommand{
 				Meta: *meta,
@@ -906,7 +1072,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Registry Provider Version commands (manage provider versions)
+		// Registry Provider Version commands (legacy, kept for backwards compatibility)
 		"registryproviderversion create": func() (cli.Command, error) {
 			return &RegistryProviderVersionCreateCommand{
 				Meta: *meta,
@@ -923,7 +1089,7 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Registry Provider Platform commands (manage provider platform binaries)
+		// Registry Provider Platform commands (legacy, kept for backwards compatibility)
 		"registryproviderplatform create": func() (cli.Command, error) {
 			return &RegistryProviderPlatformCreateCommand{
 				Meta: *meta,

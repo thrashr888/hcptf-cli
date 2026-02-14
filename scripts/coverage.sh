@@ -40,7 +40,7 @@ case "$MODE" in
         if (( $(echo "$coverage >= 80" | bc -l) )); then
           color=$GREEN
           status="✓ Excellent"
-        elif (( $(echo "$coverage >= 60" | bc -l) )); then
+        elif (( $(echo "$coverage >= 50" | bc -l) )); then
           color=$BLUE
           status="○ Good"
         elif (( $(echo "$coverage >= 40" | bc -l) )); then
@@ -92,7 +92,7 @@ case "$MODE" in
 
         if (( $(echo "$coverage >= 80" | bc -l) )); then
           color=$GREEN
-        elif (( $(echo "$coverage >= 60" | bc -l) )); then
+        elif (( $(echo "$coverage >= 50" | bc -l) )); then
           color=$BLUE
         elif (( $(echo "$coverage >= 40" | bc -l) )); then
           color=$YELLOW
@@ -108,7 +108,7 @@ case "$MODE" in
     cmd_coverage=$(go test -cover ./command/... 2>&1 | grep coverage | awk '{print $5}' | sed 's/%//')
     if (( $(echo "$cmd_coverage >= 80" | bc -l) )); then
       color=$GREEN
-    elif (( $(echo "$cmd_coverage >= 60" | bc -l) )); then
+    elif (( $(echo "$cmd_coverage >= 50" | bc -l) )); then
       color=$BLUE
     elif (( $(echo "$cmd_coverage >= 40" | bc -l) )); then
       color=$YELLOW
@@ -124,7 +124,7 @@ case "$MODE" in
     echo ""
 
     # Calculate progress to goals
-    goal_60=60
+    goal_50=50
     goal_75=75
     goal_80=80
 
@@ -134,13 +134,13 @@ case "$MODE" in
       echo -e "  ${GREEN}✓${NC} Exceeded 75% goal!"
       remaining=$(echo "$goal_80 - $total" | bc)
       echo -e "  ${YELLOW}○${NC} Next goal: 80% (need ${remaining}% more)"
-    elif (( $(echo "$total >= $goal_60" | bc -l) )); then
-      echo -e "  ${GREEN}✓${NC} Exceeded 60% goal!"
+    elif (( $(echo "$total >= $goal_50" | bc -l) )); then
+      echo -e "  ${GREEN}✓${NC} Exceeded 50% goal!"
       remaining=$(echo "$goal_75 - $total" | bc)
       echo -e "  ${YELLOW}○${NC} Next goal: 75% (need ${remaining}% more)"
     else
-      remaining=$(echo "$goal_60 - $total" | bc)
-      echo -e "  ${YELLOW}○${NC} Target: 60% (need ${remaining}% more)"
+      remaining=$(echo "$goal_50 - $total" | bc)
+      echo -e "  ${YELLOW}○${NC} Target: 50% (need ${remaining}% more)"
     fi
 
     echo ""

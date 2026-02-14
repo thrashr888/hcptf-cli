@@ -3,13 +3,16 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // NotificationDeleteCommand is a command to delete a notification configuration
 type NotificationDeleteCommand struct {
 	Meta
-	id    string
-	force bool
+	id       string
+	force    bool
+	notifSvc notificationReadDeleter
 }
 
 // Run executes the notification delete command
@@ -36,15 +39,15 @@ func (c *NotificationDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Read notification configuration to get its name for confirmation
-	notification, err := client.NotificationConfigurations.Read(client.Context(), c.id)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading notification configuration: %s", err))
-		return 1
-	}
-
 	// Confirm deletion unless force flag is set
 	if !c.force {
+		// Read notification configuration to get its name for confirmation
+		notification, err := c.notificationService(client).Read(client.Context(), c.id)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading notification configuration: %s", err))
+			return 1
+		}
+
 		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete notification configuration '%s' (%s)? (yes/no): ", notification.Name, c.id))
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
@@ -58,14 +61,21 @@ func (c *NotificationDeleteCommand) Run(args []string) int {
 	}
 
 	// Delete notification configuration
-	err = client.NotificationConfigurations.Delete(client.Context(), c.id)
+	err = c.notificationService(client).Delete(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting notification configuration: %s", err))
 		return 1
 	}
 
-	c.Ui.Output(fmt.Sprintf("Notification configuration '%s' (%s) deleted successfully", notification.Name, c.id))
+	c.Ui.Output(fmt.Sprintf("Notification configuration '%s' deleted successfully", c.id))
 	return 0
+}
+
+func (c *NotificationDeleteCommand) notificationService(client *client.Client) notificationReadDeleter {
+	if c.notifSvc != nil {
+		return c.notifSvc
+	}
+	return client.NotificationConfigurations
 }
 
 // Help returns help text for the notification delete command

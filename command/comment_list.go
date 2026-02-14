@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // CommentListCommand is a command to list comments for a run
 type CommentListCommand struct {
 	Meta
-	runID  string
-	format string
+	runID      string
+	format     string
+	commentSvc commentLister
 }
 
 // Run executes the comment list command
@@ -39,14 +40,14 @@ func (c *CommentListCommand) Run(args []string) int {
 	}
 
 	// List comments for the run
-	comments, err := client.Comments.List(client.Context(), c.runID)
+	comments, err := c.commentService(client).List(client.Context(), c.runID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing comments: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(comments.Items) == 0 {
 		c.Ui.Output("No comments found for this run")
@@ -74,6 +75,13 @@ func (c *CommentListCommand) Run(args []string) int {
 
 	formatter.Table(headers, rows)
 	return 0
+}
+
+func (c *CommentListCommand) commentService(client *client.Client) commentLister {
+	if c.commentSvc != nil {
+		return c.commentSvc
+	}
+	return client.Comments
 }
 
 // Help returns help text for the comment list command

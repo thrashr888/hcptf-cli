@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // UserTokenListCommand is a command to list user tokens
 type UserTokenListCommand struct {
 	Meta
-	format string
+	format       string
+	userSvc      userReader
+	userTokenSvc userTokenLister
 }
 
 // Run executes the user token list command
@@ -30,21 +32,21 @@ func (c *UserTokenListCommand) Run(args []string) int {
 	}
 
 	// Get current user
-	user, err := client.Users.ReadCurrent(client.Context())
+	user, err := c.userService(client).ReadCurrent(client.Context())
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading current user: %s", err))
 		return 1
 	}
 
 	// List user tokens
-	tokens, err := client.UserTokens.List(client.Context(), user.ID)
+	tokens, err := c.userTokenService(client).List(client.Context(), user.ID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing user tokens: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(tokens.Items) == 0 {
 		c.Ui.Output("No user tokens found")
@@ -82,6 +84,20 @@ func (c *UserTokenListCommand) Run(args []string) int {
 
 	formatter.Table(headers, rows)
 	return 0
+}
+
+func (c *UserTokenListCommand) userService(client *client.Client) userReader {
+	if c.userSvc != nil {
+		return c.userSvc
+	}
+	return client.Users
+}
+
+func (c *UserTokenListCommand) userTokenService(client *client.Client) userTokenLister {
+	if c.userTokenSvc != nil {
+		return c.userTokenSvc
+	}
+	return client.UserTokens
 }
 
 // Help returns help text for the user token list command

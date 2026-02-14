@@ -92,8 +92,8 @@ func TestPolicySetAddPolicySynopsis(t *testing.T) {
 
 func TestPolicySetAddPolicyFlagParsing(t *testing.T) {
 	tests := []struct {
-		name               string
-		args               []string
+		name                string
+		args                []string
 		expectedPolicySetID string
 		expectedPolicyID    string
 	}{

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // PolicySetListCommand is a command to list policy sets
@@ -13,6 +13,7 @@ type PolicySetListCommand struct {
 	Meta
 	organization string
 	format       string
+	policySetSvc policySetLister
 }
 
 // Run executes the policy set list command
@@ -41,7 +42,7 @@ func (c *PolicySetListCommand) Run(args []string) int {
 	}
 
 	// List policy sets
-	policySets, err := client.PolicySets.List(client.Context(), c.organization, &tfe.PolicySetListOptions{
+	policySets, err := c.policySetService(client).List(client.Context(), c.organization, &tfe.PolicySetListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
@@ -52,7 +53,7 @@ func (c *PolicySetListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(policySets.Items) == 0 {
 		c.Ui.Output("No policy sets found")
@@ -102,6 +103,13 @@ Example:
   hcptf policyset list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *PolicySetListCommand) policySetService(client *client.Client) policySetLister {
+	if c.policySetSvc != nil {
+		return c.policySetSvc
+	}
+	return client.PolicySets
 }
 
 // Synopsis returns a short synopsis for the policy set list command

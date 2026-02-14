@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // StackReadCommand is a command to read stack details
@@ -46,7 +44,7 @@ func (c *StackReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":                 stack.ID,

@@ -5,17 +5,18 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // VariableSetCreateCommand is a command to create a variable set
 type VariableSetCreateCommand struct {
 	Meta
-	organization string
-	name         string
-	description  string
-	global       bool
-	format       string
+	organization   string
+	name           string
+	description    string
+	global         bool
+	format         string
+	variableSetSvc variableSetCreator
 }
 
 // Run executes the variable set create command
@@ -62,14 +63,14 @@ func (c *VariableSetCreateCommand) Run(args []string) int {
 		options.Description = tfe.String(c.description)
 	}
 
-	variableSet, err := client.VariableSets.Create(client.Context(), c.organization, &options)
+	variableSet, err := c.variableSetService(client).Create(client.Context(), c.organization, &options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating variable set: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Variable set '%s' created successfully", variableSet.Name))
 
@@ -83,6 +84,13 @@ func (c *VariableSetCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *VariableSetCreateCommand) variableSetService(client *client.Client) variableSetCreator {
+	if c.variableSetSvc != nil {
+		return c.variableSetSvc
+	}
+	return client.VariableSets
 }
 
 // Help returns help text for the variable set create command

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // RunTaskListCommand is a command to list run tasks
@@ -52,7 +51,7 @@ func (c *RunTaskListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(runTasks.Items) == 0 {
 		c.Ui.Output("No run tasks found")

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ProjectUpdateCommand is a command to update a project
@@ -62,7 +61,7 @@ func (c *ProjectUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Project '%s' updated successfully", project.Name))
 

@@ -5,30 +5,36 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ConfigVersionReadCommand is a command to read configuration version details
 type ConfigVersionReadCommand struct {
 	Meta
 	configVersionID string
+	runID           string
 	format          string
 	configVerSvc    configVersionReader
+	runSvc          runReader
 }
 
 // Run executes the configversion read command
 func (c *ConfigVersionReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("configversion read")
-	flags.StringVar(&c.configVersionID, "id", "", "Configuration version ID (required)")
+	flags.StringVar(&c.configVersionID, "id", "", "Configuration version ID or Run ID")
+	flags.StringVar(&c.runID, "run-id", "", "Run ID (alternative to -id)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
-	// Validate required flags
-	if c.configVersionID == "" {
-		c.Ui.Error("Error: -id flag is required")
+	// Validate required flags - need either configVersionID or runID
+	id := c.configVersionID
+	if id == "" {
+		id = c.runID
+	}
+	if id == "" {
+		c.Ui.Error("Error: -id or -run-id flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -40,15 +46,30 @@ func (c *ConfigVersionReadCommand) Run(args []string) int {
 		return 1
 	}
 
+	// If ID starts with "run-", get the config version ID from the run
+	configVersionID := id
+	if strings.HasPrefix(id, "run-") {
+		run, err := c.runService(client).Read(client.Context(), id)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+			return 1
+		}
+		if run.ConfigurationVersion == nil {
+			c.Ui.Error("Error: run has no configuration version")
+			return 1
+		}
+		configVersionID = run.ConfigurationVersion.ID
+	}
+
 	// Read configuration version
-	configVersion, err := c.configVersionService(client).Read(client.Context(), c.configVersionID)
+	configVersion, err := c.configVersionService(client).Read(client.Context(), configVersionID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading configuration version: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":           configVersion.ID,
@@ -75,22 +96,39 @@ func (c *ConfigVersionReadCommand) configVersionService(client *client.Client) c
 	return client.ConfigurationVersions
 }
 
+func (c *ConfigVersionReadCommand) runService(client *client.Client) runReader {
+	if c.runSvc != nil {
+		return c.runSvc
+	}
+	return client.Runs
+}
+
 // Help returns help text for the configversion read command
 func (c *ConfigVersionReadCommand) Help() string {
 	helpText := `
 Usage: hcptf configversion read [options]
 
-  Show configuration version details.
+  Show configuration version details. You can provide either a configuration
+  version ID or a run ID. If you provide a run ID, the command will automatically
+  look up the associated configuration version.
 
 Options:
 
-  -id=<config-id>   Configuration version ID (required)
+  -id=<id>          Configuration version ID (cv-xxx) or Run ID (run-xxx) (required)
+  -run-id=<id>      Run ID (alternative to -id)
   -output=<format>  Output format: table (default) or json
 
-Example:
+Examples:
 
+  # Using configuration version ID
   hcptf configversion read -id=cv-abc123
-  hcptf configversion read -id=cv-abc123 -output=json
+
+  # Using run ID
+  hcptf configversion read -id=run-xyz789
+  hcptf configversion read -run-id=run-xyz789
+
+  # URL-style
+  hcptf my-org my-workspace runs run-xyz789 configversion
 `
 	return strings.TrimSpace(helpText)
 }

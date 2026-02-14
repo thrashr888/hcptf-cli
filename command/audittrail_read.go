@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AuditTrailReadCommand is a command to read audit trail event details
@@ -82,7 +81,7 @@ func (c *AuditTrailReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":        auditTrail.ID,

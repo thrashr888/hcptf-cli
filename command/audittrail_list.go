@@ -6,7 +6,6 @@ import (
 	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AuditTrailListCommand is a command to list audit trail events
@@ -76,7 +75,7 @@ func (c *AuditTrailListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(auditTrails.Items) == 0 {
 		c.Ui.Output("No audit trail events found")

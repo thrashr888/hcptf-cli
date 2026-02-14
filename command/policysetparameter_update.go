@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicySetParameterUpdateCommand is a command to update a policy set parameter
@@ -90,7 +89,7 @@ func (c *PolicySetParameterUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Policy set parameter '%s' updated successfully", parameter.Key))
 

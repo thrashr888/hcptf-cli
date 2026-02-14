@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // NotificationListCommand is a command to list notification configurations
@@ -67,7 +66,7 @@ func (c *NotificationListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(notifications.Items) == 0 {
 		c.Ui.Output("No notification configurations found")

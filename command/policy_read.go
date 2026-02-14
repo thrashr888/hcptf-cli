@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // PolicyReadCommand is a command to read policy details
 type PolicyReadCommand struct {
 	Meta
-	policyID string
-	format   string
+	policyID    string
+	format      string
+	policySvc   policyReader
+	downloadSvc policyDownloader
 }
 
 // Run executes the policy read command
@@ -39,21 +41,21 @@ func (c *PolicyReadCommand) Run(args []string) int {
 	}
 
 	// Read policy
-	policy, err := client.Policies.Read(client.Context(), c.policyID)
+	policy, err := c.policyService(client).Read(client.Context(), c.policyID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading policy: %s", err))
 		return 1
 	}
 
 	// Download policy content
-	policyContent, err := client.Policies.Download(client.Context(), c.policyID)
+	policyContent, err := c.policyDownloadService(client).Download(client.Context(), c.policyID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error downloading policy content: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":               policy.ID,
@@ -87,6 +89,20 @@ Example:
   hcptf policy read -id=pol-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *PolicyReadCommand) policyService(client *client.Client) policyReader {
+	if c.policySvc != nil {
+		return c.policySvc
+	}
+	return client.Policies
+}
+
+func (c *PolicyReadCommand) policyDownloadService(client *client.Client) policyDownloader {
+	if c.downloadSvc != nil {
+		return c.downloadSvc
+	}
+	return client.Policies
 }
 
 // Synopsis returns a short synopsis for the policy read command

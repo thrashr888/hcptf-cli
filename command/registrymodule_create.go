@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 type RegistryModuleCreateCommand struct {
@@ -79,7 +78,7 @@ func (c *RegistryModuleCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Registry module '%s/%s' created successfully", module.Name, module.Provider))
 

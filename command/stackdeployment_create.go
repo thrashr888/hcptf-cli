@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // StackDeploymentCreateCommand is a command to create/trigger a stack deployment
@@ -51,7 +49,7 @@ func (c *StackDeploymentCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Stack deployment triggered for stack '%s'", c.stackID))
 	c.Ui.Output("Fetching latest configuration from VCS...")

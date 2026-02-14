@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 type RegistryProviderVersionDeleteCommand struct {
@@ -13,6 +14,7 @@ type RegistryProviderVersionDeleteCommand struct {
 	name         string
 	namespace    string
 	version      string
+	versionSvc   registryProviderVersionDeleter
 }
 
 // Run executes the registry provider version delete command
@@ -69,7 +71,7 @@ func (c *RegistryProviderVersionDeleteCommand) Run(args []string) int {
 		Version: c.version,
 	}
 
-	err = client.RegistryProviderVersions.Delete(client.Context(), versionID)
+	err = c.versionService(client).Delete(client.Context(), versionID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting provider version: %s", err))
 		return 1
@@ -77,6 +79,13 @@ func (c *RegistryProviderVersionDeleteCommand) Run(args []string) int {
 
 	c.Ui.Output(fmt.Sprintf("Provider version '%s/%s:%s' deleted successfully", c.namespace, c.name, c.version))
 	return 0
+}
+
+func (c *RegistryProviderVersionDeleteCommand) versionService(client *client.Client) registryProviderVersionDeleter {
+	if c.versionSvc != nil {
+		return c.versionSvc
+	}
+	return client.RegistryProviderVersions
 }
 
 // Help returns help text for the registry provider version delete command

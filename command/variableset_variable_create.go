@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // VariableSetVariableCreateCommand is a command to add a variable to a variable set
@@ -90,7 +89,7 @@ func (c *VariableSetVariableCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Variable '%s' created successfully in variable set", variable.Key))
 

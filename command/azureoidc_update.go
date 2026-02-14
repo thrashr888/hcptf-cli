@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AzureoidcUpdateCommand is a command to update an Azure OIDC configuration
@@ -68,7 +67,7 @@ func (c *AzureoidcUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Azure OIDC configuration '%s' updated successfully", config.ID))
 

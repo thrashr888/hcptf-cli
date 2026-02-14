@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 type RegistryProviderVersionCreateCommand struct {
@@ -17,6 +17,7 @@ type RegistryProviderVersionCreateCommand struct {
 	keyID        string
 	protocols    string
 	format       string
+	versionSvc   registryProviderVersionCreator
 }
 
 // Run executes the registry provider version create command
@@ -88,14 +89,14 @@ func (c *RegistryProviderVersionCreateCommand) Run(args []string) int {
 		Protocols: protocolList,
 	}
 
-	providerVersion, err := client.RegistryProviderVersions.Create(client.Context(), providerID, options)
+	providerVersion, err := c.versionService(client).Create(client.Context(), providerID, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating provider version: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Provider version '%s' created successfully", providerVersion.Version))
 	c.Ui.Output("\nNext steps:")
@@ -121,6 +122,13 @@ func (c *RegistryProviderVersionCreateCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *RegistryProviderVersionCreateCommand) versionService(client *client.Client) registryProviderVersionCreator {
+	if c.versionSvc != nil {
+		return c.versionSvc
+	}
+	return client.RegistryProviderVersions
 }
 
 // Help returns help text for the registry provider version create command

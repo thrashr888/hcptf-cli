@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AgentPoolUpdateCommand is a command to update an agent pool
@@ -86,7 +85,7 @@ func (c *AgentPoolUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Agent pool '%s' updated successfully", agentPool.Name))
 

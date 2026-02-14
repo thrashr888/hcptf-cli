@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // NotificationVerifyCommand is a command to verify a notification configuration
@@ -46,7 +44,7 @@ func (c *NotificationVerifyCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	c.Ui.Output(fmt.Sprintf("Notification configuration '%s' verified successfully", notification.Name))
 	c.Ui.Output("A test notification has been sent to the configured destination.")

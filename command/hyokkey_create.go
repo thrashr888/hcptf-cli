@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // HYOKKeyCreateCommand is a command to check for new HYOK customer key versions
@@ -49,7 +48,7 @@ func (c *HYOKKeyCreateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(keyVersions.Items) == 0 {
 		c.Ui.Output("No key versions found")

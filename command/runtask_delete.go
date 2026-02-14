@@ -3,13 +3,16 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // RunTaskDeleteCommand is a command to delete a run task
 type RunTaskDeleteCommand struct {
 	Meta
-	id    string
-	force bool
+	id         string
+	force      bool
+	runTaskSvc runTaskDeleterReader
 }
 
 // Run executes the run task delete command
@@ -37,7 +40,7 @@ func (c *RunTaskDeleteCommand) Run(args []string) int {
 	}
 
 	// Read run task to get its name for confirmation
-	runTask, err := client.RunTasks.Read(client.Context(), c.id)
+	runTask, err := c.runTaskService(client).Read(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading run task: %s", err))
 		return 1
@@ -58,7 +61,7 @@ func (c *RunTaskDeleteCommand) Run(args []string) int {
 	}
 
 	// Delete run task
-	err = client.RunTasks.Delete(client.Context(), c.id)
+	err = c.runTaskService(client).Delete(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting run task: %s", err))
 		return 1
@@ -66,6 +69,13 @@ func (c *RunTaskDeleteCommand) Run(args []string) int {
 
 	c.Ui.Output(fmt.Sprintf("Run task '%s' (%s) deleted successfully", runTask.Name, c.id))
 	return 0
+}
+
+func (c *RunTaskDeleteCommand) runTaskService(client *client.Client) runTaskDeleterReader {
+	if c.runTaskSvc != nil {
+		return c.runTaskSvc
+	}
+	return client.RunTasks
 }
 
 // Help returns help text for the run task delete command

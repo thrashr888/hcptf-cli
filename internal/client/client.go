@@ -15,6 +15,7 @@ type Client struct {
 	*tfe.Client
 	config  *config.Config
 	address string
+	token   string
 }
 
 // New creates a new API client
@@ -49,6 +50,7 @@ func New(cfg *config.Config) (*Client, error) {
 		Client:  tfeClient,
 		config:  cfg,
 		address: address,
+		token:   token,
 	}, nil
 }
 
@@ -61,4 +63,14 @@ func (c *Client) GetAddress() string {
 // Commands can override this if they need cancellation or timeouts
 func (c *Client) Context() context.Context {
 	return context.Background()
+}
+
+// Token returns the authentication token being used
+func (c *Client) Token() string {
+	return c.token
+}
+
+// BaseURL returns the base API URL
+func (c *Client) BaseURL() string {
+	return c.address
 }

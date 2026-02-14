@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // StateListCommand is a command to list state versions
@@ -48,20 +47,13 @@ func (c *StateListCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Get workspace first
-	ws, err := client.Workspaces.Read(client.Context(), c.organization, c.workspace)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading workspace: %s", err))
-		return 1
-	}
-
 	// List state versions
 	stateVersions, err := client.StateVersions.List(client.Context(), &tfe.StateVersionListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 50,
 		},
 		Organization: c.organization,
-		Workspace:    ws.ID,
+		Workspace:    c.workspace,
 	})
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing state versions: %s", err))
@@ -69,7 +61,7 @@ func (c *StateListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(stateVersions.Items) == 0 {
 		c.Ui.Output("No state versions found")

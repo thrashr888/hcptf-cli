@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // ProjectReadCommand is a command to read project details
 type ProjectReadCommand struct {
 	Meta
-	projectID string
-	format    string
+	projectID  string
+	format     string
+	projectSvc projectReader
 }
 
 // Run executes the project read command
@@ -39,14 +40,14 @@ func (c *ProjectReadCommand) Run(args []string) int {
 	}
 
 	// Read project
-	project, err := client.Projects.Read(client.Context(), c.projectID)
+	project, err := c.projectService(client).Read(client.Context(), c.projectID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading project: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":          project.ID,
@@ -80,6 +81,13 @@ Example:
   hcptf project read -id=prj-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *ProjectReadCommand) projectService(client *client.Client) projectReader {
+	if c.projectSvc != nil {
+		return c.projectSvc
+	}
+	return client.Projects
 }
 
 // Synopsis returns a short synopsis for the project read command

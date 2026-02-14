@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicySetOutcomeListCommand is a command to list policy set outcomes for a policy evaluation
@@ -51,7 +50,7 @@ func (c *PolicySetOutcomeListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(policySetOutcomes.Items) == 0 {
 		c.Ui.Output("No policy set outcomes found")

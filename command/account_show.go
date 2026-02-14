@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // AccountShowCommand is a command to show current account details
 type AccountShowCommand struct {
 	Meta
-	format string
+	format     string
+	accountSvc accountReader
 }
 
 // Run executes the account show command
@@ -30,14 +31,14 @@ func (c *AccountShowCommand) Run(args []string) int {
 	}
 
 	// Get current account details (using Users API)
-	account, err := client.Users.ReadCurrent(client.Context())
+	account, err := c.accountService(client).ReadCurrent(client.Context())
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading account: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":               account.ID,
@@ -55,6 +56,13 @@ func (c *AccountShowCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 	return 0
+}
+
+func (c *AccountShowCommand) accountService(client *client.Client) accountReader {
+	if c.accountSvc != nil {
+		return c.accountSvc
+	}
+	return client.Users
 }
 
 // Help returns help text for the account show command

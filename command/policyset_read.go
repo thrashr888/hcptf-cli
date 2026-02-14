@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // PolicySetReadCommand is a command to read policy set details
 type PolicySetReadCommand struct {
 	Meta
-	id     string
-	format string
+	id           string
+	format       string
+	policySetSvc policySetReader
 }
 
 // Run executes the policy set read command
@@ -39,14 +40,14 @@ func (c *PolicySetReadCommand) Run(args []string) int {
 	}
 
 	// Read policy set
-	policySet, err := client.PolicySets.Read(client.Context(), c.id)
+	policySet, err := c.policySetService(client).Read(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading policy set: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":                policySet.ID,
@@ -86,6 +87,13 @@ Example:
   hcptf policyset read -id=polset-12345 -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *PolicySetReadCommand) policySetService(client *client.Client) policySetReader {
+	if c.policySetSvc != nil {
+		return c.policySetSvc
+	}
+	return client.PolicySets
 }
 
 // Synopsis returns a short synopsis for the policy set read command

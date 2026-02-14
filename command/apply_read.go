@@ -5,30 +5,36 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ApplyReadCommand is a command to read apply details
 type ApplyReadCommand struct {
 	Meta
 	applyID  string
+	runID    string
 	format   string
 	applySvc applyReader
+	runSvc   runReader
 }
 
 // Run executes the apply read command
 func (c *ApplyReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("apply read")
-	flags.StringVar(&c.applyID, "id", "", "Apply ID (required)")
+	flags.StringVar(&c.applyID, "id", "", "Apply ID or Run ID")
+	flags.StringVar(&c.runID, "run-id", "", "Run ID (alternative to -id)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
-	// Validate required flags
-	if c.applyID == "" {
-		c.Ui.Error("Error: -id flag is required")
+	// Validate required flags - need either applyID or runID
+	id := c.applyID
+	if id == "" {
+		id = c.runID
+	}
+	if id == "" {
+		c.Ui.Error("Error: -id or -run-id flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -40,15 +46,30 @@ func (c *ApplyReadCommand) Run(args []string) int {
 		return 1
 	}
 
+	// If ID starts with "run-", get the apply ID from the run
+	applyID := id
+	if strings.HasPrefix(id, "run-") {
+		run, err := c.runService(client).Read(client.Context(), id)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+			return 1
+		}
+		if run.Apply == nil {
+			c.Ui.Error("Error: run has no apply (may not have been applied yet)")
+			return 1
+		}
+		applyID = run.Apply.ID
+	}
+
 	// Read apply
-	apply, err := c.applyService(client).Read(client.Context(), c.applyID)
+	apply, err := c.applyService(client).Read(client.Context(), applyID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading apply: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":                   apply.ID,
@@ -91,19 +112,36 @@ func (c *ApplyReadCommand) Help() string {
 	helpText := `
 Usage: hcptf apply read [options]
 
-  Show apply details.
+  Show apply details. You can provide either an apply ID or a run ID.
+  If you provide a run ID, the command will automatically look up the
+  associated apply.
 
 Options:
 
-  -id=<apply-id>    Apply ID (required)
+  -id=<id>          Apply ID (apply-xxx) or Run ID (run-xxx) (required)
+  -run-id=<id>      Run ID (alternative to -id)
   -output=<format>  Output format: table (default) or json
 
-Example:
+Examples:
 
+  # Using apply ID
   hcptf apply read -id=apply-abc123
-  hcptf apply read -id=apply-abc123 -output=json
+
+  # Using run ID
+  hcptf apply read -id=run-xyz789
+  hcptf apply read -run-id=run-xyz789
+
+  # URL-style
+  hcptf my-org my-workspace runs run-xyz789 apply read
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *ApplyReadCommand) runService(client *client.Client) runReader {
+	if c.runSvc != nil {
+		return c.runSvc
+	}
+	return client.Runs
 }
 
 // Synopsis returns a short synopsis for the apply read command

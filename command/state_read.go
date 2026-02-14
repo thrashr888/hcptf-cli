@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // StateReadCommand is a command to read state version details
@@ -12,6 +12,7 @@ type StateReadCommand struct {
 	Meta
 	stateVersionID string
 	format         string
+	stateSvc       stateVersionReader
 }
 
 // Run executes the state read command
@@ -39,14 +40,14 @@ func (c *StateReadCommand) Run(args []string) int {
 	}
 
 	// Read state version
-	stateVersion, err := client.StateVersions.ReadCurrent(client.Context(), c.stateVersionID)
+	stateVersion, err := c.stateService(client).ReadCurrent(client.Context(), c.stateVersionID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading state version: %s", err))
 		return 1
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	data := map[string]interface{}{
 		"ID":                 stateVersion.ID,
@@ -87,6 +88,13 @@ Example:
   hcptf state read -id=sv-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)
+}
+
+func (c *StateReadCommand) stateService(client *client.Client) stateVersionReader {
+	if c.stateSvc != nil {
+		return c.stateSvc
+	}
+	return client.StateVersions
 }
 
 // Synopsis returns a short synopsis for the state read command

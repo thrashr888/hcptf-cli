@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // OrganizationTokenReadCommand is a command to read an organization token
@@ -47,7 +45,7 @@ func (c *OrganizationTokenReadCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if token == nil {
 		c.Ui.Output("No organization token found")

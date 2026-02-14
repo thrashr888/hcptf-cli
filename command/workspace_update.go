@@ -6,7 +6,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // WorkspaceUpdateCommand is a command to update a workspace
@@ -92,9 +91,11 @@ func (c *WorkspaceUpdateCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("Workspace '%s' updated successfully", workspace.Name))
+	if c.format != "json" {
+		c.Ui.Output(fmt.Sprintf("Workspace '%s' updated successfully", workspace.Name))
+	}
 
 	// Show workspace details
 	data := map[string]interface{}{

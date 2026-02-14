@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // ReservedTagKeyListCommand is a command to list reserved tag keys
@@ -52,7 +51,7 @@ func (c *ReservedTagKeyListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(keys.Items) == 0 {
 		c.Ui.Output("No reserved tag keys found")

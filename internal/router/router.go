@@ -24,6 +24,8 @@ func NewRouter(client *tfe.Client) *Router {
 //   - "myorg workspaces" -> ["workspace", "list", "-org=myorg"]
 //   - "myorg myworkspace" -> ["workspace", "read", "-org=myorg", "-workspace=myworkspace"]
 //   - "myorg myworkspace runs list" -> ["run", "list", "-org=myorg", "-workspace=myworkspace"]
+//   - "myorg -h" -> ["organization:context", "-org=myorg"]
+//   - "myorg myworkspace -h" -> ["workspace:context", "-org=myorg", "-workspace=myworkspace"]
 func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	// If no args or first arg starts with "-", use default routing
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
@@ -38,9 +40,17 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	// URL-like pattern detected
 	org := args[0]
 
-	// Just org: show org details
+	// Check if help is requested at any position
+	hasHelp := r.hasHelpFlag(args)
+
+	// Just org: show org details or org context help
 	if len(args) == 1 {
 		return []string{"organization", "show", "-name=" + org}, nil
+	}
+
+	// org -h: show org context
+	if len(args) == 2 && hasHelp {
+		return []string{"organization:context", "-org=" + org}, nil
 	}
 
 	// Check for resource type as second arg
@@ -73,10 +83,56 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 		return []string{"workspace", "read", "-org=" + org, "-name=" + workspace}, nil
 	}
 
-	// 3+ args: org, workspace, resource
+	// org workspace -h: show workspace context
+	if len(args) == 3 && hasHelp && !r.isResourceKeyword(args[1]) {
+		workspace := args[1]
+		return []string{"workspace:context", "-org=" + org, "-workspace=" + workspace}, nil
+	}
+
+	// 3+ args: org, workspace, resource/run-id
 	if len(args) >= 3 {
 		workspace := args[1]
 		third := args[2]
+
+		// Check if third arg is a run ID (format: run-xxx)
+		if strings.HasPrefix(third, "run-") {
+			runID := third
+			action := "show"
+			if len(args) >= 4 {
+				action = args[3]
+				// Special case: plan, logs, and apply subcommands
+				if action == "plan" {
+					return []string{"plan", "read", "-id=" + runID}, nil
+				}
+				if action == "logs" || action == "planlogs" {
+					return []string{"plan", "logs", "-id=" + runID}, nil
+				}
+				if action == "applylogs" {
+					return []string{"apply", "logs", "-id=" + runID}, nil
+				}
+				if action == "applyread" || action == "applydetails" {
+					return []string{"apply", "read", "-id=" + runID}, nil
+				}
+				// Sub-resource lists
+				if action == "comments" {
+					return []string{"comment", "list", "-run-id=" + runID}, nil
+				}
+				if action == "policychecks" {
+					return []string{"policycheck", "list", "-run-id=" + runID}, nil
+				}
+				// Workspace-level convenience shortcuts (when accessed via run)
+				if action == "state" || action == "stateversions" {
+					return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+				}
+				if action == "outputs" {
+					return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+				}
+				if action == "configversion" {
+					return []string{"configversion", "read", "-run-id=" + runID}, nil
+				}
+			}
+			return []string{"run", action, "-id=" + runID}, nil
+		}
 
 		switch third {
 		case "runs":
@@ -89,6 +145,37 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 				action := "show"
 				if len(args) >= 5 {
 					action = args[4]
+					// Special case: plan, logs, and apply subcommands
+					if action == "plan" {
+						return []string{"plan", "read", "-id=" + runID}, nil
+					}
+					if action == "logs" || action == "planlogs" {
+						return []string{"plan", "logs", "-id=" + runID}, nil
+					}
+					if action == "applylogs" {
+						return []string{"apply", "logs", "-id=" + runID}, nil
+					}
+					if action == "applyread" || action == "applydetails" {
+						return []string{"apply", "read", "-id=" + runID}, nil
+					}
+					// Sub-resource lists
+					if action == "comments" {
+						return []string{"comment", "list", "-run-id=" + runID}, nil
+					}
+					if action == "policychecks" {
+						return []string{"policycheck", "list", "-run-id=" + runID}, nil
+					}
+					// Workspace-level convenience shortcuts (when accessed via run)
+					if action == "state" || action == "stateversions" {
+						return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+					}
+					if action == "outputs" {
+						return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+					}
+					if action == "configversion" {
+						// Show the config version used by this run
+						return []string{"configversion", "read", "-run-id=" + runID}, nil
+					}
 				}
 				return []string{"run", action, "-id=" + runID}, nil
 			}
@@ -102,6 +189,26 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 			}
 			if len(args) == 4 && args[3] == "outputs" {
 				return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "resources":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"workspaceresource", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "assessments":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "changerequests":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"changerequest", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "configversions":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"configversion", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			}
+		case "tags":
+			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
+				return []string{"workspacetag", "list", "-org=" + org, "-workspace=" + workspace}, nil
 			}
 		}
 	}
@@ -118,7 +225,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"state", "policy", "policyset", "sshkey", "notification",
 		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
 		"runtrigger", "plan", "apply", "configversion", "teamaccess",
-		"projectteamaccess", "registrymodule", "registryprovider",
+		"projectteamaccess", "registry", "registrymodule", "registryprovider",
 		"registryproviderversion", "registryproviderplatform", "gpgkey",
 		"stack", "stackconfiguration", "stackdeployment", "stackstate",
 		"audittrail", "audittrailtoken", "organizationtoken", "usertoken",
@@ -128,7 +235,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"awsoidc", "azureoidc", "gcpoidc", "vaultoidc",
 		"workspaceresource", "workspacetag", "queryrun", "queryworkspace",
 		"changerequest", "assessmentresult", "hyok", "hyokkey",
-		"vcsevent", "planexport", "agent",
+		"vcsevent", "planexport", "agent", "explorer",
 	}
 
 	for _, cmd := range knownCommands {
@@ -163,4 +270,29 @@ func (r *Router) ValidateWorkspace(ctx context.Context, org, workspace string) e
 		return fmt.Errorf("workspace %q not found in organization %q: %w", workspace, org, err)
 	}
 	return nil
+}
+
+// hasHelpFlag checks if help flag is present in args
+func (r *Router) hasHelpFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" || arg == "-help" {
+			return true
+		}
+	}
+	return false
+}
+
+// isResourceKeyword checks if arg is a resource type keyword
+func (r *Router) isResourceKeyword(arg string) bool {
+	resourceKeywords := []string{
+		"workspaces", "projects", "teams", "policies", "policysets",
+		"runs", "variables", "state", "resources", "assessments",
+		"changerequests", "configversions", "tags",
+	}
+	for _, keyword := range resourceKeywords {
+		if arg == keyword {
+			return true
+		}
+	}
+	return false
 }

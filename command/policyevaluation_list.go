@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
-	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // PolicyEvaluationListCommand is a command to list policy evaluations for a task stage
@@ -51,7 +50,7 @@ func (c *PolicyEvaluationListCommand) Run(args []string) int {
 	}
 
 	// Format output
-	formatter := output.NewFormatter(c.format)
+	formatter := c.Meta.NewFormatter(c.format)
 
 	if len(policyEvaluations.Items) == 0 {
 		c.Ui.Output("No policy evaluations found")
