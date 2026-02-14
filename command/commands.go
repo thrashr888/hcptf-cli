@@ -788,6 +788,33 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Stack management commands (new hierarchical namespace)
+		"stack list": func() (cli.Command, error) {
+			return &StackListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack create": func() (cli.Command, error) {
+			return &StackCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack read": func() (cli.Command, error) {
+			return &StackReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack update": func() (cli.Command, error) {
+			return &StackUpdateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"stack delete": func() (cli.Command, error) {
+			return &StackDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// Stack configuration commands (new hierarchical namespace)
 		"stack configuration list": func() (cli.Command, error) {
 			return &StackConfigurationListCommand{
@@ -839,89 +866,6 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 		"stack state read": func() (cli.Command, error) {
-			return &StackStateReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Stack commands (legacy, kept for backwards compatibility)
-		"stack list": func() (cli.Command, error) {
-			return &StackListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stack create": func() (cli.Command, error) {
-			return &StackCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stack read": func() (cli.Command, error) {
-			return &StackReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stack update": func() (cli.Command, error) {
-			return &StackUpdateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stack delete": func() (cli.Command, error) {
-			return &StackDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Stack Configuration commands (legacy, kept for backwards compatibility)
-		"stackconfiguration list": func() (cli.Command, error) {
-			return &StackConfigurationListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackconfiguration create": func() (cli.Command, error) {
-			return &StackConfigurationCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackconfiguration read": func() (cli.Command, error) {
-			return &StackConfigurationReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackconfiguration update": func() (cli.Command, error) {
-			return &StackConfigurationUpdateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackconfiguration delete": func() (cli.Command, error) {
-			return &StackConfigurationDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Stack Deployment commands (legacy, kept for backwards compatibility)
-		"stackdeployment list": func() (cli.Command, error) {
-			return &StackDeploymentListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackdeployment create": func() (cli.Command, error) {
-			return &StackDeploymentCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackdeployment read": func() (cli.Command, error) {
-			return &StackDeploymentReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Stack State commands (legacy, kept for backwards compatibility)
-		"stackstate list": func() (cli.Command, error) {
-			return &StackStateListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"stackstate read": func() (cli.Command, error) {
 			return &StackStateReadCommand{
 				Meta: *meta,
 			}, nil
@@ -1013,94 +957,6 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 		"registry provider platform delete": func() (cli.Command, error) {
-			return &RegistryProviderPlatformDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Registry Module commands (legacy, kept for backwards compatibility)
-		"registrymodule list": func() (cli.Command, error) {
-			return &RegistryModuleListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registrymodule create": func() (cli.Command, error) {
-			return &RegistryModuleCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registrymodule read": func() (cli.Command, error) {
-			return &RegistryModuleReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registrymodule delete": func() (cli.Command, error) {
-			return &RegistryModuleDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registrymodule create-version": func() (cli.Command, error) {
-			return &RegistryModuleCreateVersionCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registrymodule delete-version": func() (cli.Command, error) {
-			return &RegistryModuleDeleteVersionCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Registry Provider commands (legacy, kept for backwards compatibility)
-		"registryprovider list": func() (cli.Command, error) {
-			return &RegistryProviderListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryprovider create": func() (cli.Command, error) {
-			return &RegistryProviderCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryprovider read": func() (cli.Command, error) {
-			return &RegistryProviderReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryprovider delete": func() (cli.Command, error) {
-			return &RegistryProviderDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Registry Provider Version commands (legacy, kept for backwards compatibility)
-		"registryproviderversion create": func() (cli.Command, error) {
-			return &RegistryProviderVersionCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryproviderversion read": func() (cli.Command, error) {
-			return &RegistryProviderVersionReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryproviderversion delete": func() (cli.Command, error) {
-			return &RegistryProviderVersionDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
-		// Registry Provider Platform commands (legacy, kept for backwards compatibility)
-		"registryproviderplatform create": func() (cli.Command, error) {
-			return &RegistryProviderPlatformCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryproviderplatform read": func() (cli.Command, error) {
-			return &RegistryProviderPlatformReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"registryproviderplatform delete": func() (cli.Command, error) {
 			return &RegistryProviderPlatformDeleteCommand{
 				Meta: *meta,
 			}, nil
