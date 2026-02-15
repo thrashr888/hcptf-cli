@@ -310,17 +310,6 @@ func (c *AssessmentResultReadCommand) showDriftDetails(client *client.Client, js
 		index++
 	}
 
-	// Provide summary interpretation
-	c.Ui.Output(strings.Repeat("=", 80))
-	c.Ui.Output("INTERPRETATION:")
-	c.Ui.Output("These resources have changed outside of Terraform. This drift means the actual")
-	c.Ui.Output("infrastructure no longer matches your Terraform configuration.")
-	c.Ui.Output("")
-	c.Ui.Output("To resolve drift:")
-	c.Ui.Output("  1. Run 'terraform apply' to update infrastructure to match configuration")
-	c.Ui.Output("  2. Or update your Terraform configuration to match current infrastructure")
-	c.Ui.Output("  3. Or use 'terraform refresh' to update state without making changes")
-
 	// Show Terraform check results if available
 	if len(plan.Checks) > 0 {
 		c.Ui.Output("\n" + strings.Repeat("=", 80))
