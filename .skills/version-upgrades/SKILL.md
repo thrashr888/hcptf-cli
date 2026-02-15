@@ -1,12 +1,12 @@
 # Version Upgrade Skill
 
 ## Overview
-This skill helps upgrade Terraform, provider, and module versions in HCP Terraform workspaces. Keeping versions current improves security, performance, and access to new features.
+This skill helps upgrade Terraform, provider, module, and policy versions in HCP Terraform workspaces. Keeping versions current improves security, performance, and access to new features.
 
 ## Prerequisites
 - Authenticated with `hcptf` CLI
 - Write access to target workspace
-- VCS access if updating provider/module versions in code
+- VCS access if updating provider/module/policy versions in code
 
 ## Core Concepts
 
@@ -14,6 +14,7 @@ This skill helps upgrade Terraform, provider, and module versions in HCP Terrafo
 - **Terraform Version**: The Terraform CLI version used to run plans/applies
 - **Provider Versions**: API plugins defined in `required_providers` block
 - **Module Versions**: Reusable module versions called with `source` argument
+- **Policy Versions**: Sentinel/OPA policy sets for compliance and governance
 
 **Upgrade Approaches:**
 
@@ -22,10 +23,10 @@ This skill helps upgrade Terraform, provider, and module versions in HCP Terrafo
    - No code changes needed
    - Takes effect on next run
 
-2. **Provider/Module Versions** (Complex - Requires Code Changes):
+2. **Provider/Module/Policy Versions** (Complex - Requires Code Changes):
    - Get git repo info from workspace
    - Clone repository
-   - Edit Terraform files (versions.tf, main.tf, etc.)
+   - Edit Terraform files (versions.tf, main.tf, sentinel.hcl, etc.)
    - Update version constraints
    - Commit and push changes
    - VCS triggers new run automatically
@@ -123,6 +124,35 @@ hcptf registry module list -organization=<org>
 hcptf registry module read -organization=<org> -namespace=<org> -name=<module>
 ```
 
+**Public policy versions:**
+- Policy registry page: `https://registry.terraform.io/policies/<namespace>/<name>`
+  - Example: https://registry.terraform.io/policies/hashicorp/CIS-Policy-Set-for-AWS-Terraform
+  - Example: https://registry.terraform.io/policies/hashicorp/gcp-networking-terraform
+- Shows available versions, included policies, and modules
+- CLI commands:
+  ```bash
+  # List all available public policies
+  hcptf publicregistry policy list
+
+  # Get latest policy version and details
+  hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-AWS-Terraform
+
+  # Get specific policy version
+  hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-Azure-Terraform -version=1.0.0
+
+  # Check policy count, module count, included policies
+  hcptf publicregistry policy -name=hashicorp/gcp-networking-terraform
+  ```
+
+**Private policy versions:**
+```bash
+# List private policies (via policy sets)
+hcptf policyset list -organization=<org>
+
+# View policy set details
+hcptf policyset read -organization=<org> -id=<policy-set-id>
+```
+
 ### 3. Upgrade Terraform Version (Workspace Setting)
 
 ```bash
@@ -139,9 +169,9 @@ hcptf workspace update -org=<org> -name=<workspace> \
   -terraform-version="~>1.10.0"
 ```
 
-### 4. Upgrade Provider/Module Versions (Code Changes)
+### 4. Upgrade Provider/Module/Policy Versions (Code Changes)
 
-Provider and module versions are defined in code and require updating the Terraform files.
+Provider, module, and policy versions are defined in code and require updating the Terraform files.
 
 **Get code location:**
 
@@ -376,6 +406,53 @@ hcptf explorer query -org=my-org -type=modules \
   -fields=name,version,workspaces | grep cool-website
 ```
 
+### Scenario 5: Upgrade Policy Versions
+
+**Important**: Policy versions are managed in VCS-backed policy sets via sentinel.hcl configuration.
+
+```bash
+# 1. Find current policy sets in use
+hcptf policyset list -organization=my-org
+
+# 2. Check for newer policy versions
+hcptf publicregistry policy list | grep CIS
+
+# 3. Get details about latest policy version
+hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-AWS-Terraform
+# Shows: Version: 1.0.1, PolicyCount: 35, ModuleCount: 4
+
+# 4. Review policy changes
+# Visit: https://registry.terraform.io/policies/hashicorp/CIS-Policy-Set-for-AWS-Terraform
+# Review: Changelog, new policies, removed policies, parameter changes
+
+# 5. Get VCS info for policy set repository
+hcptf policyset read -organization=my-org -id=<policy-set-id>
+# Shows VCS repo and branch information
+
+# 6. Clone and update policy configuration
+git clone <policy-repo-url>
+cd policy-repo
+
+# Edit sentinel.hcl to update policy source version:
+# Change:
+#   policy "require-mfa" {
+#     source = "https://registry.terraform.io/v2/policies/hashicorp/CIS-Policy-Set-for-AWS-Terraform/1.0.0/policy-modules/..."
+#   }
+# To:
+#   policy "require-mfa" {
+#     source = "https://registry.terraform.io/v2/policies/hashicorp/CIS-Policy-Set-for-AWS-Terraform/1.0.1/policy-modules/..."
+#   }
+
+# 7. Commit and push
+git add sentinel.hcl
+git commit -m "Upgrade CIS AWS policy set from v1.0.0 to v1.0.1"
+git push origin main
+# Policy set updates automatically in HCP Terraform
+
+# 8. Verify policy set updated
+hcptf policyset read -organization=my-org -id=<policy-set-id>
+```
+
 ## Version Compatibility
 
 **Terraform version constraints:**
@@ -414,6 +491,13 @@ Follow same syntax. Use pessimistic constraints to avoid breaking changes:
 - Check module changelog and README
 - Test for interface changes (new required variables, removed outputs)
 
+**Policy version upgrades:**
+- Review policy changelog for new/removed checks
+- Check if new policies require additional parameters
+- Test in non-production workspace first
+- Consider impact on existing runs (advisory vs mandatory enforcement)
+- Verify policy modules are compatible
+
 ## Rollback
 
 **If upgrade fails:**
@@ -440,7 +524,11 @@ hcptf workspace update -org=<org> -name=<workspace> \
 - `hcptf publicregistry provider` - Get public provider info and latest version
 - `hcptf publicregistry provider versions` - List all available provider versions
 - `hcptf publicregistry module` - Get public module info and latest version
+- `hcptf publicregistry policy` - Get public policy info and latest version
+- `hcptf publicregistry policy list` - List all available public policies
 - `hcptf registry module read` - Check private module versions
+- `hcptf policyset list` - List policy sets in organization
+- `hcptf policyset read` - View policy set details and VCS info
 
 ## Tips
 
@@ -451,3 +539,5 @@ hcptf workspace update -org=<org> -name=<workspace> \
 5. **Coordinate**: For major provider upgrades, update all workspaces using that provider
 6. **Use constraints**: Prefer `~>` constraints over exact versions for easier patch updates
 7. **Stage upgrades**: Test in dev/staging before production
+8. **Policy upgrades**: Review new policy checks and set to advisory mode first before enforcing
+9. **Use CLI tools**: Leverage `publicregistry` commands to quickly check latest versions without leaving terminal
