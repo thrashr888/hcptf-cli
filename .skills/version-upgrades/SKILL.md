@@ -11,13 +11,24 @@ This skill helps upgrade Terraform, provider, and module versions in HCP Terrafo
 ## Core Concepts
 
 **Version Types:**
-- **Terraform Version**: The Terraform CLI version used to run plans/applies (workspace setting)
-- **Provider Versions**: API plugins defined in `required_providers` block (code)
-- **Module Versions**: Reusable module versions called with `source` argument (code)
+- **Terraform Version**: The Terraform CLI version used to run plans/applies
+- **Provider Versions**: API plugins defined in `required_providers` block
+- **Module Versions**: Reusable module versions called with `source` argument
 
 **Upgrade Approaches:**
-- **Terraform Version**: Update workspace setting (no code change needed)
-- **Providers/Modules**: Update version constraints in code, commit, and test
+
+1. **Terraform Version** (Simple - Workspace Setting):
+   - One command: `hcptf workspace update -terraform-version=latest`
+   - No code changes needed
+   - Takes effect on next run
+
+2. **Provider/Module Versions** (Complex - Requires Code Changes):
+   - Get git repo info from workspace
+   - Clone repository
+   - Edit Terraform files (versions.tf, main.tf, etc.)
+   - Update version constraints
+   - Commit and push changes
+   - VCS triggers new run automatically
 
 ## Workflow
 
@@ -185,6 +196,8 @@ hcptf my-org my-workspace runs <run-id> apply
 
 ### Scenario 2: Upgrade AWS Provider (Major Version)
 
+**Important**: Provider versions are in code, not workspace settings. You MUST clone the repo and edit files.
+
 ```bash
 # 1. Check current provider version
 hcptf explorer query -org=my-org -type=workspaces \
@@ -192,27 +205,50 @@ hcptf explorer query -org=my-org -type=workspaces \
   -fields=workspace-name,providers
 # Shows: hashicorp/aws:5.69.0
 
-# 2. Get code location
+# 2. Get git repo information
 RUN_ID=$(hcptf my-org my-workspace -output=json | jq -r '.CurrentRunID')
 hcptf my-org my-workspace runs $RUN_ID configversion
-# Shows: RepoIdentifier: user/repo, Branch: main, CommitURL: ...
+# Output:
+#   RepoIdentifier: thrashr888/my-infra
+#   Branch: main
+#   CommitSHA: abc123...
+#   CommitURL: https://github.com/thrashr888/my-infra/commit/abc123...
 
-# 3. Update code
-#    - Clone repo: git clone https://github.com/user/repo
-#    - Checkout branch: git checkout main
-#    - Edit versions.tf: change aws version from "~> 5.69.0" to "~> 6.0"
-#    - Review AWS provider upgrade guide for breaking changes
-#    - Commit and push
+# 3. Clone and update code
+git clone https://github.com/thrashr888/my-infra
+cd my-infra
+git checkout main
 
-# 4. Test upgrade
-#    VCS push triggers run automatically, or:
-hcptf my-org my-workspace runs create -message="Upgrade AWS provider to v6"
+# Edit versions.tf or terraform block:
+# Change:
+#   aws = { version = "~> 5.69.0" }
+# To:
+#   aws = { version = "~> 6.0" }
 
-# 5. Review plan for provider upgrade impacts
-hcptf my-org my-workspace runs <run-id> plan
+# Review AWS provider v6 upgrade guide for breaking changes:
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-upgrade
 
-# 6. Apply if successful
-hcptf my-org my-workspace runs <run-id> apply
+# 4. Commit and push
+git add versions.tf
+git commit -m "Upgrade AWS provider from v5 to v6"
+git push origin main
+# VCS push triggers run automatically in HCP Terraform
+
+# 5. Monitor the automatically triggered run
+hcptf my-org my-workspace runs list | head -5
+RUN_ID=$(hcptf my-org my-workspace -output=json | jq -r '.CurrentRunID')
+
+# 6. Review plan for provider upgrade impacts
+hcptf my-org my-workspace runs $RUN_ID show
+
+# 7. Apply if successful (or it auto-applies if enabled)
+hcptf my-org my-workspace runs $RUN_ID apply
+
+# 8. Verify new provider version
+hcptf explorer query -org=my-org -type=workspaces \
+  -filter="workspace-name:my-workspace" \
+  -fields=workspace-name,providers
+# Should now show: hashicorp/aws:6.x.x
 ```
 
 ### Scenario 3: Upgrade Multiple Workspaces
@@ -238,22 +274,56 @@ done
 
 ### Scenario 4: Upgrade Module Versions
 
+**Important**: Module versions are in code. You MUST clone the repo and edit the module source blocks.
+
 ```bash
 # 1. Find modules in use
 hcptf explorer query -org=my-org -type=modules \
   -fields=name,version,workspaces
+# Shows: terraform-aws-modules/s3-bucket/aws version 4.0.0 used in cool-website
 
-# 2. For each workspace using outdated module:
-#    - Get code location
-#    - Clone repo
-#    - Update module version in .tf files
-#    - Check module changelog for breaking changes
-#    - Update module arguments if needed
-#    - Commit and push
+# 2. Get git repo for workspace using outdated module
+RUN_ID=$(hcptf my-org cool-website -output=json | jq -r '.CurrentRunID')
+hcptf my-org cool-website runs $RUN_ID configversion
+# Output:
+#   RepoIdentifier: thrashr888/cool-website
+#   Branch: main
+#   CommitURL: https://github.com/thrashr888/cool-website/commit/abc123...
 
-# 3. Test
-hcptf my-org my-workspace runs create \
-  -message="Upgrade s3-bucket module to 5.10.0"
+# 3. Clone and update code
+git clone https://github.com/thrashr888/cool-website
+cd cool-website
+git checkout main
+
+# Edit main.tf (or wherever module is called):
+# Change:
+#   module "s3_bucket" {
+#     source  = "terraform-aws-modules/s3-bucket/aws"
+#     version = "~> 4.0"
+#     ...
+#   }
+# To:
+#   module "s3_bucket" {
+#     source  = "terraform-aws-modules/s3-bucket/aws"
+#     version = "~> 5.10"
+#     ...
+#   }
+
+# Check module changelog for breaking changes:
+# https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/latest
+
+# Update module arguments if API changed
+
+# 4. Commit and push
+git add main.tf
+git commit -m "Upgrade s3-bucket module from v4 to v5.10"
+git push origin main
+# VCS push triggers run automatically
+
+# 5. Monitor and verify
+hcptf my-org cool-website runs list | head -5
+hcptf explorer query -org=my-org -type=modules \
+  -fields=name,version,workspaces | grep cool-website
 ```
 
 ## Version Compatibility
