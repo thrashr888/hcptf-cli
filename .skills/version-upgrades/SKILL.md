@@ -77,6 +77,14 @@ hcptf explorer query -org=<org> -type=modules \
   - Example: https://registry.terraform.io/providers/hashicorp/random/latest
 - Documentation includes changelog, upgrade guides, and version history
 - In use across org: `hcptf explorer query -org=<org> -type=providers`
+- CLI commands:
+  ```bash
+  # Get latest provider version and details
+  hcptf publicregistry provider -name=hashicorp/aws
+
+  # List all available provider versions
+  hcptf publicregistry provider versions -name=hashicorp/aws
+  ```
 
 **Private provider versions:**
 ```bash
@@ -97,6 +105,14 @@ hcptf registry provider version read -organization=<org> \
   - Example: https://registry.terraform.io/modules/hashicorp/dir/template
 - Shows available versions, inputs/outputs, and usage examples
 - In use across org: `hcptf explorer query -org=<org> -type=modules`
+- CLI commands:
+  ```bash
+  # Get latest module version and details
+  hcptf publicregistry module -name=terraform-aws-modules/vpc/aws
+
+  # Check module downloads, verified status, docs URL
+  hcptf publicregistry module -name=terraform-aws-modules/s3-bucket/aws
+  ```
 
 **Private module versions:**
 ```bash
@@ -421,6 +437,9 @@ hcptf workspace update -org=<org> -name=<workspace> \
 - `hcptf configversion read` - Get VCS info to find code
 - `hcptf run create` - Test upgraded configuration
 - `hcptf run show` - Monitor upgrade run
+- `hcptf publicregistry provider` - Get public provider info and latest version
+- `hcptf publicregistry provider versions` - List all available provider versions
+- `hcptf publicregistry module` - Get public module info and latest version
 - `hcptf registry module read` - Check private module versions
 
 ## Tips

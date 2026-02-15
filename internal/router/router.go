@@ -229,7 +229,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"state", "policy", "policyset", "sshkey", "notification",
 		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
 		"runtrigger", "plan", "apply", "configversion", "teamaccess",
-		"projectteamaccess", "registry", "gpgkey",
+		"projectteamaccess", "registry", "publicregistry", "gpgkey",
 		"stack",
 		"audittrail", "audittrailtoken", "organizationtoken", "usertoken",
 		"teamtoken", "organizationmembership", "organizationmember",

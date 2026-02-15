@@ -962,6 +962,28 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Public Registry commands (query public Terraform registry)
+		"publicregistry": func() (cli.Command, error) {
+			return &PublicRegistryCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"publicregistry provider": func() (cli.Command, error) {
+			return &PublicRegistryProviderCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"publicregistry provider versions": func() (cli.Command, error) {
+			return &PublicRegistryProviderVersionsCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"publicregistry module": func() (cli.Command, error) {
+			return &PublicRegistryModuleCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// GPG Key commands (manage GPG keys for provider signing)
 		"gpgkey list": func() (cli.Command, error) {
 			return &GPGKeyListCommand{
