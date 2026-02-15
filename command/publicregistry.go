@@ -33,6 +33,10 @@ Subcommands:
   Module Commands:
     module                   Get module information
 
+  Policy Commands:
+    policy                   Get policy information
+    policy list              List available policies
+
 Examples:
 
   # Get information about the AWS provider
@@ -44,8 +48,11 @@ Examples:
   # Get information about the VPC module
   hcptf publicregistry module -name=terraform-aws-modules/vpc/aws
 
-  # Check latest version of Random provider
-  hcptf publicregistry provider -name=hashicorp/random
+  # Get AWS CIS policy set information
+  hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-AWS-Terraform
+
+  # List all available public policies
+  hcptf publicregistry policy list
 
 For detailed help on any subcommand:
   hcptf publicregistry <subcommand> -help

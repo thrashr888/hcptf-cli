@@ -2,11 +2,12 @@ package command
 
 import (
 	"github.com/mitchellh/cli"
+	"strings"
 )
 
 // Commands returns the mapping of CLI commands
 func Commands(meta *Meta) map[string]cli.CommandFactory {
-	return map[string]cli.CommandFactory{
+	commands := map[string]cli.CommandFactory{
 		"version": func() (cli.Command, error) {
 			return &VersionCommand{
 				Meta: *meta,
@@ -983,6 +984,16 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"publicregistry policy": func() (cli.Command, error) {
+			return &PublicRegistryPolicyCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"publicregistry policy list": func() (cli.Command, error) {
+			return &PublicRegistryPolicyListCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// GPG Key commands (manage GPG keys for provider signing)
 		"gpgkey list": func() (cli.Command, error) {
@@ -1378,4 +1389,89 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 	}
+
+	namespaceSynopses := map[string]string{
+		"account":             "Manage accounts",
+		"agent":               "Manage agents",
+		"apply":               "Manage applies",
+		"assessmentresult":     "Manage assessment results",
+		"audittrail":          "Manage audit trail entries",
+		"audittrailtoken":     "Manage audit trail tokens",
+		"awsoidc":             "Manage AWS OIDC integration",
+		"azureoidc":           "Manage Azure OIDC integration",
+		"changerequest":       "Manage change requests",
+		"comment":             "Manage run comments",
+		"configversion":       "Manage workspace configuration versions",
+		"explorer":            "Query Terraform Cloud",
+		"gcpoidc":             "Manage GCP OIDC integration",
+		"gpgkey":              "Manage GPG keys",
+		"hyok":                "Manage Hold Your Own Key settings",
+		"hyokkey":             "Manage Hold Your Own Key versions",
+		"notification":        "Manage notifications",
+		"oauthclient":         "Manage OAuth clients",
+		"oauthtoken":          "Manage OAuth tokens",
+		"organization":        "Manage the current organization",
+		"organizationmember":   "Manage organization members",
+		"organizationmembership": "Manage organization memberships",
+		"organizationtag":       "Manage organization tags",
+		"organizationtoken":     "Manage organization tokens",
+		"plan":                 "Manage Terraform plans",
+		"planexport":           "Manage plan exports",
+		"policy":               "Manage policies",
+		"policycheck":          "Manage policy checks",
+		"policyevaluation":     "Manage policy evaluations",
+		"policyset":            "Manage policy sets",
+		"policysetoutcome":     "Manage policy set outcomes",
+		"policysetparameter":   "Manage policy set parameters",
+		"project":              "Manage projects",
+		"projectteamaccess":    "Manage project team access",
+		"queryrun":             "Search runs",
+		"queryworkspace":       "Search workspaces",
+		"reservedtagkey":       "Manage reserved tag keys",
+		"run":                 "Manage Terraform runs",
+		"runtask":             "Manage run tasks",
+		"runtrigger":          "Manage run triggers",
+		"sshkey":              "Manage SSH keys",
+		"state":               "Manage Terraform states",
+		"team":                "Manage teams",
+		"teamaccess":          "Manage team access",
+		"teamtoken":           "Manage team tokens",
+		"usertoken":           "Manage user tokens",
+		"variable":            "Manage workspace variables",
+		"variableset":         "Manage variable sets",
+		"vaultoidc":           "Manage Vault OIDC integration",
+		"vcsevent":            "Manage VCS events",
+		"workspace":           "Manage workspaces",
+		"workspaceresource":   "Manage workspace resources",
+		"workspacetag":        "Manage workspace tags",
+	}
+
+	for commandName := range commands {
+		parts := strings.Split(commandName, " ")
+		if len(parts) <= 1 {
+			continue
+		}
+
+		namespace := parts[0]
+		if _, exists := commands[namespace]; exists {
+			continue
+		}
+
+		synopsis := "Manage " + namespace
+		if customSynopsis, ok := namespaceSynopses[namespace]; ok {
+			synopsis = customSynopsis
+		}
+
+		ns := namespace
+		syn := synopsis
+		commands[ns] = func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     ns,
+				synopsis: syn,
+			}, nil
+		}
+	}
+
+	return commands
 }
