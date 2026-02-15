@@ -103,6 +103,13 @@ hcptf registry module list -org=my-org
 hcptf registry provider create -org=my-org -name=custom-provider
 hcptf registry provider version create -org=my-org -name=aws -version=3.1.1 -key-id=GPG_KEY_ID
 
+# Public registry commands (query public Terraform registry)
+hcptf publicregistry provider -name=hashicorp/aws
+hcptf publicregistry provider versions -name=hashicorp/random
+hcptf publicregistry module -name=terraform-aws-modules/vpc/aws
+hcptf publicregistry policy list
+hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-AWS-Terraform
+
 # Stack commands (hierarchical namespace)
 hcptf stack list -org=my-org -project=prj-abc123
 hcptf stack configuration list -stack-id=stk-abc123
@@ -110,6 +117,7 @@ hcptf stack deployment create -stack-id=stk-abc123
 
 # Explorer API (query resources across organization)
 hcptf explorer query -org=my-org -type=providers -sort=-version
+hcptf explorer query -org=my-org -type=workspaces -filter="current-run-status:policy_checked"
 ```
 
 ### URL-Style Navigation
@@ -143,6 +151,13 @@ hcptf my-org my-workspace variables
 hcptf my-org my-workspace state
 hcptf my-org my-workspace state outputs
 
+# Check drift and health assessments
+hcptf my-org my-workspace assessments
+hcptf my-org my-workspace runs run-abc123 assessment
+
+# View policy checks
+hcptf my-org my-workspace runs run-abc123 policychecks
+
 # Other org resources
 hcptf my-org projects
 hcptf my-org teams
@@ -153,15 +168,23 @@ Both styles work interchangeably - use whichever you prefer!
 
 ### Hierarchical Command Namespaces
 
-Registry and stack commands use a hierarchical namespace structure for better organization:
+Registry, stack, and public registry commands use a hierarchical namespace structure for better organization:
 
 ```bash
-# Registry commands
+# Private registry commands
 hcptf registry                                    # Show all registry commands
-hcptf registry module list -org=my-org           # List modules
-hcptf registry provider create -org=my-org       # Create provider
+hcptf registry module list -org=my-org           # List private modules
+hcptf registry provider create -org=my-org       # Create private provider
 hcptf registry provider version create ...        # Create provider version
 hcptf registry provider platform create ...       # Add platform binary
+
+# Public registry commands
+hcptf publicregistry                             # Show all public registry commands
+hcptf publicregistry provider -name=hashicorp/aws        # Get provider info
+hcptf publicregistry provider versions -name=hashicorp/aws  # List versions
+hcptf publicregistry module -name=terraform-aws-modules/vpc/aws  # Get module info
+hcptf publicregistry policy list                 # List public policies
+hcptf publicregistry policy -name=hashicorp/CIS-Policy-Set-for-AWS-Terraform  # Get policy info
 
 # Stack commands
 hcptf stack                                       # Show all stack commands
@@ -173,7 +196,7 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 
 ## Commands
 
-100+ commands across 50+ resource types organized in hierarchical namespaces.
+230+ commands across 60+ resource types organized in hierarchical namespaces.
 
 | Group | Commands | Description |
 |-------|----------|-------------|
@@ -186,18 +209,24 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `team` | 6 | Teams and membership |
 | `project` | 5 | Project organization |
 | `state` | 3 | State versions and outputs |
-| `policy` | 5 | Sentinel policies |
+| `policy` | 5 | Sentinel/OPA policies |
 | `policyset` | 7 | Policy set management |
+| `policycheck` | 3 | Policy check results |
+| `policyevaluation` | 1 | Policy evaluations |
+| `policysetoutcome` | 2 | Policy set outcomes |
+| `policysetparameter` | 4 | Policy set parameters |
 | `sshkey` | 5 | SSH keys for VCS |
 | `notification` | 6 | Run notifications |
 | `variableset` | 10 | Reusable variable sets |
 | `agentpool` | 8 | Self-hosted agent pools |
+| `agent` | 2 | Agent monitoring |
 | `runtask` | 7 | Run task integrations |
 | `oauthclient` | 5 | VCS OAuth clients |
 | `oauthtoken` | 3 | OAuth tokens |
 | `runtrigger` | 4 | Workspace orchestration |
 | `plan` | 2 | Plan details and logs |
 | `apply` | 2 | Apply details and logs |
+| `planexport` | 3 | Plan exports |
 | `configversion` | 4 | Configuration versions |
 | `teamaccess` | 5 | Team workspace permissions |
 | `projectteamaccess` | 5 | Team project permissions |
@@ -206,6 +235,10 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `registry provider` | 4 | Private registry providers |
 | `registry provider version` | 3 | Provider versions |
 | `registry provider platform` | 3 | Provider platforms |
+| `publicregistry` | 1 | Public registry parent |
+| `publicregistry provider` | 2 | Public provider info/versions |
+| `publicregistry module` | 1 | Public module info |
+| `publicregistry policy` | 2 | Public policy info/list |
 | `gpgkey` | 5 | GPG keys for providers |
 | `stack` | 6 | Terraform Stacks management |
 | `stack configuration` | 5 | Stack configurations |
@@ -213,6 +246,27 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `stack state` | 2 | Stack states |
 | `audittrail` | 2 | Audit trail events |
 | `audittrailtoken` | 4 | Audit trail tokens |
+| `organizationtoken` | 4 | Organization API tokens |
+| `usertoken` | 4 | User API tokens |
+| `teamtoken` | 4 | Team API tokens |
+| `organizationmembership` | 4 | Organization memberships |
+| `organizationmember` | 1 | Organization member details |
+| `organizationtag` | 2 | Organization tags |
+| `workspacetag` | 3 | Workspace tags |
+| `reservedtagkey` | 3 | Reserved tag keys |
+| `comment` | 3 | Run comments |
+| `awsoidc` | 4 | AWS OIDC integration |
+| `azureoidc` | 4 | Azure OIDC integration |
+| `gcpoidc` | 4 | GCP OIDC integration |
+| `vaultoidc` | 4 | Vault OIDC integration |
+| `workspaceresource` | 2 | Managed resources |
+| `queryrun` | 1 | Search runs |
+| `queryworkspace` | 1 | Search workspaces |
+| `changerequest` | 4 | Change requests |
+| `assessmentresult` | 2 | Drift detection/health |
+| `hyok` | 5 | Hold Your Own Key config |
+| `hyokkey` | 3 | HYOK key versions |
+| `vcsevent` | 2 | VCS integration events |
 | `explorer` | 1 | Query resources across org |
 | `version` | 1 | CLI version |
 
@@ -238,11 +292,15 @@ This project includes [Agent Skills](https://agentskills.io/) that help AI agent
 
 **Available skills:**
 - **hcptf-cli**: Comprehensive guide covering authentication, commands, workflows, and best practices
+- **drift**: Investigate and resolve infrastructure drift (detect drifted workspaces, view changes, fix violations)
+- **version-upgrades**: Upgrade Terraform, provider, module, and policy versions (find latest versions, update code, test changes)
+- **policy-compliance**: Investigate and resolve policy check failures (understand violations, fix code, override policies)
 
 The `.skills/` directory contains structured instructions that agents can load to:
-- Understand hierarchical command structure
-- Learn common workflows (workspace creation, deployments, etc.)
-- Follow best practices for automation
+- Understand hierarchical command structure and URL-style navigation
+- Learn common workflows (drift investigation, version upgrades, policy compliance)
+- Use public registry commands to discover providers, modules, and policies
+- Follow best practices for remediation and automation
 - Handle errors and troubleshooting
 
 See [.skills/README.md](.skills/README.md) for details.
