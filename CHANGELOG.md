@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-14
+
 ### Fixed
 
 - Corrected command test helpers to construct mock API clients with hostname-based credentials so new command tests can run reliably in CI without external credentials.
@@ -22,13 +24,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Agent Skills**: Added `.skills/hcptf-cli/` with comprehensive CLI usage guide for AI agents
+- **Public Terraform Registry Commands**: Query public registry for providers, modules, and policies
+  - `publicregistry provider` - Get provider info (version, description, docs URL)
+  - `publicregistry provider versions` - List all available provider versions with protocols and platforms
+  - `publicregistry module` - Get module info (version, downloads, verified status)
+  - `publicregistry policy` - Get policy set details (included policies, modules, version)
+  - `publicregistry policy list` - List all available public Sentinel/OPA policies
+  - All commands support table and JSON output formats
+  - Similar to [terraform-mcp-server](https://github.com/hashicorp/terraform-mcp-server) capabilities
+  - Useful for version upgrade workflows and discovering compliance policies
+
+- **Enhanced Assessment Results**:
+  - Added support for Terraform continuous validation checks
+  - Display check status (pass/fail/error/unknown) with problem details
+  - Parse health-json-redacted endpoint for comprehensive check data
+  - Show check instances with per-instance problems
+  - Prefer health-json-redacted over json-output for checks
+  - URL-style patterns: `hcptf <org> <workspace> assessments` and `hcptf <org> <workspace> runs <run-id> assessment`
+
+- **Configuration Version VCS Info**:
+  - Added ingress attributes support to `configversion read`
+  - Shows Branch, CommitSHA, CommitURL, CompareURL, RepoIdentifier
+  - Essential for drift investigation and code-based remediation workflows
+  - Fetches from `/api/v2/configuration-versions/{id}/ingress-attributes` endpoint
+
+- **Agent Skills for Common Workflows**:
+  - `.skills/drift/` - Investigate and resolve infrastructure drift
+    - Finding drifted workspaces using Explorer API
+    - Viewing drift details with assessment results
+    - Getting VCS commit information
+    - Decision matrix for drift resolution strategies
+    - Common drift scenarios (deleted resources, IP changes, tags, cert expiration)
+  - `.skills/version-upgrades/` - Upgrade Terraform, provider, module, and policy versions
+    - Terraform version upgrades (workspace setting)
+    - Provider/module/policy upgrades (VCS workflow with code changes)
+    - Using publicregistry commands to find latest versions
+    - Complete git clone/edit/commit/push workflows
+    - Handling breaking changes and rollbacks
+  - `.skills/policy-compliance/` - Investigate and resolve policy check failures
+    - Detecting policy failures across workspaces
+    - Understanding what policies check (using publicregistry policy)
+    - Identifying violating resources
+    - Decision matrix for remediation (fix code, override, adjust policy)
+    - Common scenarios (CIS benchmarks, tagging, security groups)
+    - Tracking compliance metrics across organization
+  - `.skills/hcptf-cli/` - Comprehensive CLI usage guide
+  - All skills follow [Agent Skills specification](https://agentskills.io/)
   - Automatically discovered by compatible agents (Claude Code, Cursor, GitHub Copilot, etc.)
-  - Covers authentication, hierarchical commands, workflows, and best practices
-  - Follows [Agent Skills specification](https://agentskills.io/)
-- Parent commands for hierarchical navigation: `hcptf registry` and `hcptf stack`
+
+- Parent commands for hierarchical navigation: `hcptf registry`, `hcptf stack`, and `hcptf publicregistry`
 - Explorer API support: `hcptf explorer query` for querying resources across organizations
-- Enhanced assessment result output with drift detection and analysis
 
 
 ## [0.1.0] - 2025-02-11
@@ -133,5 +178,6 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 Total: 229 commands across 59 resource types.
 
-[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thrashr888/hcptf-cli/releases/tag/v0.1.0
