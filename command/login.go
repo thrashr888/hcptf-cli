@@ -11,15 +11,34 @@ import (
 type LoginCommand struct {
 	Meta
 	hostname string
+	showToken bool
 }
 
 // Run executes the login command
 func (c *LoginCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("login")
 	flags.StringVar(&c.hostname, "hostname", "app.terraform.io", "HCP Terraform hostname")
+	flags.BoolVar(&c.showToken, "show-token", false, "Show token after successful login")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
+	}
+
+	if c.showToken {
+		cfg, err := c.Config()
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error loading config: %s", err))
+			return 1
+		}
+
+		token := cfg.GetToken(c.hostname)
+		if token == "" {
+			c.Ui.Error("No token found for this hostname. Run 'hcptf login' first.")
+			return 1
+		}
+
+		c.Ui.Output(token)
+		return 0
 	}
 
 	c.Ui.Output(fmt.Sprintf("Authenticating to %s", c.hostname))
@@ -94,6 +113,7 @@ Usage: hcptf login [options]
 Options:
 
   -hostname=<hostname>  HCP Terraform hostname (default: app.terraform.io)
+  -show-token          Show token and exit without prompting (default: false)
 
 Example:
 

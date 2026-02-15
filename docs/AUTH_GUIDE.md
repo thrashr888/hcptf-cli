@@ -52,6 +52,23 @@ output_format = "table"
 
 If you've already run `terraform login`, no additional setup is needed. `hcptf` reads `~/.terraform.d/credentials.tfrc.json` automatically.
 
+
+Use `-show-token` to print the token for the target hostname without prompting:
+
+```bash
+hcptf login -show-token
+# or for a custom hostname
+hcptf login -hostname=tfe.example.com -show-token
+```
+
+Use `whoami` to verify token context and confirm the current user
+(e.g., in scripts or after switching hosts):
+
+```bash
+hcptf whoami
+hcptf whoami -output=json
+```
+
 ## Multiple TFE Instances
 
 Store credentials for multiple instances via `hcptf login`:

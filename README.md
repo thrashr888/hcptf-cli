@@ -37,6 +37,8 @@ The fastest way to get started:
 
 ```bash
 hcptf login
+hcptf login -show-token                # Print saved token for scripting
+hcptf whoami                           # Show current authenticated user
 ```
 
 This prompts for an API token, validates it, and stores it in `~/.terraform.d/credentials.tfrc.json` (shared with Terraform CLI).
@@ -196,10 +198,11 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 
 ## Commands
 
-230+ commands across 60+ resource types organized in hierarchical namespaces.
+231+ commands across 60+ resource types organized in hierarchical namespaces.
 
 | Group | Commands | Description |
 |-------|----------|-------------|
+| `whoami` | 1 | Show current authenticated user |
 | `login` / `logout` | 2 | Credential management |
 | `account` | 3 | User account CRUD |
 | `workspace` | 5 | Workspace management |

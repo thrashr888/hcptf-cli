@@ -32,6 +32,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"whoami": func() (cli.Command, error) {
+			return &WhoAmICommand{
+				Meta: *meta,
+			}, nil
+		},
 		"logout": func() (cli.Command, error) {
 			return &LogoutCommand{
 				Meta: *meta,

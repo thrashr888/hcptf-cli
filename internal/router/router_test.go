@@ -29,6 +29,11 @@ func TestTranslateArgs(t *testing.T) {
 			expected: []string{"workspace", "list", "-org=myorg"},
 		},
 		{
+			name:     "whoami command (passthrough)",
+			input:    []string{"whoami", "-output=json"},
+			expected: []string{"whoami", "-output=json"},
+		},
+		{
 			name:     "org only",
 			input:    []string{"myorg"},
 			expected: []string{"organization", "show", "-name=myorg"},
@@ -237,6 +242,7 @@ func TestIsKnownCommand(t *testing.T) {
 		{"login", true},
 		{"logout", true},
 		{"version", true},
+		{"whoami", true},
 		{"notacommand", false},
 		{"myorg", false},
 		{"", false},

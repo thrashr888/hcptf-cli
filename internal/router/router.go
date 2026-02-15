@@ -239,6 +239,7 @@ func (r *Router) isKnownCommand(arg string) bool {
 		"workspaceresource", "workspacetag", "queryrun", "queryworkspace",
 		"changerequest", "assessmentresult", "hyok", "hyokkey",
 		"vcsevent", "planexport", "agent", "explorer",
+		"whoami",
 	}
 
 	for _, cmd := range knownCommands {
