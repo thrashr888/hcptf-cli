@@ -63,6 +63,15 @@ type TerraformPlan struct {
 			After   map[string]interface{} `json:"after"`
 		} `json:"change"`
 	} `json:"resource_drift"`
+	Checks []struct {
+		Address string `json:"address"`
+		Kind    string `json:"kind"` // "resource", "output", "check"
+		Name    string `json:"name"`
+		Status  string `json:"status"` // "pass", "fail", "error", "unknown"
+		Problems []struct {
+			Message string `json:"message"`
+		} `json:"problems"`
+	} `json:"checks"`
 }
 
 // Run executes the assessmentresult read command
@@ -292,6 +301,51 @@ func (c *AssessmentResultReadCommand) showDriftDetails(client *client.Client, js
 	c.Ui.Output("  1. Run 'terraform apply' to update infrastructure to match configuration")
 	c.Ui.Output("  2. Or update your Terraform configuration to match current infrastructure")
 	c.Ui.Output("  3. Or use 'terraform refresh' to update state without making changes")
+
+	// Show Terraform check results if available
+	if len(plan.Checks) > 0 {
+		c.Ui.Output("\n" + strings.Repeat("=", 80))
+		c.Ui.Output("TERRAFORM CHECK RESULTS")
+		c.Ui.Output(strings.Repeat("=", 80))
+
+		passed := 0
+		failed := 0
+		errored := 0
+		unknown := 0
+
+		for _, check := range plan.Checks {
+			switch check.Status {
+			case "pass":
+				passed++
+			case "fail":
+				failed++
+			case "error":
+				errored++
+			default:
+				unknown++
+			}
+		}
+
+		c.Ui.Output(fmt.Sprintf("\nCheck Summary: %d passed, %d failed, %d errored, %d unknown\n", passed, failed, errored, unknown))
+
+		// Show failed/errored checks
+		if failed > 0 || errored > 0 {
+			c.Ui.Output("Issues found:")
+			for _, check := range plan.Checks {
+				if check.Status == "fail" || check.Status == "error" {
+					c.Ui.Output(fmt.Sprintf("\n  %s (%s) - %s", check.Address, check.Kind, strings.ToUpper(check.Status)))
+					if check.Name != "" {
+						c.Ui.Output(fmt.Sprintf("  Name: %s", check.Name))
+					}
+					for _, problem := range check.Problems {
+						c.Ui.Output(fmt.Sprintf("    • %s", problem.Message))
+					}
+				}
+			}
+		} else if passed > 0 {
+			c.Ui.Output("All checks passed successfully!")
+		}
+	}
 
 	return nil
 }

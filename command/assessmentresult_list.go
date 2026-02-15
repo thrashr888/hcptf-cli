@@ -122,46 +122,23 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 		}
 	}
 
-	// Format output
-	formatter := c.Meta.NewFormatter(c.format)
-
 	if len(assessmentResults) == 0 {
 		c.Ui.Output("No assessment results found")
+		c.Ui.Output("\nNote: Health assessments must be enabled in workspace settings.")
+		c.Ui.Output("This feature requires HCP Terraform Plus or Enterprise.")
 		return 0
 	}
 
-	headers := []string{"ID", "Status", "Drift", "Created At", "Error"}
-	var rows [][]string
-	for _, ar := range assessmentResults {
-		status := "Failed"
-		if ar.Attributes.Succeeded {
-			status = "Succeeded"
-		}
+	// Since there's only ever the latest result, automatically show details
+	// instead of just listing (which would be a pointless extra step)
+	ar := assessmentResults[0]
 
-		drift := "No"
-		if ar.Attributes.Drifted {
-			drift = "Yes"
-		}
-
-		errorMsg := ""
-		if ar.Attributes.ErrorMsg != nil {
-			errorMsg = *ar.Attributes.ErrorMsg
-			if len(errorMsg) > 60 {
-				errorMsg = errorMsg[:57] + "..."
-			}
-		}
-
-		rows = append(rows, []string{
-			ar.ID,
-			status,
-			drift,
-			ar.Attributes.CreatedAt,
-			errorMsg,
-		})
+	// Show details by running the read command
+	readCmd := &AssessmentResultReadCommand{
+		Meta:   c.Meta,
+		format: c.format,
 	}
-
-	formatter.Table(headers, rows)
-	return 0
+	return readCmd.Run([]string{"-id", ar.ID})
 }
 
 // Help returns help text for the assessmentresult list command

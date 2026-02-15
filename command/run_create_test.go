@@ -34,7 +34,7 @@ func TestRunCreateRequiresFlags(t *testing.T) {
 	if code := cmd.Run([]string{"-organization=my-org"}); code != 1 {
 		t.Fatalf("expected exit 1 missing workspace")
 	}
-	if !strings.Contains(ui.ErrorWriter.String(), "-workspace") {
+	if !strings.Contains(ui.ErrorWriter.String(), "-name") {
 		t.Fatalf("expected workspace error")
 	}
 }
@@ -45,7 +45,7 @@ func TestRunCreateHandlesWorkspaceError(t *testing.T) {
 	runs := &mockRunCreateService{}
 	cmd := newRunCreateCommand(ui, reader, runs)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-name=prod"}); code != 1 {
 		t.Fatalf("expected exit 1")
 	}
 	if reader.lastOrg != "my-org" || reader.lastName != "prod" {
@@ -62,7 +62,7 @@ func TestRunCreateHandlesRunError(t *testing.T) {
 	runs := &mockRunCreateService{err: errors.New("run failed")}
 	cmd := newRunCreateCommand(ui, reader, runs)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-name=prod"}); code != 1 {
 		t.Fatalf("expected exit 1")
 	}
 	if runs.lastOptions.Workspace == nil || runs.lastOptions.Workspace.ID != "ws-1" {
@@ -73,14 +73,13 @@ func TestRunCreateHandlesRunError(t *testing.T) {
 	}
 }
 
-func TestRunCreateOutputsJSON(t *testing.T) {
+func TestRunCreateHandlesNameAlias(t *testing.T) {
 	ui := cli.NewMockUi()
 	reader := &mockWorkspaceReader{workspace: &tfe.Workspace{ID: "ws-1"}}
 	runs := &mockRunCreateService{response: &tfe.Run{
 		ID:        "run-1",
 		Status:    tfe.RunApplied,
 		Message:   "hello",
-		IsDestroy: false,
 		CreatedAt: time.Unix(0, 0),
 	}}
 	cmd := newRunCreateCommand(ui, reader, runs)
@@ -92,8 +91,35 @@ func TestRunCreateOutputsJSON(t *testing.T) {
 		t.Fatalf("expected exit 0")
 	}
 
-	if runs.lastOptions.Message == nil || *runs.lastOptions.Message != "hi" {
-		t.Fatalf("expected message in options")
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(output), &data); err != nil {
+		t.Fatalf("failed to decode json: %v", err)
+	}
+	if data["ID"] != "run-1" {
+		t.Fatalf("unexpected data: %#v", data)
+	}
+}
+
+func TestRunCreateWithRefreshOnly(t *testing.T) {
+	ui := cli.NewMockUi()
+	reader := &mockWorkspaceReader{workspace: &tfe.Workspace{ID: "ws-1"}}
+	runs := &mockRunCreateService{response: &tfe.Run{
+		ID:        "run-1",
+		Status:    tfe.RunApplied,
+		Message:   "refresh only",
+		CreatedAt: time.Unix(0, 0),
+	}}
+	cmd := newRunCreateCommand(ui, reader, runs)
+
+	output, code := captureStdout(t, func() int {
+		return cmd.Run([]string{"-organization=my-org", "-name=prod", "-refresh-only", "-output=json"})
+	})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if runs.lastOptions.RefreshOnly == nil || !*runs.lastOptions.RefreshOnly {
+		t.Fatalf("expected refresh-only option to be set, got %#v", runs.lastOptions)
 	}
 
 	var data map[string]interface{}

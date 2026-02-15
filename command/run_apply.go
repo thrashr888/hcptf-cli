@@ -63,7 +63,7 @@ func (c *RunApplyCommand) runService(client *client.Client) runApplier {
 // Help returns help text for the run apply command
 func (c *RunApplyCommand) Help() string {
 	helpText := `
-Usage: hcptf run apply [options]
+Usage: hcptf workspace run apply [options]
 
   Approve and apply a run.
 
@@ -74,8 +74,8 @@ Options:
 
 Example:
 
-  hcptf run apply -id=run-abc123
-  hcptf run apply -id=run-abc123 -comment="Approved for deployment"
+  hcptf workspace run apply -id=run-abc123
+  hcptf workspace run apply -id=run-abc123 -comment="Approved for deployment"
 `
 	return strings.TrimSpace(helpText)
 }

@@ -9,7 +9,7 @@ metadata:
 
 # HCP Terraform CLI (hcptf)
 
-A comprehensive CLI for managing HCP Terraform resources with hierarchical command structure and URL-style navigation.
+Use the CLI with workspace/run hierarchical commands and URL-style navigation.
 
 ## When to Use This Skill
 
@@ -68,13 +68,17 @@ hcptf explorer query -org=my-org -type=providers -sort=-version
 # Workspace operations
 hcptf workspace list -org=my-org
 hcptf workspace create -org=my-org -name=staging
-hcptf workspace read -org=my-org -workspace=staging
+hcptf workspace read -org=my-org -name=staging
 
 # Run operations
-hcptf run list -org=my-org -workspace=staging
-hcptf run create -org=my-org -workspace=staging -message="Deploy"
-hcptf run show -id=run-abc123
-hcptf run apply -id=run-abc123
+hcptf workspace run list -org=my-org -name=staging
+hcptf workspace run create -org=my-org -name=staging -message="Deploy"
+hcptf workspace run show -id=run-abc123
+hcptf workspace run apply -id=run-abc123
+hcptf workspace run cancel -id=run-abc123
+hcptf workspace run discard -id=run-abc123
+hcptf workspace run assessmentresult list -org=my-org -name=staging
+hcptf workspace run assessmentresult read -id=asmtres-abc123 -show-drift
 
 # Variables
 hcptf variable create -org=my-org -workspace=staging -key=region -value=us-east-1
@@ -96,6 +100,7 @@ hcptf my-org teams              # List teams
 # Workspace level
 hcptf my-org my-workspace       # Show workspace details
 hcptf my-org my-workspace runs  # List runs
+hcptf my-org my-workspace assessments  # List assessment results
 hcptf my-org my-workspace variables
 hcptf my-org my-workspace state
 
@@ -119,14 +124,14 @@ hcptf variable create -org=my-org -workspace=production \
   -key=environment -value=prod
 
 # Trigger run
-hcptf run create -org=my-org -workspace=production \
+hcptf workspace run create -org=my-org -name=production \
   -message="Initial deployment"
 
 # Check status
-hcptf run show -id=run-abc123
+hcptf workspace run show -id=run-abc123
 
 # Apply when ready
-hcptf run apply -id=run-abc123 -comment="Approved by team"
+hcptf workspace run apply -id=run-abc123 -comment="Approved by team"
 ```
 
 ### Manage Private Registry
@@ -216,19 +221,20 @@ hcptf workspace list -org=my-org -output=json | jq '.data[].attributes.name'
 ## Best Practices
 
 1. **Use hierarchical commands for clarity**
-   - `hcptf registry module list` instead of legacy flat commands
-   - `hcptf stack configuration list` for stack operations
+   - `hcptf workspace run create` for run workflows
+   - `hcptf workspace run assessmentresult list` for drift workflows
 
 2. **Prefer explicit flags for automation**
-   - Use `-org=` and `-workspace=` in scripts
+   - Use `-org=` and `-name=` in scripts
+   - `-workspace=` remains available as alias
    - URL-style is great for interactive use
 
 3. **Check status before applying**
-   ```bash
-   # Always review before apply
-   hcptf run show -id=run-abc123
-   hcptf run apply -id=run-abc123
-   ```
+  ```bash
+  # Always review before apply
+  hcptf workspace run show -id=run-abc123
+  hcptf workspace run apply -id=run-abc123
+  ```
 
 4. **Use JSON output for parsing**
    ```bash
@@ -244,17 +250,19 @@ hcptf workspace list -org=my-org -output=json | jq '.data[].attributes.name'
    ```
 
 6. **Check drift before deployment**
-   ```bash
-   # Assessment results show drift
-   hcptf assessmentresult read -id=ar-abc123 -show-drift
-   ```
+  ```bash
+  # Assessment results show drift
+  hcptf workspace run assessmentresult list -org=my-org -name=prod
+  hcptf workspace run assessmentresult read -id=ar-abc123 -show-drift
+  hcptf workspace run create -org=my-org -name=prod -refresh-only
+  ```
 
 ## Common Flags
 
 | Flag | Alias | Description |
 |------|-------|-------------|
 | `-organization` | `-org` | Organization name |
-| `-workspace` | `-ws` | Workspace name |
+| `-name` | `-workspace` | Workspace name |
 | `-output` | | `table` (default) or `json` |
 | `-force` | | Skip confirmation prompts |
 
@@ -362,7 +370,7 @@ hcptf workspace read -org=my-org -workspace=staging -output=json | \
   jq -r '.data.id'
 
 # Get latest run ID
-hcptf run list -org=my-org -workspace=staging -output=json | \
+hcptf workspace run list -org=my-org -name=staging -output=json | \
   jq -r '.data[0].id'
 ```
 
@@ -370,10 +378,10 @@ hcptf run list -org=my-org -workspace=staging -output=json | \
 
 ```bash
 # Use JSON output for detailed info
-hcptf run show -id=run-abc123 -output=json | jq .
+hcptf workspace run show -id=run-abc123 -output=json | jq .
 
 # Check drift in assessment results
-hcptf assessmentresult read -id=ar-abc123 -show-drift -summary-only
+hcptf workspace run assessmentresult read -id=ar-abc123 -show-drift -summary-only
 ```
 
 ## Reference

@@ -94,7 +94,7 @@ func (c *RunShowCommand) runService(client *client.Client) runReader {
 // Help returns help text for the run show command
 func (c *RunShowCommand) Help() string {
 	helpText := `
-Usage: hcptf run show [options]
+Usage: hcptf workspace run show [options]
 
   Show run details.
 
@@ -105,8 +105,8 @@ Options:
 
 Example:
 
-  hcptf run show -id=run-abc123
-  hcptf run show -id=run-abc123 -output=json
+  hcptf workspace run show -id=run-abc123
+  hcptf workspace run show -id=run-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)
 }

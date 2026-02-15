@@ -23,7 +23,8 @@ func (c *RunListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("run list")
 	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
-	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
+	flags.StringVar(&c.workspace, "name", "", "Workspace name (required)")
+	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -38,7 +39,7 @@ func (c *RunListCommand) Run(args []string) int {
 	}
 
 	if c.workspace == "" {
-		c.Ui.Error("Error: -workspace flag is required")
+		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -116,7 +117,7 @@ func (c *RunListCommand) runService(client *client.Client) runLister {
 // Help returns help text for the run list command
 func (c *RunListCommand) Help() string {
 	helpText := `
-Usage: hcptf run list [options]
+Usage: hcptf workspace run list [options]
 
   List runs for a workspace.
 
@@ -124,13 +125,14 @@ Options:
 
   -organization=<name>  Organization name (required)
   -org=<name>          Alias for -organization
-  -workspace=<name>    Workspace name (required)
+  -name=<name>         Workspace name (required)
+  -workspace=<name>    Alias for -name
   -output=<format>     Output format: table (default) or json
 
 Example:
 
-  hcptf run list -org=my-org -workspace=my-workspace
-  hcptf run list -org=my-org -workspace=prod -output=json
+  hcptf workspace run list -org=my-org -name=my-workspace
+  hcptf workspace run list -org=my-org -name=prod -output=json
 `
 	return strings.TrimSpace(helpText)
 }

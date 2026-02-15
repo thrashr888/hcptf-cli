@@ -50,7 +50,7 @@ func TestRunListRequiresFlags(t *testing.T) {
 		t.Fatalf("expected exit 1 missing workspace, got %d", code)
 	}
 
-	if !strings.Contains(ui.ErrorWriter.String(), "-workspace") {
+	if !strings.Contains(ui.ErrorWriter.String(), "-name") {
 		t.Fatalf("expected workspace error")
 	}
 }
@@ -61,7 +61,7 @@ func TestRunListHandlesWorkspaceError(t *testing.T) {
 	runs := &mockRunService{}
 	cmd := newRunListCommand(ui, ws, runs)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-name=prod"}); code != 1 {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
 
@@ -80,7 +80,7 @@ func TestRunListHandlesRunError(t *testing.T) {
 	runs := &mockRunService{err: errors.New("run failed")}
 	cmd := newRunListCommand(ui, ws, runs)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-name=prod"}); code != 1 {
 		t.Fatalf("expected exit 1, got %d", code)
 	}
 
@@ -110,7 +110,7 @@ func TestRunListOutputsJSON(t *testing.T) {
 	cmd := newRunListCommand(ui, ws, runs)
 
 	output, code := captureStdout(t, func() int {
-		return cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-output=json"})
+		return cmd.Run([]string{"-organization=my-org", "-name=prod", "-output=json"})
 	})
 
 	if code != 0 {

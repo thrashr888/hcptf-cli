@@ -63,7 +63,7 @@ func (c *RunDiscardCommand) runService(client *client.Client) runDiscarder {
 // Help returns help text for the run discard command
 func (c *RunDiscardCommand) Help() string {
 	helpText := `
-Usage: hcptf run discard [options]
+Usage: hcptf workspace run discard [options]
 
   Discard a run.
 
@@ -74,8 +74,8 @@ Options:
 
 Example:
 
-  hcptf run discard -id=run-abc123
-  hcptf run discard -id=run-abc123 -comment="No longer needed"
+  hcptf workspace run discard -id=run-abc123
+  hcptf workspace run discard -id=run-abc123 -comment="No longer needed"
 `
 	return strings.TrimSpace(helpText)
 }

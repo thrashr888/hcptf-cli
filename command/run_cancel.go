@@ -72,7 +72,7 @@ func (c *RunCancelCommand) runService(client *client.Client) runCanceler {
 // Help returns help text for the run cancel command
 func (c *RunCancelCommand) Help() string {
 	helpText := `
-Usage: hcptf run cancel [options]
+Usage: hcptf workspace run cancel [options]
 
   Cancel a run.
 
@@ -84,8 +84,8 @@ Options:
 
 Example:
 
-  hcptf run cancel -id=run-abc123
-  hcptf run cancel -id=run-abc123 -force -comment="Emergency stop"
+  hcptf workspace run cancel -id=run-abc123
+  hcptf workspace run cancel -id=run-abc123 -force -comment="Emergency stop"
 `
 	return strings.TrimSpace(helpText)
 }
