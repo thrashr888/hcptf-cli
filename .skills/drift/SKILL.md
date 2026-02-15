@@ -67,14 +67,17 @@ hcptf explorer query -org=<org-name> -type=workspaces \
 **Get commit information from the run:**
 
 ```bash
-# Get current run ID
-RUN_ID=$(hcptf workspace read -org=<org> -name=<workspace> -output=json | jq -r '.CurrentRunID')
+# Get current run ID from workspace
+hcptf <org> <workspace>  # Shows CurrentRunID
 
-# Get configuration version
-CONFIG_VERSION=$(hcptf run show -id=$RUN_ID -output=json | jq -r '.ConfigurationVersionID')
+# View configuration version with VCS commit info
+hcptf <org> <workspace> runs <run-id> configversion
+```
 
-# View configuration version details (includes VCS commit info if available)
-hcptf configversion read -id=$CONFIG_VERSION
+Or with JSON parsing:
+```bash
+RUN_ID=$(hcptf <org> <workspace> -output=json | jq -r '.CurrentRunID')
+hcptf <org> <workspace> runs $RUN_ID configversion
 ```
 
 **For VCS-backed workspaces**, this provides:
@@ -166,7 +169,7 @@ hcptf assessmentresult list -org=my-org -name=my-workspace
 
 # 2. Decision: Recreate the instance
 # 3. Apply fix
-hcptf run create -org=my-org -name=my-workspace \
+hcptf my-org my-workspace runs create \
   -message="Recreate deleted EC2 instance"
 ```
 
@@ -178,16 +181,21 @@ hcptf assessmentresult list -org=my-org -name=my-workspace
 # Shows: aws_route53_record.app - Action: update
 #        records: ["1.2.3.4"] -> ["5.6.7.8"]
 
-# 2. Decision: Is new IP correct?
+# 2. Get VCS info to see the code
+RUN_ID=$(hcptf my-org my-workspace -output=json | jq -r '.CurrentRunID')
+hcptf my-org my-workspace runs $RUN_ID configversion
+# Shows: CommitURL to review the configuration
+
+# 3. Decision: Is new IP correct?
 #    - If YES: Update variable or code
 #    - If NO: Run apply to revert
 
-# 3a. If updating variable:
+# 4a. If updating variable:
 hcptf variable update -org=my-org -workspace=my-workspace \
   -key=app_ip -value="5.6.7.8"
 
-# 3b. If reverting infrastructure:
-hcptf run create -org=my-org -name=my-workspace \
+# 4b. If reverting infrastructure:
+hcptf my-org my-workspace runs create \
   -message="Revert Route53 record to configured IP"
 ```
 
@@ -199,9 +207,14 @@ hcptf assessmentresult list -org=my-org -name=my-workspace
 # Shows: multiple resources - Action: update
 #        tags: {} -> {"Environment": "prod", "Owner": "team-a"}
 
-# 2. Decision: Tags are correct, update code to include them
-# 3. Update Terraform code to include tags in resource definitions
-# 4. Commit and push (triggers auto-run if VCS-backed)
+# 2. Get code location
+RUN_ID=$(hcptf my-org my-workspace -output=json | jq -r '.CurrentRunID')
+hcptf my-org my-workspace runs $RUN_ID configversion
+# Shows: RepoIdentifier, Branch, CommitURL
+
+# 3. Decision: Tags are correct, update code to include them
+# 4. Clone repo, checkout branch, update Terraform files with tags
+# 5. Commit and push (triggers auto-run if VCS-backed)
 ```
 
 ### Scenario 4: Certificate Expiring (Check Failure)
@@ -216,7 +229,7 @@ hcptf assessmentresult list -org=my-org -name=my-workspace
 # 2. Decision: Need to regenerate certificate
 # 3. Update code to generate new cert or increase validity period
 # 4. Apply changes
-hcptf run create -org=my-org -name=my-workspace \
+hcptf my-org my-workspace runs create \
   -message="Regenerate expiring certificate"
 ```
 
