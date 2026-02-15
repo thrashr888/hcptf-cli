@@ -19,6 +19,7 @@ type ExplorerQueryCommand struct {
 	sort         string
 	filter       string
 	fields       string
+	limit        int
 	pageNumber   int
 	pageSize     int
 	format       string
@@ -34,6 +35,7 @@ func (c *ExplorerQueryCommand) Run(args []string) int {
 	flags.StringVar(&c.sort, "sort", "", "Sort field (prefix with - for descending)")
 	flags.StringVar(&c.filter, "filter", "", "Filter conditions")
 	flags.StringVar(&c.fields, "fields", "", "Comma-separated fields to return")
+	flags.IntVar(&c.limit, "limit", 0, "Maximum number of results to return (overrides page-size)")
 	flags.IntVar(&c.pageNumber, "page", 1, "Page number")
 	flags.IntVar(&c.pageSize, "page-size", 20, "Page size")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
@@ -54,6 +56,11 @@ func (c *ExplorerQueryCommand) Run(args []string) int {
 		c.Ui.Error("Error: -type flag is required")
 		c.Ui.Error(c.Help())
 		return 1
+	}
+
+	// Apply limit if set (overrides page-size)
+	if c.limit > 0 {
+		c.pageSize = c.limit
 	}
 
 	// Validate query type
@@ -246,6 +253,7 @@ Options:
   -sort=<field>        Sort by field (prefix with - for descending, e.g., -created_at)
   -filter=<expr>       Filter expression (e.g., "name:prod*")
   -fields=<fields>     Comma-separated fields to return
+  -limit=<number>      Maximum number of results to return (overrides page-size)
   -page=<number>       Page number (default: 1)
   -page-size=<size>    Page size (default: 20)
   -output=<format>     Output format: table (default) or json
@@ -255,6 +263,9 @@ Examples:
 
   # List all workspaces
   hcptf explorer query -org=my-org -type=workspaces
+
+  # List first 10 workspaces
+  hcptf explorer query -org=my-org -type=workspaces -limit=10
 
   # List workspaces sorted by creation date
   hcptf explorer query -org=my-org -type=workspaces -sort=-created_at
