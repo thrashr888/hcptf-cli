@@ -1,7 +1,6 @@
 package command
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -35,7 +34,7 @@ func TestPolicyCheckOverrideHelp(t *testing.T) {
 	}
 
 	// Check for key help elements
-	if !strings.Contains(help, "hcptf policycheck override") {
+	if !strings.Contains(help, "hcptf policy check override") {
 		t.Error("Help should contain usage")
 	}
 	if !strings.Contains(help, "-id") {
@@ -130,7 +129,7 @@ func TestPolicyCheckOverrideFlagParsing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &PolicyCheckOverrideCommand{}
 
-			flags := cmd.Meta.FlagSet("policycheck override")
+			flags := cmd.Meta.FlagSet("policy check override")
 			flags.StringVar(&cmd.policyCheckID, "id", "", "Policy Check ID (required)")
 			flags.StringVar(&cmd.format, "output", "table", "Output format: table or json")
 			flags.BoolVar(&cmd.autoApprove, "auto-approve", false, "Skip confirmation prompt")
@@ -157,88 +156,92 @@ func TestPolicyCheckOverrideFlagParsing(t *testing.T) {
 	}
 }
 
-func TestPolicyCheckOverrideRunAutoApproveSuccess(t *testing.T) {
+func TestPolicyCheckOverrideRunSuccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/v2/ping":
-			_, _ = w.Write([]byte(`{"ok":true}`))
+			w.WriteHeader(http.StatusNoContent)
 			return
-		case "/api/v2/policy-checks/pc-1":
-			body := map[string]interface{}{
-				"data": map[string]interface{}{
-					"id":   "pc-1",
+		case "/api/v2/policy-checks/pchk-override":
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"data": {
+					"id": "pchk-override",
 					"type": "policy-checks",
-					"attributes": map[string]interface{}{
-						"actions": map[string]interface{}{
-							"is-overridable": true,
+					"attributes": {
+						"status": "soft_failed",
+						"scope": "workspace",
+						"actions": {
+							"is-overridable": true
 						},
-						"permissions": map[string]interface{}{
-							"can-override": true,
+						"permissions": {
+							"can-override": true
 						},
-						"scope":  "organization",
-						"status": "passed",
-						"result": map[string]interface{}{
-							"soft-failed": 0,
-						},
-					},
-				},
-			}
-			if encoded, err := json.Marshal(body); err == nil {
-				_, _ = w.Write(encoded)
-			}
+						"result": {
+							"passed": 0,
+							"total-failed": 1,
+							"hard-failed": 0,
+							"soft-failed": 1,
+							"advisory-failed": 0,
+							"duration": 100,
+							"result": false
+						}
+					}
+				}
+			}`))
 			return
-		case "/api/v2/policy-checks/pc-1/actions/override":
-			body := map[string]interface{}{
-				"data": map[string]interface{}{
-					"id":   "pc-1",
+		case "/api/v2/policy-checks/pchk-override/actions/override":
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`{
+				"data": {
+					"id": "pchk-override",
 					"type": "policy-checks",
-					"attributes": map[string]interface{}{
-						"actions": map[string]interface{}{
-							"is-overridable": true,
-						},
-						"permissions": map[string]interface{}{
-							"can-override": true,
-						},
-						"scope":  "organization",
+					"attributes": {
 						"status": "overridden",
-						"result": map[string]interface{}{
-							"soft-failed": 0,
+						"scope": "workspace",
+						"actions": {
+							"is-overridable": true
 						},
-					},
-				},
-			}
-			if encoded, err := json.Marshal(body); err == nil {
-				_, _ = w.Write(encoded)
-			}
+						"permissions": {
+							"can-override": true
+						}
+					}
+				}
+			}`))
 			return
 		default:
-			t.Fatalf("unexpected path: %s", r.URL.Path)
+			t.Fatalf("unexpected request: %s", r.URL.Path)
 		}
 	}))
 	defer server.Close()
 
+	t.Setenv("HCPTF_ADDRESS", server.URL)
+	t.Setenv("TFE_TOKEN", "test-token")
+
 	ui := cli.NewMockUi()
-	apiClient := newAssessmentResultTestClient(t, server.URL)
-	cmd := &PolicyCheckOverrideCommand{Meta: Meta{Ui: ui, client: apiClient}}
+	cmd := &PolicyCheckOverrideCommand{
+		Meta: Meta{
+			Ui: ui,
+		},
+	}
 
-	code := cmd.Run([]string{"-id=pc-1", "-auto-approve", "-output=json"})
+	output, code := captureStdout(t, func() int {
+		return cmd.Run([]string{
+			"-id=pchk-override",
+			"-auto-approve",
+			"-output=json",
+		})
+	})
 	if code != 0 {
-		t.Fatalf("expected exit 0, got %d, output=%q, err=%q", code, ui.OutputWriter.String(), ui.ErrorWriter.String())
+		t.Fatalf("expected exit code 0, got %d", code)
 	}
-
-	out := strings.TrimSpace(ui.OutputWriter.String())
-	var data map[string]interface{}
-	start := strings.Index(out, "{")
-	end := strings.LastIndex(out, "}")
-	if start == -1 || end == -1 || end <= start {
-		t.Fatalf("expected JSON output in response, got %q", out)
+	if !strings.Contains(output, "pchk-override") {
+		t.Fatalf("expected output to include policy check id, got %q", output)
 	}
-	jsonOutput := out[start : end+1]
-	if err := json.Unmarshal([]byte(jsonOutput), &data); err != nil {
-		t.Fatalf("failed to decode json output: %v, output: %q", err, jsonOutput)
-	}
-	if data["Status"] != "overridden" {
-		t.Fatalf("expected status overridden, got %v", data["Status"])
+	if !strings.Contains(output, "overridden") {
+		t.Fatalf("expected output to include overridden status, got %q", output)
 	}
 }
 
@@ -246,47 +249,106 @@ func TestPolicyCheckOverrideRunCannotOverride(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/api/v2/ping":
-			_, _ = w.Write([]byte(`{"ok":true}`))
+			w.WriteHeader(http.StatusNoContent)
 			return
-		case "/api/v2/policy-checks/pc-1":
-			body := map[string]interface{}{
-				"data": map[string]interface{}{
-					"id":   "pc-1",
+		case "/api/v2/policy-checks/pchk-blocked":
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"data": {
+					"id": "pchk-blocked",
 					"type": "policy-checks",
-					"attributes": map[string]interface{}{
-						"actions": map[string]interface{}{
-							"is-overridable": false,
+					"attributes": {
+						"status": "hard_failed",
+						"scope": "workspace",
+						"actions": {
+							"is-overridable": false
 						},
-						"permissions": map[string]interface{}{
-							"can-override": true,
-						},
-						"scope":  "organization",
-						"status": "soft_failed",
-						"result": map[string]interface{}{
-							"soft-failed": 1,
-						},
-					},
-				},
-			}
-			if encoded, err := json.Marshal(body); err == nil {
-				_, _ = w.Write(encoded)
-			}
+						"permissions": {
+							"can-override": true
+						}
+					}
+				}
+			}`))
 			return
 		default:
-			t.Fatalf("unexpected path: %s", r.URL.Path)
+			t.Fatalf("unexpected request: %s", r.URL.Path)
 		}
 	}))
 	defer server.Close()
 
-	ui := cli.NewMockUi()
-	apiClient := newAssessmentResultTestClient(t, server.URL)
-	cmd := &PolicyCheckOverrideCommand{Meta: Meta{Ui: ui, client: apiClient}}
+	t.Setenv("HCPTF_ADDRESS", server.URL)
+	t.Setenv("TFE_TOKEN", "test-token")
 
-	code := cmd.Run([]string{"-id=pc-1", "-auto-approve"})
-	if code != 1 {
-		t.Fatalf("expected exit 1, got %d", code)
+	ui := cli.NewMockUi()
+	cmd := &PolicyCheckOverrideCommand{
+		Meta: Meta{
+			Ui: ui,
+		},
 	}
-	if !strings.Contains(ui.ErrorWriter.String(), "cannot be overridden") {
-		t.Fatalf("expected cannot be overridden error, got %q", ui.ErrorWriter.String())
+
+	code := cmd.Run([]string{
+		"-id=pchk-blocked",
+		"-auto-approve",
+	})
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d", code)
+	}
+	if out := ui.ErrorWriter.String(); !strings.Contains(out, "cannot be overridden") {
+		t.Fatalf("expected cannot override error, got %q", out)
+	}
+}
+
+func TestPolicyCheckOverrideRunNoPermission(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/v2/ping":
+			w.WriteHeader(http.StatusNoContent)
+			return
+		case "/api/v2/policy-checks/pchk-noperm":
+			w.Header().Set("Content-Type", "application/vnd.api+json")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{
+				"data": {
+					"id": "pchk-noperm",
+					"type": "policy-checks",
+					"attributes": {
+						"status": "soft_failed",
+						"scope": "workspace",
+						"actions": {
+							"is-overridable": true
+						},
+						"permissions": {
+							"can-override": false
+						}
+					}
+				}
+			}`))
+			return
+		default:
+			t.Fatalf("unexpected request: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	t.Setenv("HCPTF_ADDRESS", server.URL)
+	t.Setenv("TFE_TOKEN", "test-token")
+
+	ui := cli.NewMockUi()
+	cmd := &PolicyCheckOverrideCommand{
+		Meta: Meta{
+			Ui: ui,
+		},
+	}
+
+	code := cmd.Run([]string{
+		"-id=pchk-noperm",
+		"-auto-approve",
+	})
+	if code != 1 {
+		t.Fatalf("expected exit code 1, got %d", code)
+	}
+	if out := ui.ErrorWriter.String(); !strings.Contains(out, "You do not have permission") {
+		t.Fatalf("expected permission error, got %q", out)
 	}
 }
