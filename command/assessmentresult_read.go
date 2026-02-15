@@ -21,33 +21,30 @@ type AssessmentResultReadCommand struct {
 
 // AssessmentResult represents a health assessment result
 type AssessmentResult struct {
-	ID   string               `json:"id"`
-	Type string               `json:"type"`
-	Data AssessmentResultData `json:"data"`
+	ID         string               `json:"id"`
+	Type       string               `json:"type"`
+	Attributes AssessmentResultData `json:"attributes"`
+	Links      AssessmentResultLinks `json:"links"`
 }
 
-// AssessmentResultData contains assessment result details
 type AssessmentResultData struct {
-	Attributes struct {
-		Drifted   bool    `json:"drifted"`
-		Succeeded bool    `json:"succeeded"`
-		ErrorMsg  *string `json:"error-msg"`
-		CreatedAt string  `json:"created-at"`
-	} `json:"attributes"`
-	Links struct {
-		Self              string `json:"self"`
-		JSONOutput        string `json:"json-output"`
-		JSONSchema        string `json:"json-schema"`
-		LogOutput         string `json:"log-output"`
-		HealthJSONRedacted string `json:"health-json-redacted"`
-	} `json:"links"`
+	Drifted   bool    `json:"drifted"`
+	Succeeded bool    `json:"succeeded"`
+	ErrorMsg  *string `json:"error-msg"`
+	CreatedAt string  `json:"created-at"`
+}
+
+type AssessmentResultLinks struct {
+	Self              string `json:"self"`
+	JSONOutput        string `json:"json-output"`
+	JSONSchema        string `json:"json-schema"`
+	LogOutput         string `json:"log-output"`
+	HealthJSONRedacted string `json:"health-json-redacted"`
 }
 
 // AssessmentResultResponse represents the API response
 type AssessmentResultResponse struct {
-	ID   string               `json:"id"`
-	Type string               `json:"type"`
-	Data AssessmentResultData `json:"data"`
+	Data AssessmentResult `json:"data"`
 }
 
 // TerraformPlan represents the Terraform JSON plan structure
@@ -172,7 +169,7 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 	}
 
 	data := map[string]interface{}{
-		"ID":               assessmentResult.ID,
+		"ID":               ar.ID,
 		"DriftStatus":      driftStatus,
 		"AssessmentStatus": assessmentStatus,
 		"CreatedAt":        ar.Attributes.CreatedAt,
@@ -195,6 +192,20 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 
+	c.Ui.Output("\n================================================================================")
+	c.Ui.Output("INTERPRETATION")
+	c.Ui.Output(strings.Repeat("=", 80))
+
+	if ar.Attributes.Drifted {
+		c.Ui.Output("This assessment detected drift between the last run state and current infrastructure.")
+	} else {
+		c.Ui.Output("No drift was detected in this assessment.")
+	}
+
+	if ar.Attributes.ErrorMsg != nil && *ar.Attributes.ErrorMsg != "" {
+		c.Ui.Output(fmt.Sprintf("Assessment errors: %s", *ar.Attributes.ErrorMsg))
+	}
+
 	// Show drift and check details if requested
 	// Use health-json-redacted if available (has checks), otherwise fall back to json-output (drift only)
 	outputURL := ar.Links.HealthJSONRedacted
@@ -202,7 +213,7 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 		outputURL = ar.Links.JSONOutput
 	}
 
-	if c.showDrift && !c.summaryOnly && outputURL != "" {
+	if c.showDrift && !c.summaryOnly && ar.Attributes.Drifted && outputURL != "" {
 		if ar.Attributes.Drifted {
 			c.Ui.Output("\n" + strings.Repeat("=", 80))
 			c.Ui.Output("DRIFT DETAILS")

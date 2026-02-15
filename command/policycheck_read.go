@@ -3,6 +3,9 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/output"
+	"os"
 )
 
 // PolicyCheckReadCommand is a command to read policy check details
@@ -45,6 +48,9 @@ func (c *PolicyCheckReadCommand) Run(args []string) int {
 
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
+	if c.Meta.OutputWriter == nil && c.Meta.ErrorWriter == nil {
+		formatter = output.NewFormatterWithWriters(c.format, os.Stdout, os.Stderr)
+	}
 
 	data := map[string]interface{}{
 		"ID":            policyCheck.ID,
@@ -88,7 +94,7 @@ func (c *PolicyCheckReadCommand) Run(args []string) int {
 // Help returns help text for the policy check read command
 func (c *PolicyCheckReadCommand) Help() string {
 	helpText := `
-Usage: hcptf policycheck read [options]
+Usage: hcptf policy check read [options]
 
   Read policy check details and results.
 
@@ -99,8 +105,8 @@ Options:
 
 Example:
 
-  hcptf policycheck read -id=polchk-abc123
-  hcptf policycheck read -id=polchk-abc123 -output=json
+  hcptf policy check read -id=polchk-abc123
+  hcptf policy check read -id=polchk-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)
 }

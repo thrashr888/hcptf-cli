@@ -3,6 +3,9 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/output"
+	"os"
 )
 
 // PolicyCheckOverrideCommand is a command to override a soft-mandatory policy check
@@ -90,6 +93,9 @@ func (c *PolicyCheckOverrideCommand) Run(args []string) int {
 
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
+	if c.Meta.OutputWriter == nil && c.Meta.ErrorWriter == nil {
+		formatter = output.NewFormatterWithWriters(c.format, os.Stdout, os.Stderr)
+	}
 
 	c.Ui.Output("Policy check overridden successfully")
 
@@ -106,7 +112,7 @@ func (c *PolicyCheckOverrideCommand) Run(args []string) int {
 // Help returns help text for the policy check override command
 func (c *PolicyCheckOverrideCommand) Help() string {
 	helpText := `
-Usage: hcptf policycheck override [options]
+Usage: hcptf policy check override [options]
 
   Override a soft-mandatory policy check. This allows a run to proceed
   even when a soft-mandatory policy has failed.
@@ -122,8 +128,8 @@ Options:
 
 Example:
 
-  hcptf policycheck override -id=polchk-abc123
-  hcptf policycheck override -id=polchk-abc123 -auto-approve
+  hcptf policy check override -id=polchk-abc123
+  hcptf policy check override -id=polchk-abc123 -auto-approve
 `
 	return strings.TrimSpace(helpText)
 }

@@ -3,7 +3,9 @@ package command
 import (
 	"fmt"
 	"strings"
+	"os"
 
+	"github.com/hashicorp/hcptf-cli/internal/output"
 	tfe "github.com/hashicorp/go-tfe"
 )
 
@@ -82,6 +84,9 @@ func (c *AuditTrailReadCommand) Run(args []string) int {
 
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
+	if c.Meta.OutputWriter == nil && c.Meta.ErrorWriter == nil {
+		formatter = output.NewFormatterWithWriters(c.format, os.Stdout, os.Stderr)
+	}
 
 	data := map[string]interface{}{
 		"ID":        auditTrail.ID,
@@ -117,7 +122,7 @@ func (c *AuditTrailReadCommand) Run(args []string) int {
 // Help returns help text for the audit trail read command
 func (c *AuditTrailReadCommand) Help() string {
 	helpText := `
-Usage: hcptf audittrail read [options]
+Usage: hcptf audit trail read [options]
 
   Read detailed information about a specific audit trail event by searching
   through recent audit logs. Note: This searches through the available audit
@@ -132,8 +137,8 @@ Options:
 
 Example:
 
-  hcptf audittrail read -id=ae66e491-db59-457c-8445-9c908ee726ae
-  hcptf audittrail read -id=ae66e491-db59-457c-8445-9c908ee726ae -output=json
+  hcptf audit trail read -id=ae66e491-db59-457c-8445-9c908ee726ae
+  hcptf audit trail read -id=ae66e491-db59-457c-8445-9c908ee726ae -output=json
 `
 	return strings.TrimSpace(helpText)
 }
