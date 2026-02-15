@@ -1,7 +1,10 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 )
 
@@ -13,12 +16,31 @@ type AssessmentResultListCommand struct {
 	format       string
 }
 
+type AssessmentResultListItem struct {
+	ID         string                     `json:"id"`
+	Type       string                     `json:"type"`
+	Attributes AssessmentResultAttributes `json:"attributes"`
+}
+
+type AssessmentResultAttributes struct {
+	Drifted   bool    `json:"drifted"`
+	Succeeded bool    `json:"succeeded"`
+	ErrorMsg  *string `json:"error-msg"`
+	CreatedAt string  `json:"created-at"`
+}
+
+type AssessmentResultListResponse struct {
+	Data     interface{}               `json:"data"`
+	Included []AssessmentResultListItem `json:"included"`
+}
+
 // Run executes the assessmentresult list command
 func (c *AssessmentResultListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("assessmentresult list")
 	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
-	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
+	flags.StringVar(&c.workspace, "name", "", "Workspace name (required)")
+	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -33,7 +55,7 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 	}
 
 	if c.workspace == "" {
-		c.Ui.Error("Error: -workspace flag is required")
+		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -46,45 +68,106 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 	}
 
 	// Get workspace to verify it exists
-	_, err = client.Workspaces.Read(client.Context(), c.organization, c.workspace)
+	workspace, err := client.Workspaces.Read(client.Context(), c.organization, c.workspace)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading workspace: %s", err))
 		return 1
 	}
 
+	// Make API call to get workspace with assessment result included
+	apiURL := fmt.Sprintf("%s/api/v2/workspaces/%s?assessment_meta=true&include=current_assessment_result", client.GetAddress(), workspace.ID)
+	req, err := http.NewRequestWithContext(client.Context(), "GET", apiURL, nil)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error creating request: %s", err))
+		return 1
+	}
+
+	req.Header.Set("Authorization", "Bearer "+client.Token())
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	httpClient := newHTTPClient()
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error making API request: %s", err))
+		return 1
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error reading response: %s", err))
+		return 1
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.Ui.Error(fmt.Sprintf("API request failed with status %d: %s", resp.StatusCode, string(body)))
+		if resp.StatusCode == http.StatusNotFound {
+			c.Ui.Error("\nNote: Assessment results may not be available in your plan.")
+			c.Ui.Error("Health assessments must be enabled in workspace settings.")
+		}
+		return 1
+	}
+
+	var response AssessmentResultListResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		c.Ui.Error(fmt.Sprintf("Error parsing response: %s", err))
+		return 1
+	}
+
+	// Filter included items for assessment-results
+	var assessmentResults []AssessmentResultListItem
+	for _, item := range response.Included {
+		if item.Type == "assessment-results" {
+			assessmentResults = append(assessmentResults, item)
+		}
+	}
+
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
 
-	// Since the go-tfe library doesn't have direct support for listing assessment results yet,
-	// we provide guidance to the user
-	c.Ui.Output("Note: Assessment result listing is not yet fully supported in the CLI.")
-	c.Ui.Output("\nHealth assessments provide drift detection and continuous validation results.")
-	c.Ui.Output("To view assessment results:")
-	c.Ui.Output("")
-	c.Ui.Output("1. View workspace health in the HCP Terraform UI")
-	c.Ui.Output("2. Check drift detection results in workspace settings")
-	c.Ui.Output("3. Use the API directly to list assessment results")
-	c.Ui.Output("")
-	c.Ui.Output("If you have an assessment result ID, you can view its details with:")
-	c.Ui.Output("  hcptf assessmentresult read -id=<assessment-result-id>")
-	c.Ui.Output("")
-	c.Ui.Output("Assessment result IDs are typically prefixed with 'asmtres-'")
-	c.Ui.Output("")
-	c.Ui.Output("This feature requires HCP Terraform Plus or Enterprise with health")
-	c.Ui.Output("assessments enabled in workspace settings.")
+	if len(assessmentResults) == 0 {
+		c.Ui.Output("No assessment results found")
+		return 0
+	}
 
-	// Return empty table to satisfy the formatter
-	headers := []string{"Info"}
-	rows := [][]string{{"See guidance above"}}
+	headers := []string{"ID", "Status", "Drift", "Created At", "Error"}
+	var rows [][]string
+	for _, ar := range assessmentResults {
+		status := "Failed"
+		if ar.Attributes.Succeeded {
+			status = "Succeeded"
+		}
+
+		drift := "No"
+		if ar.Attributes.Drifted {
+			drift = "Yes"
+		}
+
+		errorMsg := ""
+		if ar.Attributes.ErrorMsg != nil {
+			errorMsg = *ar.Attributes.ErrorMsg
+			if len(errorMsg) > 60 {
+				errorMsg = errorMsg[:57] + "..."
+			}
+		}
+
+		rows = append(rows, []string{
+			ar.ID,
+			status,
+			drift,
+			ar.Attributes.CreatedAt,
+			errorMsg,
+		})
+	}
+
 	formatter.Table(headers, rows)
-
 	return 0
 }
 
 // Help returns help text for the assessmentresult list command
 func (c *AssessmentResultListCommand) Help() string {
 	helpText := `
-Usage: hcptf assessmentresult list [options]
+Usage: hcptf workspace run assessmentresult list [options]
 
   List health assessment results for a workspace.
 
@@ -99,13 +182,14 @@ Options:
 
   -organization=<name>  Organization name (required)
   -org=<name>          Alias for -organization
-  -workspace=<name>    Workspace name (required)
+  -name=<name>         Workspace name (required)
+  -workspace=<name>    Workspace name (alias)
   -output=<format>     Output format: table (default) or json
 
 Example:
 
-  hcptf assessmentresult list -org=my-org -workspace=my-workspace
-  hcptf assessmentresult list -org=my-org -workspace=prod -output=json
+  hcptf workspace run assessmentresult list -org=my-org -name=my-workspace
+  hcptf workspace run assessmentresult list -org=my-org -name=prod -output=json
 
 Notes:
 
