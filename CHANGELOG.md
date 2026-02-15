@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agent Skills**: Added `.skills/hcptf-cli/` with comprehensive CLI usage guide for AI agents
+  - Automatically discovered by compatible agents (Claude Code, Cursor, GitHub Copilot, etc.)
+  - Covers authentication, hierarchical commands, workflows, and best practices
+  - Follows [Agent Skills specification](https://agentskills.io/)
 - Parent commands for hierarchical navigation: `hcptf registry` and `hcptf stack`
 - Explorer API support: `hcptf explorer query` for querying resources across organizations
 - Enhanced assessment result output with drift detection and analysis

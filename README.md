@@ -232,6 +232,21 @@ hcptf workspace --help
 hcptf workspace create --help
 ```
 
+## Agent Skills
+
+This project includes [Agent Skills](https://agentskills.io/) that help AI agents use the CLI effectively. Skills are automatically discovered by compatible agents (Claude Code, Cursor, GitHub Copilot, etc.).
+
+**Available skills:**
+- **hcptf-cli**: Comprehensive guide covering authentication, commands, workflows, and best practices
+
+The `.skills/` directory contains structured instructions that agents can load to:
+- Understand hierarchical command structure
+- Learn common workflows (workspace creation, deployments, etc.)
+- Follow best practices for automation
+- Handle errors and troubleshooting
+
+See [.skills/README.md](.skills/README.md) for details.
+
 ## Project Structure
 
 ```
