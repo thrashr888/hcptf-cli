@@ -46,12 +46,13 @@ Guide for investigating and resolving infrastructure drift in HCP Terraform work
 
 ### version-upgrades
 
-Guide for upgrading Terraform, provider, and module versions in workspaces.
+Guide for upgrading Terraform, provider, module, and policy versions in workspaces.
 
 **Use when:**
 - Upgrading workspace Terraform version
 - Updating provider versions for security patches or new features
 - Upgrading modules to latest versions
+- Updating policy sets to newer versions
 - Planning organization-wide version updates
 - Rolling back failed upgrades
 
@@ -59,10 +60,32 @@ Guide for upgrading Terraform, provider, and module versions in workspaces.
 - Finding current versions across workspaces (Explorer API)
 - Checking for outdated versions
 - Upgrading workspace Terraform version (workspace setting)
-- Updating provider/module versions in code (VCS workflow)
+- Updating provider/module/policy versions in code (VCS workflow)
 - Testing upgrades with speculative runs
 - Handling breaking changes and rollbacks
 - Bulk upgrade strategies for multiple workspaces
+
+### policy-compliance
+
+Guide for investigating and resolving policy check failures.
+
+**Use when:**
+- Runs are blocked by failed policy checks
+- Understanding why policies failed
+- Deciding whether to fix code or override policies
+- Finding policy failures across the organization
+- Testing new policies before enforcement
+- Troubleshooting policy check issues
+
+**Key topics covered:**
+- Detecting policy failures in runs
+- Viewing policy check details and results
+- Understanding what policies check (using public registry)
+- Identifying which resources violated policies
+- Decision matrix for remediation (fix code, override, adjust policy)
+- Common policy scenarios (CIS benchmarks, tagging, security groups)
+- Policy troubleshooting and best practices
+- Tracking compliance metrics across organization
 
 ## Using Skills
 
