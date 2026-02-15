@@ -68,16 +68,44 @@ hcptf explorer query -org=<org> -type=modules \
 ### 2. Find Latest Versions
 
 **Terraform versions:**
-- Check https://releases.hashicorp.com/terraform/
-- Or see what's in use across your org (Explorer tf_versions)
+- Official releases: https://releases.hashicorp.com/terraform/
+- What's in use across org: `hcptf explorer query -org=<org> -type=tf_versions`
 
-**Provider versions:**
-- Check https://registry.terraform.io/providers/hashicorp/aws/latest
-- Or see highest version in use across org (Explorer providers)
+**Public provider versions:**
+- Provider registry page: `https://registry.terraform.io/providers/<namespace>/<name>/latest`
+  - Example: https://registry.terraform.io/providers/hashicorp/aws/latest
+  - Example: https://registry.terraform.io/providers/hashicorp/random/latest
+- Documentation includes changelog, upgrade guides, and version history
+- In use across org: `hcptf explorer query -org=<org> -type=providers`
 
-**Module versions:**
-- Check public registry: https://registry.terraform.io/modules/<namespace>/<name>/<system>
-- Or check private registry: `hcptf registry module read`
+**Private provider versions:**
+```bash
+# List private providers
+hcptf registry provider list -organization=<org>
+
+# View provider details and versions
+hcptf registry provider read -organization=<org> -name=<provider>
+
+# View specific version
+hcptf registry provider version read -organization=<org> \
+  -name=<provider> -version=<version>
+```
+
+**Public module versions:**
+- Module registry page: `https://registry.terraform.io/modules/<namespace>/<name>/<system>`
+  - Example: https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws
+  - Example: https://registry.terraform.io/modules/hashicorp/dir/template
+- Shows available versions, inputs/outputs, and usage examples
+- In use across org: `hcptf explorer query -org=<org> -type=modules`
+
+**Private module versions:**
+```bash
+# List private modules
+hcptf registry module list -organization=<org>
+
+# View module details and versions
+hcptf registry module read -organization=<org> -namespace=<org> -name=<module>
+```
 
 ### 3. Upgrade Terraform Version (Workspace Setting)
 
@@ -219,14 +247,17 @@ git clone https://github.com/thrashr888/my-infra
 cd my-infra
 git checkout main
 
+# Review upgrade guide BEFORE editing (check for breaking changes):
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-upgrade
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-changelog
+
 # Edit versions.tf or terraform block:
 # Change:
 #   aws = { version = "~> 5.69.0" }
 # To:
 #   aws = { version = "~> 6.0" }
 
-# Review AWS provider v6 upgrade guide for breaking changes:
-# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-upgrade
+# May also need to update resource configurations if provider API changed
 
 # 4. Commit and push
 git add versions.tf
@@ -295,24 +326,27 @@ git clone https://github.com/thrashr888/cool-website
 cd cool-website
 git checkout main
 
+# Check module docs BEFORE editing (for breaking changes):
+# https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/latest
+# Review: Inputs, Outputs, Changelog, Examples
+
 # Edit main.tf (or wherever module is called):
 # Change:
 #   module "s3_bucket" {
 #     source  = "terraform-aws-modules/s3-bucket/aws"
 #     version = "~> 4.0"
+#     bucket  = var.bucket_name
 #     ...
 #   }
 # To:
 #   module "s3_bucket" {
 #     source  = "terraform-aws-modules/s3-bucket/aws"
 #     version = "~> 5.10"
+#     bucket  = var.bucket_name
+#     # Add any new required variables
+#     # Remove any deprecated variables
 #     ...
 #   }
-
-# Check module changelog for breaking changes:
-# https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/latest
-
-# Update module arguments if API changed
 
 # 4. Commit and push
 git add main.tf
