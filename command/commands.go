@@ -1293,6 +1293,13 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Explorer API commands (query resources across organization)
+		"explorer query": func() (cli.Command, error) {
+			return &ExplorerQueryCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// VCS Event commands (VCS integration debugging and monitoring)
 		"vcsevent list": func() (cli.Command, error) {
 			return &VCSEventListCommand{
