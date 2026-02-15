@@ -1,7 +1,10 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
@@ -85,6 +88,27 @@ func (c *ConfigVersionReadCommand) Run(args []string) int {
 		data["UploadURL"] = configVersion.UploadURL
 	}
 
+	// Fetch VCS ingress attributes if this is from a VCS source
+	if configVersion.Source == "github" || configVersion.Source == "gitlab" || configVersion.Source == "bitbucket" || configVersion.Source == "ado" {
+		if ingress := c.fetchIngressAttributes(client, configVersionID); ingress != nil {
+			if ingress.Branch != "" {
+				data["Branch"] = ingress.Branch
+			}
+			if ingress.CommitSHA != "" {
+				data["CommitSHA"] = ingress.CommitSHA
+			}
+			if ingress.CommitURL != "" {
+				data["CommitURL"] = ingress.CommitURL
+			}
+			if ingress.CompareURL != "" {
+				data["CompareURL"] = ingress.CompareURL
+			}
+			if ingress.Identifier != "" {
+				data["RepoIdentifier"] = ingress.Identifier
+			}
+		}
+	}
+
 	formatter.KeyValue(data)
 	return 0
 }
@@ -101,6 +125,60 @@ func (c *ConfigVersionReadCommand) runService(client *client.Client) runReader {
 		return c.runSvc
 	}
 	return client.Runs
+}
+
+// IngressAttributes represents VCS ingress information
+type IngressAttributes struct {
+	Branch     string `json:"branch"`
+	CommitSHA  string `json:"commit-sha"`
+	CommitURL  string `json:"commit-url"`
+	CompareURL string `json:"compare-url"`
+	Identifier string `json:"identifier"`
+}
+
+// IngressAttributesResponse represents the API response for ingress attributes
+type IngressAttributesResponse struct {
+	Data struct {
+		ID         string             `json:"id"`
+		Type       string             `json:"type"`
+		Attributes IngressAttributes  `json:"attributes"`
+	} `json:"data"`
+}
+
+// fetchIngressAttributes fetches VCS ingress attributes for a configuration version
+func (c *ConfigVersionReadCommand) fetchIngressAttributes(client *client.Client, configVersionID string) *IngressAttributes {
+	apiURL := fmt.Sprintf("%s/api/v2/configuration-versions/%s/ingress-attributes", client.GetAddress(), configVersionID)
+
+	req, err := http.NewRequestWithContext(client.Context(), "GET", apiURL, nil)
+	if err != nil {
+		return nil
+	}
+
+	req.Header.Set("Authorization", "Bearer "+client.Token())
+	req.Header.Set("Content-Type", "application/vnd.api+json")
+
+	httpClient := newHTTPClient()
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+
+	var response IngressAttributesResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil
+	}
+
+	return &response.Data.Attributes
 }
 
 // Help returns help text for the configversion read command

@@ -26,6 +26,24 @@ Comprehensive guide for managing HCP Terraform resources using the hcptf command
 - Output formats (table, JSON)
 - Best practices and troubleshooting
 
+### drift
+
+Guide for investigating and resolving infrastructure drift in HCP Terraform workspaces.
+
+**Use when:**
+- Infrastructure has changed outside of Terraform
+- Investigating drift detection alerts
+- Deciding whether to update code or fix infrastructure
+- Resolving continuous validation check failures
+
+**Key topics covered:**
+- Finding drifted workspaces with Explorer API
+- Viewing detailed drift information (what changed, before/after values)
+- Getting VCS commit information for the configuration
+- Decision matrix for drift resolution strategies
+- Common drift scenarios and solutions
+- Verifying drift resolution
+
 ## Using Skills
 
 ### In Compatible Agents
