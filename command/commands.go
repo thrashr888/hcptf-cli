@@ -147,6 +147,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"planexport delete": func() (cli.Command, error) {
+			return &PlanExportDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// Apply commands
 		"apply read": func() (cli.Command, error) {
@@ -698,6 +703,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"oauthtoken delete": func() (cli.Command, error) {
+			return &OAuthTokenDeleteCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// Team Access commands (workspace permissions)
 		"teamaccess list": func() (cli.Command, error) {
@@ -1049,6 +1059,87 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
+		// Cost estimate commands
+		"costestimate read": func() (cli.Command, error) {
+			return &CostEstimateReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Feature set commands
+		"featureset list": func() (cli.Command, error) {
+			return &FeatureSetListCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// GitHub app commands
+		"githubapp list": func() (cli.Command, error) {
+			return &GitHubAppListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"githubapp read": func() (cli.Command, error) {
+			return &GitHubAppReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// IP range commands
+		"iprange list": func() (cli.Command, error) {
+			return &IPRangeReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// No-code provisioning commands
+		"nocode list": func() (cli.Command, error) {
+			return &NoCodeListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"nocode create": func() (cli.Command, error) {
+			return &NoCodeCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"nocode read": func() (cli.Command, error) {
+			return &NoCodeReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"nocode update": func() (cli.Command, error) {
+			return &NoCodeUpdateCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Stability policy commands
+		"stabilitypolicy read": func() (cli.Command, error) {
+			return &StabilityPolicyReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// Subscription commands
+		"subscription list": func() (cli.Command, error) {
+			return &SubscriptionListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"subscription read": func() (cli.Command, error) {
+			return &SubscriptionReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
+		// User commands
+		"user read": func() (cli.Command, error) {
+			return &UserReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		// User Token commands (manage user-level API tokens)
 		"usertoken list": func() (cli.Command, error) {
 			return &UserTokenListCommand{
@@ -1128,6 +1219,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"organizationtag create": func() (cli.Command, error) {
+			return &OrganizationTagCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
 		"organizationtag delete": func() (cli.Command, error) {
 			return &OrganizationTagDeleteCommand{
 				Meta: *meta,
@@ -1159,6 +1255,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 		"reservedtagkey create": func() (cli.Command, error) {
 			return &ReservedTagKeyCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"reservedtagkey update": func() (cli.Command, error) {
+			return &ReservedTagKeyUpdateCommand{
 				Meta: *meta,
 			}, nil
 		},
@@ -1396,6 +1497,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 	}
 
 	namespaceSynopses := map[string]string{
+		"costestimate":           "Manage cost estimates",
+		"featureset":             "Manage feature sets",
+		"githubapp":              "Manage GitHub app installations",
+		"iprange":                "View Terraform IP ranges",
+		"nocode":                 "Manage no-code provisioning",
 		"account":                "Manage accounts",
 		"agent":                  "Manage agents",
 		"apply":                  "Manage applies",
@@ -1432,6 +1538,8 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		"projectteamaccess":      "Manage project team access",
 		"queryrun":               "Search runs",
 		"queryworkspace":         "Search workspaces",
+		"stabilitypolicy":        "Read stability policy",
+		"subscription":           "Manage subscriptions",
 		"reservedtagkey":         "Manage reserved tag keys",
 		"run":                    "Manage Terraform runs",
 		"runtask":                "Manage run tasks",

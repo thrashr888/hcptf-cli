@@ -17,3 +17,7 @@ type planExportReader interface {
 type planExportDownloader interface {
 	Download(ctx context.Context, planExportID string) ([]byte, error)
 }
+
+type planExportDeleter interface {
+	Delete(ctx context.Context, planExportID string) error
+}

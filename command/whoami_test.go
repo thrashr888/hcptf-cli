@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -33,9 +34,9 @@ func TestWhoAmICommandHandlesAPIError(t *testing.T) {
 func TestWhoAmICommandSuccess(t *testing.T) {
 	ui := cli.NewMockUi()
 	svc := &mockAccountReadService{response: &tfe.User{
-		ID:              "user-1",
-		Email:           "test@example.com",
-		Username:        "testuser",
+		ID:               "user-1",
+		Email:            "test@example.com",
+		Username:         "testuser",
 		IsServiceAccount: false,
 	}}
 	cmd := newWhoAmICommand(ui, svc)
@@ -54,9 +55,9 @@ func TestWhoAmICommandSuccess(t *testing.T) {
 func TestWhoAmICommandJSONOutput(t *testing.T) {
 	ui := cli.NewMockUi()
 	svc := &mockAccountReadService{response: &tfe.User{
-		ID:              "user-1",
-		Email:           "test@example.com",
-		Username:        "testuser",
+		ID:               "user-1",
+		Email:            "test@example.com",
+		Username:         "testuser",
 		IsServiceAccount: true,
 	}}
 	cmd := newWhoAmICommand(ui, svc)
@@ -68,11 +69,16 @@ func TestWhoAmICommandJSONOutput(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected exit 0, got %d: %s", code, ui.ErrorWriter.String())
 	}
-	if !strings.Contains(output, "\"ID\":\"user-1\"") {
-		t.Fatalf("expected JSON output to include ID, got: %s", output)
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal([]byte(output), &payload); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
 	}
-	if !strings.Contains(output, "\"IsServiceAccount\":true") {
-		t.Fatalf("expected JSON output to include service account flag, got: %s", output)
+	if got, ok := payload["ID"]; !ok || got != "user-1" {
+		t.Fatalf("expected ID=user-1, got: %v", payload["ID"])
+	}
+	if got, ok := payload["IsServiceAccount"]; !ok || got != true {
+		t.Fatalf("expected IsServiceAccount=true, got: %v", payload["IsServiceAccount"])
 	}
 }
 

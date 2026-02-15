@@ -105,6 +105,8 @@ func TestLoginFlagParsing(t *testing.T) {
 func TestLoginShowTokenFromConfig(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
+	t.Setenv("TFE_TOKEN", "")
+	t.Setenv("HCPTF_TOKEN", "")
 
 	credsPath := filepath.Join(tmpDir, ".terraform.d", "credentials.tfrc.json")
 	if err := ensureDir(filepath.Dir(credsPath)); err != nil {
@@ -141,6 +143,8 @@ func TestLoginShowTokenFromConfig(t *testing.T) {
 func TestLoginShowTokenMissing(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("HOME", tmpDir)
+	t.Setenv("TFE_TOKEN", "")
+	t.Setenv("HCPTF_TOKEN", "")
 
 	ui := cli.NewMockUi()
 	cmd := &LoginCommand{Meta: newTestMeta(ui)}

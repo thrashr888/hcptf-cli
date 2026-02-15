@@ -1,0 +1,41 @@
+package command
+
+import (
+	"github.com/mitchellh/cli"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+)
+
+func TestStabilityPolicyReadCommand_FetchesExpectedEndpoint(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v2/ping" {
+			_, _ = w.Write([]byte(`{"ok":true}`))
+			return
+		}
+		if r.Method != http.MethodGet {
+			t.Fatalf("expected method %s, got %s", http.MethodGet, r.Method)
+		}
+		if r.URL.Path != "/api/v2/stability-policy" {
+			t.Fatalf("expected path /api/v2/stability-policy, got %s", r.URL.Path)
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"data":{"id":"sp-1","type":"stability-policy","attributes":{"enabled":true}}}`))
+	}))
+	defer server.Close()
+
+	ui := cli.NewMockUi()
+	apiClient := newAssessmentResultTestClient(t, server.URL)
+	cmd := &StabilityPolicyReadCommand{Meta: Meta{Ui: ui, client: apiClient}}
+
+	code := cmd.Run([]string{"-output=json"})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	out := ui.OutputWriter.String()
+	if !strings.Contains(out, "\"id\": \"sp-1\"") {
+		t.Fatalf("expected JSON output to include id sp-1, got %q", out)
+	}
+}

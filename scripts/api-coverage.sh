@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
-# scripts/api-coverage.sh - Compare TFC API docs against CLI command coverage
+# scripts/api-coverage.sh - Compare API resource coverage against registered CLI commands.
 #
 # Usage: ./scripts/api-coverage.sh [summary|detail|missing]
 #   summary - Show coverage table (default)
-#   detail  - Show coverage table with per-resource operation details
-#   missing - Show only missing resources and operations
+#   detail  - Show coverage table with missing operation list
+#   missing - Show only resources with gaps
 
 set -euo pipefail
 
 MODE="${1:-summary}"
+case "${MODE}" in
+    summary|detail|missing) ;;
+    *)
+        echo "Usage: ./scripts/api-coverage.sh [summary|detail|missing]" >&2
+        exit 1
+        ;;
+esac
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMD_DIR="${SCRIPT_DIR}/../command"
+REPO_ROOT="${SCRIPT_DIR}/.."
+COMMANDS_FILE="${REPO_ROOT}/command/commands.go"
+CMD_DIR="${REPO_ROOT}/command"
+
+if [[ ! -f "${COMMANDS_FILE}" ]]; then
+    echo "Error: commands file not found at ${COMMANDS_FILE}" >&2
+    exit 1
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -21,56 +36,53 @@ BOLD='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
 
-# Disable colors if not a terminal
-if [ ! -t 1 ]; then
+if [[ ! -t 1 ]]; then
     RED='' GREEN='' YELLOW='' CYAN='' BOLD='' DIM='' NC=''
 fi
 
-# ─────────────────────────────────────────────────────────────────────────────
-# API resource definitions
-# Format: "api_doc_name|cli_prefix|operations"
-#
-# api_doc_name: filename from web-unified-docs/.../api-docs/ (without .mdx)
-# cli_prefix:   prefix used in command/<prefix>_<action>.go
-# operations:   comma-separated list of expected CRUD operations
-#               L=list, C=create, R=read, U=update, D=delete, plus custom ops
-#
-# Source: https://github.com/hashicorp/web-unified-docs/tree/main/content/terraform-docs-common/docs/cloud-docs/api-docs
-# ─────────────────────────────────────────────────────────────────────────────
+declare -A CMD_SET=()
+while IFS= read -r key; do
+    [[ -z "${key}" ]] && continue
+    CMD_SET["${key}"]=1
+done < <(rg 'func\(\) \(cli.Command, error\)' "${COMMANDS_FILE}" | awk -F'"' '{print $2}')
 
+# API resource definitions
+# Format: "api_doc_name|command_prefix|operations"
+# operations:
+#   L=list C=create R=read U=update D=delete
+#   plus custom ops (e.g. outputs, query, override)
 RESOURCES=(
-    # Account & Authentication
+    # Account & auth
     "account|account|C,R,U"
 
     # Organizations
     "organizations|organization|L,C,R,U,D"
     "organization-memberships|organizationmembership|L,C,R,D"
-    "organization-tags|organizationtag|L,D"
+    "organization-tags|organizationtag|L,C,D"
     "organization-tokens|organizationtoken|L,C,R,D"
 
     # Workspaces
     "workspaces|workspace|L,C,R,U,D"
     "workspace-variables|variable|L,C,U,D"
     "workspace-resources|workspaceresource|L,R"
+    "workspace-tags|workspacetag|L,C,D"
 
-    # Runs
+    # Runs / plans / applies
     "runs|run|L,C,R"
     "applies|apply|R"
     "plans|plan|R"
-    "plan-exports|planexport|C,R"
+    "plan-exports|planexport|C,R,D"
     "cost-estimates|costestimate|R"
 
     # State
     "state-versions|state|L,R"
-    "state-version-outputs|state|R"
+    "state-version-outputs|state|outputs"
 
-    # Configuration
+    # Config versions / variable sets
     "configuration-versions|configversion|L,C,R"
-
-    # Variables
     "variable-sets|variableset|L,C,R,U,D"
 
-    # Teams & Access
+    # Teams / access
     "teams|team|L,C,R,D"
     "team-access|teamaccess|L,C,R,U,D"
     "team-members|team|R"
@@ -83,52 +95,41 @@ RESOURCES=(
     # Policies
     "policies|policy|L,C,R,U,D"
     "policy-sets|policyset|L,C,R,U,D"
-    "policy-checks|policycheck|L,R"
+    "policy-checks|policycheck|L,R,override"
     "policy-evaluations|policyevaluation|L"
     "policy-set-params|policysetparameter|L,C,U,D"
 
-    # Agents
+    # Agents / pools
     "agents|agent|L,R"
     "agent-tokens|agentpool_token|L,C,D"
 
-    # SSH Keys
+    # SSH / OAuth / notifications
     "ssh-keys|sshkey|L,C,R,U,D"
-
-    # OAuth
     "oauth-clients|oauthclient|L,C,R,U,D"
-    "oauth-tokens|oauthtoken|L,R,U"
-
-    # Notifications
+    "oauth-tokens|oauthtoken|L,R,U,D"
     "notification-configurations|notification|L,C,R,U,D"
 
-    # Run Tasks
+    # Run tasks / triggers
     "run-tasks/run-tasks|runtask|L,C,R,U,D"
     "run-tasks/run-task-stages-and-results|runtask|R"
-
-    # Run Triggers
     "run-triggers|runtrigger|L,C,R,D"
 
-    # Comments
+    # Comments / audit
     "comments|comment|L,C,R"
-
-    # Audit Trails
     "audit-trails|audittrail|L,R"
     "audit-trails-tokens|audittrailtoken|L,C,R,D"
 
-    # Registry - Modules
+    # Registry
     "private-registry/modules|registrymodule|L,C,R,D"
-    "private-registry/provider-versions-platforms|registryproviderversion|C,R,D"
+    "private-registry/provider-versions-platforms|registryproviderplatform|C,R,D"
     "private-registry/providers|registryprovider|L,C,R,D"
+    "private-registry/manage-provider-versions|registryproviderversion|C,R,D"
     "private-registry/gpg-keys|gpgkey|L,C,R,U,D"
 
-    # VCS
+    # VCS / health
     "vcs-events|vcsevent|L,R"
     "github-app-installations|githubapp|L,R"
-
-    # Assessment / Health
     "assessment-results|assessmentresult|L,R"
-
-    # Change Requests
     "change-requests|changerequest|L,C,R,U"
 
     # Stacks
@@ -137,7 +138,7 @@ RESOURCES=(
     "stacks/stack-deployments|stackdeployment|L,C,R"
     "stacks/stack-states|stackstate|L,R"
 
-    # OIDC configurations
+    # OIDC / HYOK
     "hold-your-own-key/aws|awsoidc|C,R,U,D"
     "hold-your-own-key/azure|azureoidc|C,R,U,D"
     "hold-your-own-key/gcp|gcpoidc|C,R,U,D"
@@ -145,65 +146,101 @@ RESOURCES=(
     "hold-your-own-key/byok|hyok|L,C,R,U,D"
     "hold-your-own-key/key-management|hyokkey|C,R,D"
 
-    # Explorer / Queries
+    # Queries / explorer
     "queries/run-query|queryrun|L"
     "queries/workspace-query|queryworkspace|L"
+    "explorer|explorer|query"
 
-    # User Tokens
+    # User tokens / users
     "user-tokens|usertoken|L,C,R,D"
-    "users|account|R,U"
+    "users|user|R"
 
-    # Subscriptions & Billing (read-only / not typically CLI)
-    "subscriptions|subscription|R"
-    "invoices|invoice|L,R"
+    # Billing / metadata
+    "subscriptions|subscription|L,R"
     "feature-sets|featureset|L"
-
-    # IP Ranges (special endpoint)
-    "ip-ranges|iprange|R"
-
-    # Reserved Tag Keys
-    "reserved-tag-keys|reservedtagkey|L,C,D"
-
-    # No-Code Provisioning
-    "no-code-provisioning|nocode|L,C,R,U,D"
-
-    # Stability Policy
+    "ip-ranges|iprange|L"
+    "no-code-provisioning|nocode|L,C,R,U"
     "stability-policy|stabilitypolicy|R"
+
+    # Reserved tags
+    "reserved-tag-keys|reservedtagkey|L,C,U,D"
 )
 
-# Operation label map
 op_label() {
     case "$1" in
-        L) echo "list";;
-        C) echo "create";;
-        R) echo "read";;
-        U) echo "update";;
-        D) echo "delete";;
-        *) echo "$1";;
+        L) echo "list" ;;
+        C) echo "create" ;;
+        R) echo "read" ;;
+        U) echo "update" ;;
+        D) echo "delete" ;;
+        *) echo "$1" ;;
     esac
 }
 
-# Check if a command file exists for a given prefix and action
+resolve_prefix() {
+    case "$1" in
+        stackconfiguration) echo "stack configuration" ;;
+        stackdeployment) echo "stack deployment" ;;
+        stackstate) echo "stack state" ;;
+        registrymodule) echo "registry module" ;;
+        registryprovider) echo "registry provider" ;;
+        registryproviderversion) echo "registry provider version" ;;
+        registryproviderplatform) echo "registry provider platform" ;;
+        agentpool_token) echo "agentpool token" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+has_registered_command() {
+    local cmd="$1"
+    [[ -n "${CMD_SET[${cmd}]+x}" ]]
+}
+
 has_command() {
-    local prefix="$1" action="$2"
-    # Check for exact file match
-    if [ -f "${CMD_DIR}/${prefix}_${action}.go" ]; then
+    local raw_prefix="$1"
+    local action="$2"
+    local prefix
+    prefix="$(resolve_prefix "${raw_prefix}")"
+
+    local candidates=()
+
+    # Main CRUD mapping.
+    case "${prefix}:${action}" in
+        agentpool\ token:list) candidates+=("agentpool token-list") ;;
+        agentpool\ token:create) candidates+=("agentpool token-create") ;;
+        agentpool\ token:delete) candidates+=("agentpool token-delete") ;;
+        *) candidates+=("${prefix} ${action}") ;;
+    esac
+
+    # Read aliases.
+    if [[ "${action}" == "read" ]]; then
+        candidates+=("${prefix} show")
+    fi
+
+    # Custom operation aliases.
+    case "${prefix}:${action}" in
+        workspacetag:create) candidates+=("workspacetag add") ;;
+        workspacetag:delete) candidates+=("workspacetag remove") ;;
+        explorer:query) candidates+=("explorer query") ;;
+        policycheck:override) candidates+=("policycheck override") ;;
+        state:outputs) candidates+=("state outputs") ;;
+    esac
+
+    local candidate
+    for candidate in "${candidates[@]}"; do
+        if has_registered_command "${candidate}"; then
+            return 0
+        fi
+    done
+
+    # Fallback for command files that may exist without registration.
+    local file_prefix="${raw_prefix// /}"
+    if [[ -f "${CMD_DIR}/${file_prefix}_${action}.go" ]]; then
         return 0
     fi
-    # Special cases
-    case "${prefix}_${action}" in
-        account_read) [ -f "${CMD_DIR}/account_show.go" ] && return 0;;
-        organization_read) [ -f "${CMD_DIR}/organization_show.go" ] && return 0;;
-        team_read) [ -f "${CMD_DIR}/team_show.go" ] && return 0;;
-        apply_read) [ -f "${CMD_DIR}/apply_read.go" ] && return 0;;
-        run_read) [ -f "${CMD_DIR}/run_show.go" ] && return 0;;
-    esac
+
     return 1
 }
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────────────────────────────────────
 
 total_resources=0
 covered_resources=0
@@ -212,104 +249,102 @@ covered_ops=0
 missing_resources=()
 missing_ops=()
 
-# Column widths
-W_RES=38
-W_OPS=22
-W_MISS=22
+W_RES=42
+W_OPS=28
+W_MISS=28
 W_COV=8
 
 print_header() {
     printf "${BOLD}%-${W_RES}s │ %-${W_OPS}s │ %-${W_MISS}s │ %s${NC}\n" \
-        "API Resource" "CLI Commands" "Missing" "Coverage"
+        "API Resource" "Covered Ops" "Missing Ops" "Coverage"
     printf "%-${W_RES}s─┼─%-${W_OPS}s─┼─%-${W_MISS}s─┼─%s\n" \
-        "$(printf '─%.0s' $(seq 1 $W_RES))" \
-        "$(printf '─%.0s' $(seq 1 $W_OPS))" \
-        "$(printf '─%.0s' $(seq 1 $W_MISS))" \
-        "$(printf '─%.0s' $(seq 1 $W_COV))"
+        "$(printf '─%.0s' $(seq 1 ${W_RES}))" \
+        "$(printf '─%.0s' $(seq 1 ${W_OPS}))" \
+        "$(printf '─%.0s' $(seq 1 ${W_MISS}))" \
+        "$(printf '─%.0s' $(seq 1 ${W_COV}))"
 }
 
 print_row() {
     local resource="$1" found_str="$2" missing_str="$3" pct="$4"
 
-    local color="$RED"
-    if [ "$pct" -eq 100 ]; then
-        color="$GREEN"
-    elif [ "$pct" -ge 50 ]; then
-        color="$YELLOW"
+    local color="${RED}"
+    if [[ "${pct}" -eq 100 ]]; then
+        color="${GREEN}"
+    elif [[ "${pct}" -ge 50 ]]; then
+        color="${YELLOW}"
     fi
 
     printf "%-${W_RES}s │ ${GREEN}%-${W_OPS}s${NC} │ ${RED}%-${W_MISS}s${NC} │ ${color}%3d%%${NC}\n" \
-        "$resource" "$found_str" "$missing_str" "$pct"
+        "${resource}" "${found_str}" "${missing_str}" "${pct}"
 }
 
 echo ""
 echo -e "${BOLD}TFC API Coverage Report${NC}"
-echo -e "${DIM}Comparing Terraform Cloud API docs against CLI commands${NC}"
+echo -e "${DIM}Derived from command registry + resource operation expectations${NC}"
 echo ""
 
 print_header
 
 for entry in "${RESOURCES[@]}"; do
-    IFS='|' read -r api_doc cli_prefix ops_csv <<< "$entry"
+    IFS='|' read -r api_doc cli_prefix ops_csv <<< "${entry}"
 
-    IFS=',' read -ra ops <<< "$ops_csv"
+    IFS=',' read -ra ops <<< "${ops_csv}"
     resource_total=${#ops[@]}
     resource_found=0
     found_labels=()
     missing_labels=()
 
     for op in "${ops[@]}"; do
-        action=$(op_label "$op")
+        action="$(op_label "${op}")"
         total_ops=$((total_ops + 1))
 
-        if has_command "$cli_prefix" "$action"; then
+        if has_command "${cli_prefix}" "${action}"; then
             resource_found=$((resource_found + 1))
             covered_ops=$((covered_ops + 1))
-            found_labels+=("$op")
+            found_labels+=("${action}")
         else
-            missing_labels+=("$op")
+            missing_labels+=("${action}")
             missing_ops+=("${api_doc}:${action}")
         fi
     done
 
     total_resources=$((total_resources + 1))
-    if [ "$resource_found" -gt 0 ]; then
+    if [[ "${resource_found}" -gt 0 ]]; then
         covered_resources=$((covered_resources + 1))
     else
-        missing_resources+=("$api_doc")
+        missing_resources+=("${api_doc}")
     fi
 
-    if [ "$resource_total" -gt 0 ]; then
+    if [[ "${resource_total}" -gt 0 ]]; then
         pct=$((resource_found * 100 / resource_total))
     else
         pct=0
     fi
 
-    found_str=$(IFS=' '; echo "${found_labels[*]:-}")
-    miss_str=$(IFS=' '; echo "${missing_labels[*]:-}")
+    found_str="$(IFS=' '; echo "${found_labels[*]:-}")"
+    miss_str="$(IFS=' '; echo "${missing_labels[*]:-}")"
 
-    case "$MODE" in
+    case "${MODE}" in
         missing)
-            if [ "$pct" -lt 100 ]; then
-                print_row "$api_doc" "$found_str" "$miss_str" "$pct"
+            if [[ "${pct}" -lt 100 ]]; then
+                print_row "${api_doc}" "${found_str}" "${miss_str}" "${pct}"
             fi
             ;;
         *)
-            print_row "$api_doc" "$found_str" "$miss_str" "$pct"
+            print_row "${api_doc}" "${found_str}" "${miss_str}" "${pct}"
             ;;
     esac
 done
 
-# Summary
 echo ""
 echo -e "${BOLD}Summary${NC}"
 
-if [ "$total_resources" -gt 0 ]; then
+if [[ "${total_resources}" -gt 0 ]]; then
     res_pct=$((covered_resources * 100 / total_resources))
 else
     res_pct=0
 fi
-if [ "$total_ops" -gt 0 ]; then
+if [[ "${total_ops}" -gt 0 ]]; then
     ops_pct=$((covered_ops * 100 / total_ops))
 else
     ops_pct=0
@@ -318,15 +353,15 @@ fi
 echo -e "  Resources with any CLI coverage: ${BOLD}${covered_resources}/${total_resources}${NC} (${res_pct}%)"
 echo -e "  Total operations covered:        ${BOLD}${covered_ops}/${total_ops}${NC} (${ops_pct}%)"
 
-if [ ${#missing_resources[@]} -gt 0 ]; then
+if [[ ${#missing_resources[@]} -gt 0 ]]; then
     echo ""
-    echo -e "${BOLD}Resources with no CLI commands:${NC}"
+    echo -e "${BOLD}Resources with no covered operations:${NC}"
     for r in "${missing_resources[@]}"; do
         echo -e "  ${RED}✗${NC} ${r}"
     done
 fi
 
-if [ "$MODE" = "detail" ] && [ ${#missing_ops[@]} -gt 0 ]; then
+if [[ "${MODE}" == "detail" && ${#missing_ops[@]} -gt 0 ]]; then
     echo ""
     echo -e "${BOLD}All missing operations:${NC}"
     for op in "${missing_ops[@]}"; do
