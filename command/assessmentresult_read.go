@@ -35,10 +35,11 @@ type AssessmentResultData struct {
 		CreatedAt string  `json:"created-at"`
 	} `json:"attributes"`
 	Links struct {
-		Self       string `json:"self"`
-		JSONOutput string `json:"json-output"`
-		JSONSchema string `json:"json-schema"`
-		LogOutput  string `json:"log-output"`
+		Self              string `json:"self"`
+		JSONOutput        string `json:"json-output"`
+		JSONSchema        string `json:"json-schema"`
+		LogOutput         string `json:"log-output"`
+		HealthJSONRedacted string `json:"health-json-redacted"`
 	} `json:"links"`
 }
 
@@ -64,13 +65,23 @@ type TerraformPlan struct {
 		} `json:"change"`
 	} `json:"resource_drift"`
 	Checks []struct {
-		Address string `json:"address"`
-		Kind    string `json:"kind"` // "resource", "output", "check"
-		Name    string `json:"name"`
-		Status  string `json:"status"` // "pass", "fail", "error", "unknown"
-		Problems []struct {
-			Message string `json:"message"`
-		} `json:"problems"`
+		Address struct {
+			Kind      string `json:"kind"`       // "resource", "output", "check"
+			Mode      string `json:"mode"`       // "managed", "data"
+			Name      string `json:"name"`       // resource name
+			ToDisplay string `json:"to_display"` // full resource address like "tls_self_signed_cert.user"
+			Type      string `json:"type"`       // resource type
+		} `json:"address"`
+		Status    string `json:"status"` // "pass", "fail", "error", "unknown"
+		Instances []struct {
+			Address struct {
+				ToDisplay string `json:"to_display"`
+			} `json:"address"`
+			Status   string `json:"status"`
+			Problems []struct {
+				Message string `json:"message"`
+			} `json:"problems"`
+		} `json:"instances"`
 	} `json:"checks"`
 }
 
@@ -184,17 +195,25 @@ func (c *AssessmentResultReadCommand) Run(args []string) int {
 
 	formatter.KeyValue(data)
 
-	// Show drift details if requested and drift detected
-	if c.showDrift && !c.summaryOnly && ar.Attributes.Drifted && ar.Links.JSONOutput != "" {
-		c.Ui.Output("\n" + strings.Repeat("=", 80))
-		c.Ui.Output("DRIFT DETAILS")
-		c.Ui.Output(strings.Repeat("=", 80))
+	// Show drift and check details if requested
+	// Use health-json-redacted if available (has checks), otherwise fall back to json-output (drift only)
+	outputURL := ar.Links.HealthJSONRedacted
+	if outputURL == "" {
+		outputURL = ar.Links.JSONOutput
+	}
 
-		if err := c.showDriftDetails(client, ar.Links.JSONOutput); err != nil {
+	if c.showDrift && !c.summaryOnly && outputURL != "" {
+		if ar.Attributes.Drifted {
+			c.Ui.Output("\n" + strings.Repeat("=", 80))
+			c.Ui.Output("DRIFT DETAILS")
+			c.Ui.Output(strings.Repeat("=", 80))
+		}
+
+		if err := c.showDriftDetails(client, outputURL); err != nil {
 			c.Ui.Warn(fmt.Sprintf("\nWarning: Could not fetch drift details: %s", err))
 			c.Ui.Output("\nTo retrieve detailed assessment outputs manually, use curl with your token:")
 			c.Ui.Output(fmt.Sprintf("  JSON Plan: curl -H 'Authorization: Bearer $TOKEN' '%s%s'",
-				client.GetAddress(), ar.Links.JSONOutput))
+				client.GetAddress(), outputURL))
 		}
 	} else if ar.Attributes.Succeeded && !c.summaryOnly && !ar.Attributes.Drifted {
 		c.Ui.Output("\nTo retrieve detailed assessment outputs, use curl with your token:")
@@ -333,12 +352,17 @@ func (c *AssessmentResultReadCommand) showDriftDetails(client *client.Client, js
 			c.Ui.Output("Issues found:")
 			for _, check := range plan.Checks {
 				if check.Status == "fail" || check.Status == "error" {
-					c.Ui.Output(fmt.Sprintf("\n  %s (%s) - %s", check.Address, check.Kind, strings.ToUpper(check.Status)))
-					if check.Name != "" {
-						c.Ui.Output(fmt.Sprintf("  Name: %s", check.Name))
+					c.Ui.Output(fmt.Sprintf("\n  %s (%s) - %s", check.Address.ToDisplay, check.Address.Kind, strings.ToUpper(check.Status)))
+					if check.Address.Name != "" {
+						c.Ui.Output(fmt.Sprintf("  Name: %s", check.Address.Name))
 					}
-					for _, problem := range check.Problems {
-						c.Ui.Output(fmt.Sprintf("    • %s", problem.Message))
+					// Show problems from instances
+					for _, instance := range check.Instances {
+						if instance.Status == "fail" || instance.Status == "error" {
+							for _, problem := range instance.Problems {
+								c.Ui.Output(fmt.Sprintf("    • %s", problem.Message))
+							}
+						}
 					}
 				}
 			}
