@@ -153,14 +153,14 @@ func (c *PublicRegistryPolicyCommand) Run(args []string) int {
 	}
 
 	data := map[string]interface{}{
-		"Name":         fmt.Sprintf("%s/%s", namespace, name),
-		"Version":      version,
-		"Policies":     strings.Join(policies, ", "),
-		"Modules":      strings.Join(modules, ", "),
-		"PolicyCount":  len(policies),
-		"ModuleCount":  len(modules),
-		"DocsURL":      fmt.Sprintf("https://registry.terraform.io/policies/%s/%s/%s", namespace, name, version),
-		"VersionsURL":  fmt.Sprintf("https://registry.terraform.io/policies/%s/%s", namespace, name),
+		"Name":        fmt.Sprintf("%s/%s", namespace, name),
+		"Version":     version,
+		"Policies":    strings.Join(policies, ", "),
+		"Modules":     strings.Join(modules, ", "),
+		"PolicyCount": len(policies),
+		"ModuleCount": len(modules),
+		"DocsURL":     fmt.Sprintf("https://registry.terraform.io/policies/%s/%s/%s", namespace, name, version),
+		"VersionsURL": fmt.Sprintf("https://registry.terraform.io/policies/%s/%s", namespace, name),
 	}
 
 	// Add readme if present (truncated for table view)

@@ -21,9 +21,9 @@ type AssessmentResultReadCommand struct {
 
 // AssessmentResult represents a health assessment result
 type AssessmentResult struct {
-	ID         string               `json:"id"`
-	Type       string               `json:"type"`
-	Attributes AssessmentResultData `json:"attributes"`
+	ID         string                `json:"id"`
+	Type       string                `json:"type"`
+	Attributes AssessmentResultData  `json:"attributes"`
 	Links      AssessmentResultLinks `json:"links"`
 }
 
@@ -35,10 +35,10 @@ type AssessmentResultData struct {
 }
 
 type AssessmentResultLinks struct {
-	Self              string `json:"self"`
-	JSONOutput        string `json:"json-output"`
-	JSONSchema        string `json:"json-schema"`
-	LogOutput         string `json:"log-output"`
+	Self               string `json:"self"`
+	JSONOutput         string `json:"json-output"`
+	JSONSchema         string `json:"json-schema"`
+	LogOutput          string `json:"log-output"`
 	HealthJSONRedacted string `json:"health-json-redacted"`
 }
 

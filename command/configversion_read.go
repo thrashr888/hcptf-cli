@@ -139,9 +139,9 @@ type IngressAttributes struct {
 // IngressAttributesResponse represents the API response for ingress attributes
 type IngressAttributesResponse struct {
 	Data struct {
-		ID         string             `json:"id"`
-		Type       string             `json:"type"`
-		Attributes IngressAttributes  `json:"attributes"`
+		ID         string            `json:"id"`
+		Type       string            `json:"type"`
+		Attributes IngressAttributes `json:"attributes"`
 	} `json:"data"`
 }
 

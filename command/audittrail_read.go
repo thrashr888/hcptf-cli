@@ -2,11 +2,11 @@ package command
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/output"
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/output"
 )
 
 // AuditTrailReadCommand is a command to read audit trail event details
