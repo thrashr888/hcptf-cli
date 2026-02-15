@@ -176,6 +176,10 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 						// Show the config version used by this run
 						return []string{"configversion", "read", "-run-id=" + runID}, nil
 					}
+					if action == "assessment" {
+						// Show the current assessment for this workspace
+						return []string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, nil
+					}
 				}
 				return []string{"run", action, "-id=" + runID}, nil
 			}

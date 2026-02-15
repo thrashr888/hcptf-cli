@@ -43,7 +43,10 @@ hcptf explorer query -org=<org-name> -type=workspaces \
 Get detailed drift information for a workspace:
 
 ```bash
-# View drift and check results
+# View drift and check results (URL-style)
+hcptf <org> <workspace> assessments
+
+# Or flag-based
 hcptf assessmentresult list -org=<org-name> -name=<workspace-name>
 ```
 
@@ -164,7 +167,7 @@ hcptf assessmentresult list -org=<org> -name=<workspace>
 
 ```bash
 # 1. Identify drift
-hcptf assessmentresult list -org=my-org -name=my-workspace
+hcptf my-org my-workspace assessments
 # Shows: aws_instance.app - Action: delete
 
 # 2. Decision: Recreate the instance
@@ -177,7 +180,7 @@ hcptf my-org my-workspace runs create \
 
 ```bash
 # 1. View drift
-hcptf assessmentresult list -org=my-org -name=my-workspace
+hcptf my-org my-workspace assessments
 # Shows: aws_route53_record.app - Action: update
 #        records: ["1.2.3.4"] -> ["5.6.7.8"]
 
@@ -203,7 +206,7 @@ hcptf my-org my-workspace runs create \
 
 ```bash
 # 1. View drift
-hcptf assessmentresult list -org=my-org -name=my-workspace
+hcptf my-org my-workspace assessments
 # Shows: multiple resources - Action: update
 #        tags: {} -> {"Environment": "prod", "Owner": "team-a"}
 
@@ -221,7 +224,7 @@ hcptf my-org my-workspace runs $RUN_ID configversion
 
 ```bash
 # 1. View checks
-hcptf assessmentresult list -org=my-org -name=my-workspace
+hcptf my-org my-workspace assessments
 # Shows: TERRAFORM CHECK RESULTS
 #        tls_self_signed_cert.app - FAIL
 #        • Certificate will expire in less than 4 hours

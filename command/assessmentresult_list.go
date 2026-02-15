@@ -144,13 +144,15 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 // Help returns help text for the assessmentresult list command
 func (c *AssessmentResultListCommand) Help() string {
 	helpText := `
-Usage: hcptf workspace run assessmentresult list [options]
+Usage: hcptf assessmentresult list [options]
+   or: hcptf <org> <workspace> assessments
+   or: hcptf <org> <workspace> runs <run-id> assessment
 
-  List health assessment results for a workspace.
+  Show health assessment results for a workspace, including drift detection
+  and continuous validation check results.
 
   Health assessments check if a workspace's real infrastructure matches
-  its Terraform configuration. This includes drift detection and continuous
-  validation results.
+  its Terraform configuration.
 
   Note: This feature requires HCP Terraform Plus or Enterprise, and
   health assessments must be enabled in workspace settings.
@@ -163,10 +165,22 @@ Options:
   -workspace=<name>    Workspace name (alias)
   -output=<format>     Output format: table (default) or json
 
-Example:
+Examples:
 
-  hcptf workspace run assessmentresult list -org=my-org -name=my-workspace
-  hcptf workspace run assessmentresult list -org=my-org -name=prod -output=json
+  # URL-style (recommended)
+  hcptf my-org my-workspace assessments
+  hcptf my-org my-workspace runs run-abc123 assessment
+
+  # Flag-based
+  hcptf assessmentresult list -org=my-org -name=my-workspace
+  hcptf assessmentresult list -org=my-org -name=prod -output=json
+
+Output includes:
+
+  - Drift status and resource count
+  - Detailed drift information (what changed, before/after values)
+  - Terraform check results (continuous validation)
+  - Links to JSON outputs for programmatic access
 
 Notes:
 

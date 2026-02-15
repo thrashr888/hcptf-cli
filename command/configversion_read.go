@@ -205,8 +205,12 @@ Examples:
   hcptf configversion read -id=run-xyz789
   hcptf configversion read -run-id=run-xyz789
 
-  # URL-style
+  # URL-style (recommended)
   hcptf my-org my-workspace runs run-xyz789 configversion
+
+  # Get VCS info for current run
+  RUN_ID=$(hcptf my-org my-workspace -output=json | jq -r '.CurrentRunID')
+  hcptf my-org my-workspace runs $RUN_ID configversion
 `
 	return strings.TrimSpace(helpText)
 }
