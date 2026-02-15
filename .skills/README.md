@@ -44,6 +44,26 @@ Guide for investigating and resolving infrastructure drift in HCP Terraform work
 - Common drift scenarios and solutions
 - Verifying drift resolution
 
+### version-upgrades
+
+Guide for upgrading Terraform, provider, and module versions in workspaces.
+
+**Use when:**
+- Upgrading workspace Terraform version
+- Updating provider versions for security patches or new features
+- Upgrading modules to latest versions
+- Planning organization-wide version updates
+- Rolling back failed upgrades
+
+**Key topics covered:**
+- Finding current versions across workspaces (Explorer API)
+- Checking for outdated versions
+- Upgrading workspace Terraform version (workspace setting)
+- Updating provider/module versions in code (VCS workflow)
+- Testing upgrades with speculative runs
+- Handling breaking changes and rollbacks
+- Bulk upgrade strategies for multiple workspaces
+
 ## Using Skills
 
 ### In Compatible Agents
