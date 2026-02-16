@@ -127,7 +127,35 @@ Guide for setting up a brand-new infrastructure project from scratch with HCP Te
 - Setting up notifications, team access, and health assessments
 - Post-deployment checklist and best practices
 
-## Using Skills
+## Installing Skills
+
+### With npx (Recommended)
+
+```bash
+# Install all skills
+npx skills add thrashr888/hcptf-cli
+
+# Install a specific skill
+npx skills add thrashr888/hcptf-cli@drift
+npx skills add thrashr888/hcptf-cli@workspace-to-stack
+npx skills add thrashr888/hcptf-cli@greenfield-deploy
+
+# Install to a specific agent
+npx skills add thrashr888/hcptf-cli -a claude-code
+npx skills add thrashr888/hcptf-cli -a cursor
+
+# Install all skills non-interactively
+npx skills add thrashr888/hcptf-cli --all -y
+```
+
+### Manual Installation
+
+Copy the `.skills/` directory into your project:
+
+```bash
+git clone https://github.com/thrashr888/hcptf-cli.git
+cp -r hcptf-cli/.skills /path/to/your/project/.skills
+```
 
 ### In Compatible Agents
 

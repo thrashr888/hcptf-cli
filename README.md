@@ -317,16 +317,24 @@ This project includes [Agent Skills](https://agentskills.io/) that help AI agent
 
 ### Installing Skills
 
-To use these skills, clone or copy the `.skills/` directory into your project:
+```bash
+# Install all skills (recommended)
+npx skills add thrashr888/hcptf-cli
+
+# Install a specific skill
+npx skills add thrashr888/hcptf-cli@drift
+npx skills add thrashr888/hcptf-cli@greenfield-deploy
+
+# Install to a specific agent
+npx skills add thrashr888/hcptf-cli -a claude-code
+npx skills add thrashr888/hcptf-cli -a cursor
+```
+
+Or manually copy skills into your project:
 
 ```bash
-# Clone the repo and copy skills into your project
 git clone https://github.com/thrashr888/hcptf-cli.git
 cp -r hcptf-cli/.skills /path/to/your/project/.skills
-
-# Or add as a git submodule
-git submodule add https://github.com/thrashr888/hcptf-cli.git .hcptf-cli
-ln -s .hcptf-cli/.skills .skills
 ```
 
 Compatible agents will automatically discover skills in the `.skills/` directory.
