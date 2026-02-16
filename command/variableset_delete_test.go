@@ -1,17 +1,23 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/mitchellh/cli"
 )
 
+func newVariableSetDeleteCommand(ui cli.Ui, svc variableSetDeleter) *VariableSetDeleteCommand {
+	return &VariableSetDeleteCommand{
+		Meta:           newTestMeta(ui),
+		variableSetSvc: svc,
+	}
+}
+
 func TestVariableSetDeleteRequiresID(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &VariableSetDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newVariableSetDeleteCommand(ui, &mockVariableSetDeleteService{})
 
 	code := cmd.Run([]string{})
 	if code != 1 {
@@ -25,9 +31,7 @@ func TestVariableSetDeleteRequiresID(t *testing.T) {
 
 func TestVariableSetDeleteRequiresEmptyID(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &VariableSetDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newVariableSetDeleteCommand(ui, &mockVariableSetDeleteService{})
 
 	code := cmd.Run([]string{"-id="})
 	if code != 1 {
@@ -56,6 +60,57 @@ func TestVariableSetDeleteHelp(t *testing.T) {
 	}
 	if !strings.Contains(help, "required") {
 		t.Error("Help should indicate -id is required")
+	}
+	if !strings.Contains(help, "-force") {
+		t.Error("Help should mention -force flag")
+	}
+	if !strings.Contains(help, "-y") {
+		t.Error("Help should mention -y flag")
+	}
+}
+
+func TestVariableSetDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockVariableSetDeleteService{err: errors.New("boom")}
+	cmd := newVariableSetDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=varset-123", "-force"}); code != 1 {
+		t.Fatalf("expected exit 1")
+	}
+	if svc.lastID != "varset-123" {
+		t.Fatalf("expected delete id varset-123, got %q", svc.lastID)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output")
+	}
+}
+
+func TestVariableSetDeleteSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockVariableSetDeleteService{}
+	cmd := newVariableSetDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=varset-123", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastID != "varset-123" {
+		t.Fatalf("expected delete id varset-123, got %q", svc.lastID)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success output")
+	}
+}
+
+func TestVariableSetDeletePromptsWithoutForce(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("no\n")
+	cmd := newVariableSetDeleteCommand(ui, &mockVariableSetDeleteService{})
+
+	if code := cmd.Run([]string{"-id=varset-123"}); code != 0 {
+		t.Fatalf("expected exit 0 on cancel, got %d", code)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Deletion cancelled") {
+		t.Fatalf("expected cancellation message")
 	}
 }
 

@@ -411,39 +411,51 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 
 		// Policy Set Outcome commands (policy set evaluation outcomes)
-		"policysetoutcome list": func() (cli.Command, error) {
+		"policyset outcome": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "policyset outcome",
+				synopsis: "Manage policy set outcomes",
+			}, nil
+		},
+		"policyset outcome list": func() (cli.Command, error) {
 			return &PolicySetOutcomeListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"policysetoutcome read": func() (cli.Command, error) {
+		"policyset outcome read": func() (cli.Command, error) {
 			return &PolicySetOutcomeReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-
 		// Policy Set Parameter commands (parameters for policy sets)
-		"policysetparameter list": func() (cli.Command, error) {
+		"policyset parameter": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "policyset parameter",
+				synopsis: "Manage policy set parameters",
+			}, nil
+		},
+		"policyset parameter list": func() (cli.Command, error) {
 			return &PolicySetParameterListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"policysetparameter create": func() (cli.Command, error) {
+		"policyset parameter create": func() (cli.Command, error) {
 			return &PolicySetParameterCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"policysetparameter update": func() (cli.Command, error) {
+		"policyset parameter update": func() (cli.Command, error) {
 			return &PolicySetParameterUpdateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"policysetparameter delete": func() (cli.Command, error) {
+		"policyset parameter delete": func() (cli.Command, error) {
 			return &PolicySetParameterDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
-
 		// SSH Key commands
 		"sshkey list": func() (cli.Command, error) {
 			return &SSHKeyListCommand{
@@ -710,54 +722,68 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 
 		// Team Access commands (workspace permissions)
-		"teamaccess list": func() (cli.Command, error) {
+		"team access": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "team access",
+				synopsis: "Manage team access",
+			}, nil
+		},
+		"team access list": func() (cli.Command, error) {
 			return &TeamAccessListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamaccess create": func() (cli.Command, error) {
+		"team access create": func() (cli.Command, error) {
 			return &TeamAccessCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamaccess read": func() (cli.Command, error) {
+		"team access read": func() (cli.Command, error) {
 			return &TeamAccessReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamaccess update": func() (cli.Command, error) {
+		"team access update": func() (cli.Command, error) {
 			return &TeamAccessUpdateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamaccess delete": func() (cli.Command, error) {
+		"team access delete": func() (cli.Command, error) {
 			return &TeamAccessDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
 
 		// Project Team Access commands (project permissions)
-		"projectteamaccess list": func() (cli.Command, error) {
+		"project teamaccess": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "project teamaccess",
+				synopsis: "Manage project team access",
+			}, nil
+		},
+		"project teamaccess list": func() (cli.Command, error) {
 			return &ProjectTeamAccessListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"projectteamaccess create": func() (cli.Command, error) {
+		"project teamaccess create": func() (cli.Command, error) {
 			return &ProjectTeamAccessCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"projectteamaccess read": func() (cli.Command, error) {
+		"project teamaccess read": func() (cli.Command, error) {
 			return &ProjectTeamAccessReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"projectteamaccess update": func() (cli.Command, error) {
+		"project teamaccess update": func() (cli.Command, error) {
 			return &ProjectTeamAccessUpdateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"projectteamaccess delete": func() (cli.Command, error) {
+		"project teamaccess delete": func() (cli.Command, error) {
 			return &ProjectTeamAccessDeleteCommand{
 				Meta: *meta,
 			}, nil
@@ -776,22 +802,29 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 
 		// Audit Trail Token commands (manage audit log streaming tokens)
-		"audittrailtoken list": func() (cli.Command, error) {
+		"audittrail token": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "audittrail token",
+				synopsis: "Manage audit trail tokens",
+			}, nil
+		},
+		"audittrail token list": func() (cli.Command, error) {
 			return &AuditTrailTokenListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"audittrailtoken create": func() (cli.Command, error) {
+		"audittrail token create": func() (cli.Command, error) {
 			return &AuditTrailTokenCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"audittrailtoken read": func() (cli.Command, error) {
+		"audittrail token read": func() (cli.Command, error) {
 			return &AuditTrailTokenReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"audittrailtoken delete": func() (cli.Command, error) {
+		"audittrail token delete": func() (cli.Command, error) {
 			return &AuditTrailTokenDeleteCommand{
 				Meta: *meta,
 			}, nil
@@ -1037,28 +1070,6 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 			}, nil
 		},
 
-		// Organization Token commands (manage organization-level API tokens)
-		"organizationtoken list": func() (cli.Command, error) {
-			return &OrganizationTokenListCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"organizationtoken create": func() (cli.Command, error) {
-			return &OrganizationTokenCreateCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"organizationtoken read": func() (cli.Command, error) {
-			return &OrganizationTokenReadCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"organizationtoken delete": func() (cli.Command, error) {
-			return &OrganizationTokenDeleteCommand{
-				Meta: *meta,
-			}, nil
-		},
-
 		// Cost estimate commands
 		"costestimate read": func() (cli.Command, error) {
 			return &CostEstimateReadCommand{
@@ -1141,107 +1152,176 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 
 		// User Token commands (manage user-level API tokens)
-		"usertoken list": func() (cli.Command, error) {
+		"user token": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "user token",
+				synopsis: "Manage user tokens",
+			}, nil
+		},
+		"user token list": func() (cli.Command, error) {
 			return &UserTokenListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"usertoken create": func() (cli.Command, error) {
+		"user token create": func() (cli.Command, error) {
 			return &UserTokenCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"usertoken read": func() (cli.Command, error) {
+		"user token read": func() (cli.Command, error) {
 			return &UserTokenReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"usertoken delete": func() (cli.Command, error) {
+		"user token delete": func() (cli.Command, error) {
 			return &UserTokenDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
 
 		// Team Token commands (manage team-level API tokens)
-		"teamtoken list": func() (cli.Command, error) {
+		"team token": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "team token",
+				synopsis: "Manage team tokens",
+			}, nil
+		},
+		"team token list": func() (cli.Command, error) {
 			return &TeamTokenListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamtoken create": func() (cli.Command, error) {
+		"team token create": func() (cli.Command, error) {
 			return &TeamTokenCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamtoken read": func() (cli.Command, error) {
+		"team token read": func() (cli.Command, error) {
 			return &TeamTokenReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"teamtoken delete": func() (cli.Command, error) {
+		"team token delete": func() (cli.Command, error) {
 			return &TeamTokenDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
 
 		// Organization Membership commands (manage organization membership)
-		"organizationmembership list": func() (cli.Command, error) {
+		"organization membership": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "organization membership",
+				synopsis: "Manage organization memberships",
+			}, nil
+		},
+		"organization membership list": func() (cli.Command, error) {
 			return &OrganizationMembershipListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"organizationmembership create": func() (cli.Command, error) {
+		"organization membership create": func() (cli.Command, error) {
 			return &OrganizationMembershipCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"organizationmembership read": func() (cli.Command, error) {
+		"organization membership read": func() (cli.Command, error) {
 			return &OrganizationMembershipReadCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"organizationmembership delete": func() (cli.Command, error) {
+		"organization membership delete": func() (cli.Command, error) {
 			return &OrganizationMembershipDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
-
 		// Organization Member commands (detailed member operations)
-		"organizationmember read": func() (cli.Command, error) {
+		"organization member": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "organization member",
+				synopsis: "Manage organization members",
+			}, nil
+		},
+		"organization member read": func() (cli.Command, error) {
 			return &OrganizationMemberReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		// Organization Token commands
+		"organization token": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "organization token",
+				synopsis: "Manage organization tokens",
+			}, nil
+		},
+		"organization token list": func() (cli.Command, error) {
+			return &OrganizationTokenListCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"organization token create": func() (cli.Command, error) {
+			return &OrganizationTokenCreateCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"organization token read": func() (cli.Command, error) {
+			return &OrganizationTokenReadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"organization token delete": func() (cli.Command, error) {
+			return &OrganizationTokenDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
 
 		// Organization Tag commands (tag resources in an organization)
-		"organizationtag list": func() (cli.Command, error) {
+		"organization tag": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "organization tag",
+				synopsis: "Manage organization tags",
+			}, nil
+		},
+		"organization tag list": func() (cli.Command, error) {
 			return &OrganizationTagListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"organizationtag create": func() (cli.Command, error) {
+		"organization tag create": func() (cli.Command, error) {
 			return &OrganizationTagCreateCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"organizationtag delete": func() (cli.Command, error) {
+		"organization tag delete": func() (cli.Command, error) {
 			return &OrganizationTagDeleteCommand{
 				Meta: *meta,
 			}, nil
 		},
 
 		// Workspace Tag commands (apply organization tags to workspaces)
-		"workspacetag list": func() (cli.Command, error) {
+		"workspace tag": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "workspace tag",
+				synopsis: "Manage workspace tags",
+			}, nil
+		},
+		"workspace tag list": func() (cli.Command, error) {
 			return &WorkspaceTagListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"workspacetag add": func() (cli.Command, error) {
+		"workspace tag add": func() (cli.Command, error) {
 			return &WorkspaceTagAddCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"workspacetag remove": func() (cli.Command, error) {
+		"workspace tag remove": func() (cli.Command, error) {
 			return &WorkspaceTagRemoveCommand{
 				Meta: *meta,
 			}, nil
@@ -1375,12 +1455,19 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 
 		// Workspace Resource commands (view managed infrastructure)
-		"workspaceresource list": func() (cli.Command, error) {
+		"workspace resource": func() (cli.Command, error) {
+			return &NamespaceCommand{
+				Meta:     *meta,
+				name:     "workspace resource",
+				synopsis: "Manage workspace resources",
+			}, nil
+		},
+		"workspace resource list": func() (cli.Command, error) {
 			return &WorkspaceResourceListCommand{
 				Meta: *meta,
 			}, nil
 		},
-		"workspaceresource read": func() (cli.Command, error) {
+		"workspace resource read": func() (cli.Command, error) {
 			return &WorkspaceResourceReadCommand{
 				Meta: *meta,
 			}, nil
@@ -1497,66 +1584,57 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 	}
 
 	namespaceSynopses := map[string]string{
-		"costestimate":           "Manage cost estimates",
-		"featureset":             "Manage feature sets",
-		"githubapp":              "Manage GitHub app installations",
-		"iprange":                "View Terraform IP ranges",
-		"nocode":                 "Manage no-code provisioning",
-		"account":                "Manage accounts",
-		"agent":                  "Manage agents",
-		"apply":                  "Manage applies",
-		"assessmentresult":       "Manage assessment results",
-		"audittrail":             "Manage audit trail entries",
-		"audittrailtoken":        "Manage audit trail tokens",
-		"awsoidc":                "Manage AWS OIDC integration",
-		"azureoidc":              "Manage Azure OIDC integration",
-		"changerequest":          "Manage change requests",
-		"comment":                "Manage run comments",
-		"configversion":          "Manage workspace configuration versions",
-		"explorer":               "Query Terraform Cloud",
-		"gcpoidc":                "Manage GCP OIDC integration",
-		"gpgkey":                 "Manage GPG keys",
-		"hyok":                   "Manage Hold Your Own Key settings",
-		"hyokkey":                "Manage Hold Your Own Key versions",
-		"notification":           "Manage notifications",
-		"oauthclient":            "Manage OAuth clients",
-		"oauthtoken":             "Manage OAuth tokens",
-		"organization":           "Manage the current organization",
-		"organizationmember":     "Manage organization members",
-		"organizationmembership": "Manage organization memberships",
-		"organizationtag":        "Manage organization tags",
-		"organizationtoken":      "Manage organization tokens",
-		"plan":                   "Manage Terraform plans",
-		"planexport":             "Manage plan exports",
-		"policy":                 "Manage policies",
-		"policycheck":            "Manage policy checks",
-		"policyevaluation":       "Manage policy evaluations",
-		"policyset":              "Manage policy sets",
-		"policysetoutcome":       "Manage policy set outcomes",
-		"policysetparameter":     "Manage policy set parameters",
-		"project":                "Manage projects",
-		"projectteamaccess":      "Manage project team access",
-		"queryrun":               "Search runs",
-		"queryworkspace":         "Search workspaces",
-		"stabilitypolicy":        "Read stability policy",
-		"subscription":           "Manage subscriptions",
-		"reservedtagkey":         "Manage reserved tag keys",
-		"run":                    "Manage Terraform runs",
-		"runtask":                "Manage run tasks",
-		"runtrigger":             "Manage run triggers",
-		"sshkey":                 "Manage SSH keys",
-		"state":                  "Manage Terraform states",
-		"team":                   "Manage teams",
-		"teamaccess":             "Manage team access",
-		"teamtoken":              "Manage team tokens",
-		"usertoken":              "Manage user tokens",
-		"variable":               "Manage workspace variables",
-		"variableset":            "Manage variable sets",
-		"vaultoidc":              "Manage Vault OIDC integration",
-		"vcsevent":               "Manage VCS events",
-		"workspace":              "Manage workspaces",
-		"workspaceresource":      "Manage workspace resources",
-		"workspacetag":           "Manage workspace tags",
+		"costestimate":     "Manage cost estimates",
+		"featureset":       "Manage feature sets",
+		"githubapp":        "Manage GitHub app installations",
+		"iprange":          "View Terraform IP ranges",
+		"nocode":           "Manage no-code provisioning",
+		"account":          "Manage accounts",
+		"agent":            "Manage agents",
+		"apply":            "Manage applies",
+		"assessmentresult": "Manage assessment results",
+		"audittrail":       "Manage audit trail entries",
+		"audittrail token":  "Manage audit trail tokens",
+		"awsoidc":          "Manage AWS OIDC integration",
+		"azureoidc":        "Manage Azure OIDC integration",
+		"changerequest":    "Manage change requests",
+		"comment":          "Manage run comments",
+		"configversion":    "Manage workspace configuration versions",
+		"explorer":         "Query Terraform Cloud",
+		"gcpoidc":          "Manage GCP OIDC integration",
+		"gpgkey":           "Manage GPG keys",
+		"hyok":             "Manage Hold Your Own Key settings",
+		"hyokkey":          "Manage Hold Your Own Key versions",
+		"notification":     "Manage notifications",
+		"oauthclient":      "Manage OAuth clients",
+		"oauthtoken":       "Manage OAuth tokens",
+		"organization":     "Manage the current organization",
+		"organization tag":  "Manage organization tags",
+		"plan":             "Manage Terraform plans",
+		"planexport":       "Manage plan exports",
+		"policy":           "Manage policies",
+		"policycheck":      "Manage policy checks",
+		"policyevaluation": "Manage policy evaluations",
+		"policyset":        "Manage policy sets",
+		"project":          "Manage projects",
+		"queryrun":         "Search runs",
+		"queryworkspace":   "Search workspaces",
+		"stabilitypolicy":  "Read stability policy",
+		"subscription":     "Manage subscriptions",
+		"reservedtagkey":   "Manage reserved tag keys",
+		"run":              "Manage Terraform runs",
+		"runtask":          "Manage run tasks",
+		"runtrigger":       "Manage run triggers",
+		"sshkey":           "Manage SSH keys",
+		"state":            "Manage Terraform states",
+		"team":             "Manage teams",
+		"team token":        "Manage team tokens",
+		"user token":        "Manage user tokens",
+		"variable":         "Manage workspace variables",
+		"variableset":      "Manage variable sets",
+		"vaultoidc":        "Manage Vault OIDC integration",
+		"vcsevent":         "Manage VCS events",
+		"workspace":        "Manage workspaces",
 	}
 
 	for commandName := range commands {

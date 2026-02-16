@@ -1,17 +1,23 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/mitchellh/cli"
 )
 
+func newRegistryModuleDeleteCommand(ui cli.Ui, svc registryModuleDeleter) *RegistryModuleDeleteCommand {
+	return &RegistryModuleDeleteCommand{
+		Meta:              newTestMeta(ui),
+		registryModuleSvc: svc,
+	}
+}
+
 func TestRegistryModuleDeleteRequiresOrganization(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryModuleDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryModuleDeleteCommand(ui, &mockRegistryModuleDeleteService{})
 
 	code := cmd.Run([]string{"-name=vpc"})
 	if code != 1 {
@@ -25,9 +31,7 @@ func TestRegistryModuleDeleteRequiresOrganization(t *testing.T) {
 
 func TestRegistryModuleDeleteRequiresName(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryModuleDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryModuleDeleteCommand(ui, &mockRegistryModuleDeleteService{})
 
 	code := cmd.Run([]string{"-organization=test-org"})
 	if code != 1 {
@@ -41,9 +45,7 @@ func TestRegistryModuleDeleteRequiresName(t *testing.T) {
 
 func TestRegistryModuleDeleteRequiresBothFlags(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryModuleDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryModuleDeleteCommand(ui, &mockRegistryModuleDeleteService{})
 
 	code := cmd.Run([]string{})
 	if code != 1 {
@@ -84,6 +86,73 @@ func TestRegistryModuleDeleteHelp(t *testing.T) {
 	}
 	if !strings.Contains(help, "(optional)") {
 		t.Error("Help should indicate provider is optional")
+	}
+	if !strings.Contains(help, "-force") {
+		t.Error("Help should mention -force flag")
+	}
+	if !strings.Contains(help, "-y") {
+		t.Error("Help should mention -y flag")
+	}
+}
+
+func TestRegistryModuleDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryModuleDeleteService{err: errors.New("boom")}
+	cmd := newRegistryModuleDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=vpc", "-force"}); code != 1 {
+		t.Fatalf("expected exit 1")
+	}
+	if svc.lastOrg != "my-org" || svc.lastName != "vpc" {
+		t.Fatalf("unexpected delete args %q %q", svc.lastOrg, svc.lastName)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output")
+	}
+}
+
+func TestRegistryModuleDeleteSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryModuleDeleteService{}
+	cmd := newRegistryModuleDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=vpc", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastOrg != "my-org" || svc.lastName != "vpc" {
+		t.Fatalf("unexpected delete args %q %q", svc.lastOrg, svc.lastName)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message")
+	}
+}
+
+func TestRegistryModuleDeleteSuccessWithYesFlag(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryModuleDeleteService{}
+	cmd := newRegistryModuleDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=vpc", "-y"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastOrg != "my-org" || svc.lastName != "vpc" {
+		t.Fatalf("unexpected delete args %q %q", svc.lastOrg, svc.lastName)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message")
+	}
+}
+
+func TestRegistryModuleDeletePromptsWithoutForce(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("no\n")
+	cmd := newRegistryModuleDeleteCommand(ui, &mockRegistryModuleDeleteService{})
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=vpc"}); code != 0 {
+		t.Fatalf("expected exit 0 on cancel, got %d", code)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Deletion cancelled") {
+		t.Fatalf("expected cancellation message")
 	}
 }
 

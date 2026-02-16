@@ -1,15 +1,25 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strings"
+
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
+
+type variableSetVariableDeleter interface {
+	Delete(ctx context.Context, variableSetID, variableID string) error
+}
 
 // VariableSetVariableDeleteCommand is a command to delete a variable from a variable set
 type VariableSetVariableDeleteCommand struct {
 	Meta
-	variableSetID string
-	variableID    string
+	variableSetID          string
+	variableID             string
+	force                  bool
+	yes                    bool
+	variableSetVariableSvc variableSetVariableDeleter
 }
 
 // Run executes the variable set variable delete command
@@ -17,6 +27,9 @@ func (c *VariableSetVariableDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variableset variable delete")
 	flags.StringVar(&c.variableSetID, "variableset-id", "", "Variable set ID (required)")
 	flags.StringVar(&c.variableID, "variable-id", "", "Variable ID (required)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -42,8 +55,20 @@ func (c *VariableSetVariableDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete variable '%s' from variable set '%s'? (yes/no): ", c.variableID, c.variableSetID))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
+	}
+
 	// Delete variable
-	err = client.VariableSetVariables.Delete(client.Context(), c.variableSetID, c.variableID)
+	err = c.variableSetVariableService(client).Delete(client.Context(), c.variableSetID, c.variableID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting variable: %s", err))
 		return 1
@@ -64,6 +89,9 @@ Options:
 
   -variableset-id=<id>  Variable set ID (required)
   -variable-id=<id>     Variable ID (required)
+  -force                Force delete without confirmation
+  -f                    Shorthand for -force
+  -y                    Confirm delete without prompt
 
 Example:
 
@@ -75,4 +103,11 @@ Example:
 // Synopsis returns a short synopsis for the variable set variable delete command
 func (c *VariableSetVariableDeleteCommand) Synopsis() string {
 	return "Delete a variable from a variable set"
+}
+
+func (c *VariableSetVariableDeleteCommand) variableSetVariableService(client *client.Client) variableSetVariableDeleter {
+	if c.variableSetVariableSvc != nil {
+		return c.variableSetVariableSvc
+	}
+	return client.VariableSetVariables
 }

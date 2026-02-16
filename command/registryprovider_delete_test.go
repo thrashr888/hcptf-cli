@@ -38,7 +38,7 @@ func TestRegistryProviderDeleteHandlesAPIError(t *testing.T) {
 	svc := &mockRegistryProviderDeleteService{err: errors.New("boom")}
 	cmd := newRegistryProviderDeleteCommand(ui, svc)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-name=aws"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-force"}); code != 1 {
 		t.Fatalf("expected exit 1")
 	}
 	if svc.lastID.Name != "aws" {
@@ -54,7 +54,36 @@ func TestRegistryProviderDeleteSuccess(t *testing.T) {
 	svc := &mockRegistryProviderDeleteService{}
 	cmd := newRegistryProviderDeleteCommand(ui, svc)
 
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastID.RegistryName != tfe.RegistryName("private") {
+		t.Fatalf("expected private registry")
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message")
+	}
+}
+
+func TestRegistryProviderDeletePromptsWithoutForce(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("no\n")
+	cmd := newRegistryProviderDeleteCommand(ui, &mockRegistryProviderDeleteService{})
+
 	if code := cmd.Run([]string{"-organization=my-org", "-name=aws"}); code != 0 {
+		t.Fatalf("expected exit 0 on cancel, got %d", code)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Deletion cancelled") {
+		t.Fatalf("expected cancellation message")
+	}
+}
+
+func TestRegistryProviderDeleteSuccessWithYesFlag(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryProviderDeleteService{}
+	cmd := newRegistryProviderDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-y"}); code != 0 {
 		t.Fatalf("expected exit 0")
 	}
 	if svc.lastID.RegistryName != tfe.RegistryName("private") {

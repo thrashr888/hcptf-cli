@@ -6,7 +6,7 @@ import (
 )
 
 func TestTranslateArgs(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, nil)
 
 	tests := []struct {
 		name     string
@@ -52,6 +52,21 @@ func TestTranslateArgs(t *testing.T) {
 			name:     "org teams",
 			input:    []string{"myorg", "teams"},
 			expected: []string{"team", "list", "-org=myorg"},
+		},
+		{
+			name:     "org teams help",
+			input:    []string{"myorg", "teams", "-h"},
+			expected: []string{"team", "-h"},
+		},
+		{
+			name:     "org teams create",
+			input:    []string{"myorg", "teams", "create"},
+			expected: []string{"team", "create", "-org=myorg"},
+		},
+		{
+			name:     "org teams create help",
+			input:    []string{"myorg", "teams", "create", "-h"},
+			expected: []string{"team", "create", "-org=myorg", "-h"},
 		},
 		{
 			name:     "org policies",
@@ -174,6 +189,11 @@ func TestTranslateArgs(t *testing.T) {
 			expected: []string{"plan", "read", "-id=run-abc123"},
 		},
 		{
+			name:     "org workspace run-id plan help (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "plan", "-h"},
+			expected: []string{"plan", "read", "-id=run-abc123", "-h"},
+		},
+		{
 			name:     "org workspace run-id logs (shorter syntax)",
 			input:    []string{"myorg", "myworkspace", "run-abc123", "logs"},
 			expected: []string{"plan", "logs", "-id=run-abc123"},
@@ -209,6 +229,11 @@ func TestTranslateArgs(t *testing.T) {
 			expected: []string{"comment", "list", "-run-id=run-abc123"},
 		},
 		{
+			name:     "org workspace runs run-id comments help (longer syntax)",
+			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "comments", "-h"},
+			expected: []string{"comment", "list", "-run-id=run-abc123", "-h"},
+		},
+		{
 			name:     "org workspace runs run-id policychecks (longer syntax)",
 			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "policychecks"},
 			expected: []string{"policycheck", "list", "-run-id=run-abc123"},
@@ -230,7 +255,7 @@ func TestTranslateArgs(t *testing.T) {
 }
 
 func TestIsKnownCommand(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, nil)
 
 	tests := []struct {
 		arg      string
@@ -259,7 +284,7 @@ func TestIsKnownCommand(t *testing.T) {
 }
 
 func TestHasHelpFlag(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, nil)
 
 	tests := []struct {
 		name     string
@@ -286,7 +311,7 @@ func TestHasHelpFlag(t *testing.T) {
 }
 
 func TestIsResourceKeyword(t *testing.T) {
-	r := NewRouter(nil)
+	r := NewRouter(nil, nil)
 
 	tests := []struct {
 		arg      string
@@ -312,5 +337,19 @@ func TestIsResourceKeyword(t *testing.T) {
 				t.Errorf("isResourceKeyword(%q) = %v, want %v", tt.arg, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestIsKnownCommandWithInjectedCommands(t *testing.T) {
+	r := NewRouter(nil, []string{"alpha", "beta"})
+
+	if !r.isKnownCommand("alpha") {
+		t.Fatal("expected injected command alpha to be known")
+	}
+	if !r.isKnownCommand("beta") {
+		t.Fatal("expected injected command beta to be known")
+	}
+	if r.isKnownCommand("gamma") {
+		t.Fatal("expected gamma to be unknown")
 	}
 }

@@ -591,6 +591,62 @@ func (m *mockCommentListService) List(_ context.Context, runID string) (*tfe.Com
 	return m.response, m.err
 }
 
+type mockRegistryModuleDeleteService struct {
+	err      error
+	lastOrg  string
+	lastName string
+}
+
+func (m *mockRegistryModuleDeleteService) Delete(_ context.Context, organization string, name string) error {
+	m.lastOrg = organization
+	m.lastName = name
+	return m.err
+}
+
+type mockRegistryProviderPlatformDeleteService struct {
+	err    error
+	lastID tfe.RegistryProviderPlatformID
+}
+
+func (m *mockRegistryProviderPlatformDeleteService) Delete(_ context.Context, platformID tfe.RegistryProviderPlatformID) error {
+	m.lastID = platformID
+	return m.err
+}
+
+type mockPolicySetParameterDeleteService struct {
+	err             error
+	lastPolicySetID string
+	lastParameterID string
+}
+
+func (m *mockPolicySetParameterDeleteService) Delete(_ context.Context, policySetID, parameterID string) error {
+	m.lastPolicySetID = policySetID
+	m.lastParameterID = parameterID
+	return m.err
+}
+
+type mockVariableSetDeleteService struct {
+	err    error
+	lastID string
+}
+
+func (m *mockVariableSetDeleteService) Delete(_ context.Context, variableSetID string) error {
+	m.lastID = variableSetID
+	return m.err
+}
+
+type mockVariableSetVariableDeleteService struct {
+	err          error
+	lastSetID    string
+	lastVariable string
+}
+
+func (m *mockVariableSetVariableDeleteService) Delete(_ context.Context, variableSetID, variableID string) error {
+	m.lastSetID = variableSetID
+	m.lastVariable = variableID
+	return m.err
+}
+
 type mockAgentPoolCreateService struct {
 	response    *tfe.AgentPool
 	err         error

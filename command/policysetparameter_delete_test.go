@@ -1,11 +1,19 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
 	"github.com/mitchellh/cli"
 )
+
+func newPolicySetParameterDeleteCommand(ui cli.Ui, svc policySetParameterDeleter) *PolicySetParameterDeleteCommand {
+	return &PolicySetParameterDeleteCommand{
+		Meta:                  newTestMeta(ui),
+		policySetParameterSvc: svc,
+	}
+}
 
 func TestPolicySetParameterDeleteRequiresPolicySetID(t *testing.T) {
 	ui := cli.NewMockUi()
@@ -55,21 +63,82 @@ func TestPolicySetParameterDeleteRequiresAllFlags(t *testing.T) {
 	}
 }
 
+func TestPolicySetParameterDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockPolicySetParameterDeleteService{err: errors.New("boom")}
+	cmd := newPolicySetParameterDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-policy-set-id=polset-123", "-id=var-123", "-force"}); code != 1 {
+		t.Fatalf("expected exit 1, got %d", code)
+	}
+	if svc.lastPolicySetID != "polset-123" || svc.lastParameterID != "var-123" {
+		t.Fatalf("unexpected IDs: %q/%q", svc.lastPolicySetID, svc.lastParameterID)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output, got %q", ui.ErrorWriter.String())
+	}
+}
+
+func TestPolicySetParameterDeleteSuccessWithForce(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockPolicySetParameterDeleteService{}
+	cmd := newPolicySetParameterDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-policy-set-id=polset-123", "-id=var-123", "-force"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if svc.lastPolicySetID != "polset-123" || svc.lastParameterID != "var-123" {
+		t.Fatalf("unexpected IDs: %q/%q", svc.lastPolicySetID, svc.lastParameterID)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success output, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestPolicySetParameterDeleteSuccessWithYesFlag(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockPolicySetParameterDeleteService{}
+	cmd := newPolicySetParameterDeleteCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-policy-set-id=polset-123", "-id=var-123", "-y"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if svc.lastPolicySetID != "polset-123" || svc.lastParameterID != "var-123" {
+		t.Fatalf("unexpected IDs: %q/%q", svc.lastPolicySetID, svc.lastParameterID)
+	}
+}
+
 func TestPolicySetParameterDeleteCancellation(t *testing.T) {
 	ui := cli.NewMockUi()
 	ui.InputReader = strings.NewReader("no\n")
-	cmd := &PolicySetParameterDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
-	cmd.Meta.Ui = ui
+	svc := &mockPolicySetParameterDeleteService{}
+	cmd := newPolicySetParameterDeleteCommand(ui, svc)
 
 	code := cmd.Run([]string{"-policy-set-id=polset-123", "-id=var-123"})
 	if code != 0 {
 		t.Fatalf("expected exit 0 on cancel, got %d", code)
 	}
+	if svc.lastPolicySetID != "" || svc.lastParameterID != "" {
+		t.Fatalf("expected no delete call, got %q/%q", svc.lastPolicySetID, svc.lastParameterID)
+	}
 
 	if !strings.Contains(ui.OutputWriter.String(), "Deletion cancelled") {
 		t.Fatalf("expected cancellation message")
+	}
+}
+
+func TestPolicySetParameterDeleteSuccessWithConfirmation(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("yes\n")
+	svc := &mockPolicySetParameterDeleteService{}
+	cmd := newPolicySetParameterDeleteCommand(ui, svc)
+
+	code := cmd.Run([]string{"-policy-set-id=polset-123", "-id=var-123"})
+	if code != 0 {
+		t.Fatalf("expected exit 0 on confirm, got %d", code)
+	}
+	if svc.lastPolicySetID != "polset-123" || svc.lastParameterID != "var-123" {
+		t.Fatalf("expected IDs polset-123/var-123, got %q/%q", svc.lastPolicySetID, svc.lastParameterID)
 	}
 }
 
@@ -91,8 +160,11 @@ func TestPolicySetParameterDeleteHelp(t *testing.T) {
 	if !strings.Contains(help, "-id") {
 		t.Error("Help should mention -id flag")
 	}
-	if !strings.Contains(help, "-auto-approve") {
-		t.Error("Help should mention -auto-approve flag")
+	if !strings.Contains(help, "-force") {
+		t.Error("Help should mention -force flag")
+	}
+	if !strings.Contains(help, "-y") {
+		t.Error("Help should mention -y flag")
 	}
 	if !strings.Contains(help, "required") {
 		t.Error("Help should indicate flags are required")
@@ -113,39 +185,39 @@ func TestPolicySetParameterDeleteSynopsis(t *testing.T) {
 
 func TestPolicySetParameterDeleteFlagParsing(t *testing.T) {
 	tests := []struct {
-		name                string
-		args                []string
-		expectedPolicySet   string
-		expectedID          string
-		expectedAutoApprove bool
+		name              string
+		args              []string
+		expectedPolicySet string
+		expectedID        string
+		expectedForce     bool
+		expectedYes       bool
 	}{
 		{
-			name:                "required flags only, default values",
-			args:                []string{"-policy-set-id=polset-abc123", "-id=var-xyz789"},
-			expectedPolicySet:   "polset-abc123",
-			expectedID:          "var-xyz789",
-			expectedAutoApprove: false,
+			name:              "required flags only, default values",
+			args:              []string{"-policy-set-id=polset-abc123", "-id=var-xyz789"},
+			expectedPolicySet: "polset-abc123",
+			expectedID:        "var-xyz789",
 		},
 		{
-			name:                "with auto-approve flag",
-			args:                []string{"-policy-set-id=polset-123", "-id=var-456", "-auto-approve"},
-			expectedPolicySet:   "polset-123",
-			expectedID:          "var-456",
-			expectedAutoApprove: true,
+			name:              "with force flag",
+			args:              []string{"-policy-set-id=polset-123", "-id=var-456", "-force"},
+			expectedPolicySet: "polset-123",
+			expectedID:        "var-456",
+			expectedForce:     true,
 		},
 		{
-			name:                "different policy set and parameter",
-			args:                []string{"-policy-set-id=polset-prod", "-id=var-prod-123"},
-			expectedPolicySet:   "polset-prod",
-			expectedID:          "var-prod-123",
-			expectedAutoApprove: false,
+			name:              "with shorthand force flag",
+			args:              []string{"-policy-set-id=polset-789", "-id=var-000", "-f"},
+			expectedPolicySet: "polset-789",
+			expectedID:        "var-000",
+			expectedForce:     true,
 		},
 		{
-			name:                "all flags set",
-			args:                []string{"-policy-set-id=polset-full", "-id=var-full", "-auto-approve"},
-			expectedPolicySet:   "polset-full",
-			expectedID:          "var-full",
-			expectedAutoApprove: true,
+			name:              "with yes flag",
+			args:              []string{"-policy-set-id=polset-full", "-id=var-full", "-y"},
+			expectedPolicySet: "polset-full",
+			expectedID:        "var-full",
+			expectedYes:       true,
 		},
 	}
 
@@ -156,7 +228,9 @@ func TestPolicySetParameterDeleteFlagParsing(t *testing.T) {
 			flags := cmd.Meta.FlagSet("policysetparameter delete")
 			flags.StringVar(&cmd.policySetID, "policy-set-id", "", "Policy Set ID (required)")
 			flags.StringVar(&cmd.parameterID, "id", "", "Parameter ID (required)")
-			flags.BoolVar(&cmd.autoApprove, "auto-approve", false, "Skip confirmation prompt")
+			flags.BoolVar(&cmd.force, "force", false, "Force delete without confirmation")
+			flags.BoolVar(&cmd.force, "f", false, "Shorthand for -force")
+			flags.BoolVar(&cmd.yes, "y", false, "Confirm delete without prompt")
 
 			if err := flags.Parse(tt.args); err != nil {
 				t.Fatalf("flag parsing failed: %v", err)
@@ -172,9 +246,12 @@ func TestPolicySetParameterDeleteFlagParsing(t *testing.T) {
 				t.Errorf("expected parameterID %q, got %q", tt.expectedID, cmd.parameterID)
 			}
 
-			// Verify the auto-approve flag was set correctly
-			if cmd.autoApprove != tt.expectedAutoApprove {
-				t.Errorf("expected autoApprove %v, got %v", tt.expectedAutoApprove, cmd.autoApprove)
+			// Verify confirmation flags were set correctly
+			if cmd.force != tt.expectedForce {
+				t.Errorf("expected force %v, got %v", tt.expectedForce, cmd.force)
+			}
+			if cmd.yes != tt.expectedYes {
+				t.Errorf("expected yes %v, got %v", tt.expectedYes, cmd.yes)
 			}
 		})
 	}

@@ -1,16 +1,24 @@
 package command
 
 import (
+	"context"
 	"fmt"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 	"strings"
 )
+
+type policySetParameterDeleter interface {
+	Delete(ctx context.Context, policySetID, parameterID string) error
+}
 
 // PolicySetParameterDeleteCommand is a command to delete a policy set parameter
 type PolicySetParameterDeleteCommand struct {
 	Meta
-	policySetID string
-	parameterID string
-	autoApprove bool
+	policySetID           string
+	parameterID           string
+	force                 bool
+	yes                   bool
+	policySetParameterSvc policySetParameterDeleter
 }
 
 // Run executes the policy set parameter delete command
@@ -18,7 +26,9 @@ func (c *PolicySetParameterDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policysetparameter delete")
 	flags.StringVar(&c.policySetID, "policy-set-id", "", "Policy Set ID (required)")
 	flags.StringVar(&c.parameterID, "id", "", "Parameter ID (required)")
-	flags.BoolVar(&c.autoApprove, "auto-approve", false, "Skip confirmation prompt")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -44,22 +54,22 @@ func (c *PolicySetParameterDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Confirm deletion unless auto-approve is set
-	if !c.autoApprove {
+	// Confirm deletion unless force or -y is set
+	if !c.force && !c.yes {
 		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete parameter '%s' from policy set '%s'? (yes/no): ", c.parameterID, c.policySetID))
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
 			return 1
 		}
 
-		if strings.ToLower(confirmation) != "yes" {
+		if strings.TrimSpace(confirmation) != "yes" {
 			c.Ui.Output("Deletion cancelled")
 			return 0
 		}
 	}
 
 	// Delete policy set parameter
-	err = client.PolicySetParameters.Delete(client.Context(), c.policySetID, c.parameterID)
+	err = c.policySetParameterService(client).Delete(client.Context(), c.policySetID, c.parameterID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting policy set parameter: %s", err))
 		return 1
@@ -80,12 +90,15 @@ Options:
 
   -policy-set-id=<id>  Policy Set ID (required)
   -id=<parameter-id>   Parameter ID (required)
-  -auto-approve        Skip confirmation prompt
+  -force               Force delete without confirmation
+  -f                   Shorthand for -force
+  -y                   Confirm delete without prompt
 
 Example:
 
   hcptf policysetparameter delete -policy-set-id=polset-abc123 -id=var-xyz789
-  hcptf policysetparameter delete -policy-set-id=polset-abc123 -id=var-xyz789 -auto-approve
+  hcptf policysetparameter delete -policy-set-id=polset-abc123 -id=var-xyz789 -force
+  hcptf policysetparameter delete -policy-set-id=polset-abc123 -id=var-xyz789 -y
 `
 	return strings.TrimSpace(helpText)
 }
@@ -93,4 +106,11 @@ Example:
 // Synopsis returns a short synopsis for the policy set parameter delete command
 func (c *PolicySetParameterDeleteCommand) Synopsis() string {
 	return "Delete a policy set parameter"
+}
+
+func (c *PolicySetParameterDeleteCommand) policySetParameterService(client *client.Client) policySetParameterDeleter {
+	if c.policySetParameterSvc != nil {
+		return c.policySetParameterSvc
+	}
+	return client.PolicySetParameters
 }

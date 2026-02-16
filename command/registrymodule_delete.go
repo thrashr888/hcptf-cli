@@ -12,6 +12,8 @@ type RegistryModuleDeleteCommand struct {
 	organization      string
 	name              string
 	provider          string
+	force             bool
+	yes               bool
 	registryModuleSvc registryModuleDeleter
 }
 
@@ -22,6 +24,9 @@ func (c *RegistryModuleDeleteCommand) Run(args []string) int {
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Module name (required)")
 	flags.StringVar(&c.provider, "provider", "", "Provider name (optional, deletes specific provider)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -45,6 +50,18 @@ func (c *RegistryModuleDeleteCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete module '%s/%s'? (yes/no): ", c.organization, c.name))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
 	}
 
 	// Delete registry module
@@ -85,6 +102,9 @@ Options:
   -org=<name>          Alias for -organization
   -name=<name>         Module name (required)
   -provider=<name>     Provider name (optional)
+  -force               Force delete without confirmation
+  -f                   Shorthand for -force
+  -y                   Confirm delete without prompt
 
 Example:
 

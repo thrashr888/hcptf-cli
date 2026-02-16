@@ -10,12 +10,30 @@ import (
 
 // Router handles URL-like argument routing
 type Router struct {
-	client *tfe.Client
+	client        *tfe.Client
+	knownCommands map[string]struct{}
 }
 
 // NewRouter creates a new router
-func NewRouter(client *tfe.Client) *Router {
-	return &Router{client: client}
+func NewRouter(client *tfe.Client, knownCommands []string) *Router {
+	known := make(map[string]struct{})
+
+	for _, cmd := range knownCommands {
+		if strings.TrimSpace(cmd) == "" {
+			continue
+		}
+		known[cmd] = struct{}{}
+	}
+
+	// Keep a built-in fallback for direct router tests and safe defaults.
+	for _, cmd := range defaultKnownCommands() {
+		known[cmd] = struct{}{}
+	}
+
+	return &Router{
+		client:        client,
+		knownCommands: known,
+	}
 }
 
 // TranslateArgs converts URL-like args to command args
@@ -57,17 +75,24 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	second := args[1]
 
 	// Handle known subcommands that list resources in an org
+	if namespace, ok := orgCollectionNamespace(second); ok {
+		if len(args) == 2 {
+			return []string{namespace, "list", "-org=" + org}, nil
+		}
+
+		third := args[2]
+		if hasHelp && (third == "-h" || third == "--help" || third == "-help") {
+			return []string{namespace, "-h"}, nil
+		}
+		if third == "list" {
+			return appendRemaining([]string{namespace, "list", "-org=" + org}, args, 3), nil
+		}
+
+		// Forward additional namespace actions while preserving URL-style org context.
+		return appendRemaining([]string{namespace, third, "-org=" + org}, args, 3), nil
+	}
+
 	switch second {
-	case "workspaces":
-		return []string{"workspace", "list", "-org=" + org}, nil
-	case "projects":
-		return []string{"project", "list", "-org=" + org}, nil
-	case "teams":
-		return []string{"team", "list", "-org=" + org}, nil
-	case "policies":
-		return []string{"policy", "list", "-org=" + org}, nil
-	case "policysets":
-		return []string{"policyset", "list", "-org=" + org}, nil
 	case "variables":
 		// This would need a workspace context, skip for now
 		return args, nil
@@ -97,122 +122,152 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 		// Check if third arg is a run ID (format: run-xxx)
 		if strings.HasPrefix(third, "run-") {
 			runID := third
-			action := "show"
+			if len(args) == 3 {
+				return appendRemaining([]string{"run", "show", "-id=" + runID}, args, 3), nil
+			}
+
 			if len(args) >= 4 {
-				action = args[3]
+				action := args[3]
 				// Special case: plan, logs, and apply subcommands
 				if action == "plan" {
-					return []string{"plan", "read", "-id=" + runID}, nil
+					return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, 4), nil
 				}
 				if action == "logs" || action == "planlogs" {
-					return []string{"plan", "logs", "-id=" + runID}, nil
+					return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, 4), nil
 				}
 				if action == "applylogs" {
-					return []string{"apply", "logs", "-id=" + runID}, nil
+					return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, 4), nil
 				}
 				if action == "applyread" || action == "applydetails" {
-					return []string{"apply", "read", "-id=" + runID}, nil
+					return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, 4), nil
 				}
 				// Sub-resource lists
 				if action == "comments" {
-					return []string{"comment", "list", "-run-id=" + runID}, nil
+					return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, 4), nil
 				}
 				if action == "policychecks" {
-					return []string{"policycheck", "list", "-run-id=" + runID}, nil
+					return appendRemaining([]string{"policycheck", "list", "-run-id=" + runID}, args, 4), nil
 				}
 				// Workspace-level convenience shortcuts (when accessed via run)
 				if action == "state" || action == "stateversions" {
-					return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+					return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 				}
 				if action == "outputs" {
-					return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+					return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 				}
 				if action == "configversion" {
-					return []string{"configversion", "read", "-run-id=" + runID}, nil
+					return appendRemaining([]string{"configversion", "read", "-run-id=" + runID}, args, 4), nil
 				}
+				return appendRemaining([]string{"run", action, "-id=" + runID}, args, 4), nil
 			}
-			return []string{"run", action, "-id=" + runID}, nil
 		}
 
 		switch third {
 		case "runs":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"run", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"run", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) == 4 && args[3] == "list" {
+				return appendRemaining([]string{"run", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 			// run show/apply/etc would be: org workspace runs <run-id> <action>
 			if len(args) >= 4 {
 				runID := args[3]
-				action := "show"
+				if len(args) == 4 {
+					return appendRemaining([]string{"run", "show", "-id=" + runID}, args, 4), nil
+				}
+
 				if len(args) >= 5 {
-					action = args[4]
+					action := args[4]
 					// Special case: plan, logs, and apply subcommands
 					if action == "plan" {
-						return []string{"plan", "read", "-id=" + runID}, nil
+						return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, 5), nil
 					}
 					if action == "logs" || action == "planlogs" {
-						return []string{"plan", "logs", "-id=" + runID}, nil
+						return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, 5), nil
 					}
 					if action == "applylogs" {
-						return []string{"apply", "logs", "-id=" + runID}, nil
+						return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, 5), nil
 					}
 					if action == "applyread" || action == "applydetails" {
-						return []string{"apply", "read", "-id=" + runID}, nil
+						return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, 5), nil
 					}
 					// Sub-resource lists
 					if action == "comments" {
-						return []string{"comment", "list", "-run-id=" + runID}, nil
+						return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, 5), nil
 					}
 					if action == "policychecks" {
-						return []string{"policycheck", "list", "-run-id=" + runID}, nil
+						return appendRemaining([]string{"policycheck", "list", "-run-id=" + runID}, args, 5), nil
 					}
 					// Workspace-level convenience shortcuts (when accessed via run)
 					if action == "state" || action == "stateversions" {
-						return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+						return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
 					}
 					if action == "outputs" {
-						return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+						return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
 					}
 					if action == "configversion" {
 						// Show the config version used by this run
-						return []string{"configversion", "read", "-run-id=" + runID}, nil
+						return appendRemaining([]string{"configversion", "read", "-run-id=" + runID}, args, 5), nil
 					}
 					if action == "assessment" {
 						// Show the current assessment for this workspace
-						return []string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, nil
+						return appendRemaining([]string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
 					}
+					return appendRemaining([]string{"run", action, "-id=" + runID}, args, 5), nil
 				}
-				return []string{"run", action, "-id=" + runID}, nil
 			}
 		case "variables":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"variable", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"variable", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"variable", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "state":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"state", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 			if len(args) == 4 && args[3] == "outputs" {
-				return []string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, nil
+				return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "resources":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"workspaceresource", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"workspaceresource", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"workspaceresource", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "assessments":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "changerequests":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"changerequest", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"changerequest", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"changerequest", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "configversions":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"configversion", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"configversion", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"configversion", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		case "tags":
-			if len(args) == 3 || (len(args) == 4 && args[3] == "list") {
-				return []string{"workspacetag", "list", "-org=" + org, "-workspace=" + workspace}, nil
+			if len(args) == 3 {
+				return appendRemaining([]string{"workspacetag", "list", "-org=" + org, "-workspace=" + workspace}, args, 3), nil
+			}
+			if len(args) >= 4 && args[3] == "list" {
+				return appendRemaining([]string{"workspacetag", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
 			}
 		}
 	}
@@ -223,31 +278,8 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 
 // isKnownCommand checks if the arg is a known command
 func (r *Router) isKnownCommand(arg string) bool {
-	knownCommands := []string{
-		"account", "login", "logout", "version",
-		"workspace", "run", "organization", "variable", "team", "project",
-		"state", "policy", "policyset", "sshkey", "notification",
-		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
-		"runtrigger", "plan", "apply", "configversion", "teamaccess",
-		"projectteamaccess", "registry", "publicregistry", "gpgkey",
-		"stack",
-		"audittrail", "audittrailtoken", "organizationtoken", "usertoken",
-		"teamtoken", "organizationmembership", "organizationmember",
-		"organizationtag", "reservedtagkey", "comment", "policycheck",
-		"policyevaluation", "policysetoutcome", "policysetparameter",
-		"awsoidc", "azureoidc", "gcpoidc", "vaultoidc",
-		"workspaceresource", "workspacetag", "queryrun", "queryworkspace",
-		"changerequest", "assessmentresult", "hyok", "hyokkey",
-		"vcsevent", "planexport", "agent", "explorer",
-		"whoami",
-	}
-
-	for _, cmd := range knownCommands {
-		if arg == cmd {
-			return true
-		}
-	}
-	return false
+	_, ok := r.knownCommands[arg]
+	return ok
 }
 
 // ValidateOrg checks if the org exists (optional, for better UX)
@@ -299,4 +331,50 @@ func (r *Router) isResourceKeyword(arg string) bool {
 		}
 	}
 	return false
+}
+
+func defaultKnownCommands() []string {
+	return []string{
+		"account", "login", "logout", "version",
+		"workspace", "run", "organization", "variable", "team", "project",
+		"state", "policy", "policyset", "sshkey", "notification",
+		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
+		"runtrigger", "plan", "apply", "configversion", "teamaccess",
+		"projectteamaccess", "registry", "publicregistry", "gpgkey",
+		"stack",
+		"audittrail", "reservedtagkey", "comment", "policycheck",
+		"policyevaluation",
+		"awsoidc", "azureoidc", "gcpoidc", "vaultoidc",
+		"queryrun", "queryworkspace", "changerequest", "assessmentresult",
+		"hyok", "hyokkey",
+		"vcsevent", "planexport", "agent", "explorer",
+		"whoami",
+		"costestimate", "featureset", "githubapp", "iprange", "nocode",
+		"stabilitypolicy", "subscription", "user",
+		"organization:context", "workspace:context",
+	}
+}
+
+func orgCollectionNamespace(token string) (string, bool) {
+	switch token {
+	case "workspaces":
+		return "workspace", true
+	case "projects":
+		return "project", true
+	case "teams":
+		return "team", true
+	case "policies":
+		return "policy", true
+	case "policysets":
+		return "policyset", true
+	default:
+		return "", false
+	}
+}
+
+func appendRemaining(base []string, args []string, consumed int) []string {
+	if consumed >= len(args) {
+		return base
+	}
+	return append(base, args[consumed:]...)
 }

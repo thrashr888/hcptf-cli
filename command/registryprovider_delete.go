@@ -14,6 +14,8 @@ type RegistryProviderDeleteCommand struct {
 	name                string
 	namespace           string
 	registryName        string
+	force               bool
+	yes                 bool
 	registryProviderSvc registryProviderDeleter
 }
 
@@ -25,6 +27,9 @@ func (c *RegistryProviderDeleteCommand) Run(args []string) int {
 	flags.StringVar(&c.name, "name", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")
 	flags.StringVar(&c.registryName, "registry-name", "private", "Registry name: public or private (default: private)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -53,6 +58,18 @@ func (c *RegistryProviderDeleteCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete provider '%s/%s'? (yes/no): ", c.namespace, c.name))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
 	}
 
 	// Delete registry provider
@@ -93,6 +110,9 @@ Options:
   -name=<name>         Provider name (required)
   -namespace=<name>    Namespace (defaults to organization)
   -registry-name=<val> Registry name: public or private (default: private)
+  -force               Force delete without confirmation
+  -f                   Shorthand for -force
+  -y                   Confirm delete without prompt
 
 Example:
 

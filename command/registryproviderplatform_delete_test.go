@@ -1,17 +1,24 @@
 package command
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/mitchellh/cli"
 )
 
+func newRegistryProviderPlatformDeleteCommand(ui cli.Ui, svc registryProviderPlatformDeleter) *RegistryProviderPlatformDeleteCommand {
+	return &RegistryProviderPlatformDeleteCommand{
+		Meta:                        newTestMeta(ui),
+		registryProviderPlatformSvc: svc,
+	}
+}
+
 func TestRegistryProviderPlatformDeleteRequiresOrganization(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{"-name=aws", "-version=1.0.0", "-os=linux", "-arch=amd64"})
 	if code != 1 {
@@ -25,9 +32,7 @@ func TestRegistryProviderPlatformDeleteRequiresOrganization(t *testing.T) {
 
 func TestRegistryProviderPlatformDeleteRequiresName(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{"-organization=my-org", "-version=1.0.0", "-os=linux", "-arch=amd64"})
 	if code != 1 {
@@ -41,9 +46,7 @@ func TestRegistryProviderPlatformDeleteRequiresName(t *testing.T) {
 
 func TestRegistryProviderPlatformDeleteRequiresVersion(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-os=linux", "-arch=amd64"})
 	if code != 1 {
@@ -57,9 +60,7 @@ func TestRegistryProviderPlatformDeleteRequiresVersion(t *testing.T) {
 
 func TestRegistryProviderPlatformDeleteRequiresOS(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-arch=amd64"})
 	if code != 1 {
@@ -73,9 +74,7 @@ func TestRegistryProviderPlatformDeleteRequiresOS(t *testing.T) {
 
 func TestRegistryProviderPlatformDeleteRequiresArch(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-os=linux"})
 	if code != 1 {
@@ -89,9 +88,7 @@ func TestRegistryProviderPlatformDeleteRequiresArch(t *testing.T) {
 
 func TestRegistryProviderPlatformDeleteRequiresAllFlags(t *testing.T) {
 	ui := cli.NewMockUi()
-	cmd := &RegistryProviderPlatformDeleteCommand{
-		Meta: newTestMeta(ui),
-	}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
 
 	code := cmd.Run([]string{})
 	if code != 1 {
@@ -136,6 +133,12 @@ func TestRegistryProviderPlatformDeleteHelp(t *testing.T) {
 	if !strings.Contains(help, "required") {
 		t.Error("Help should indicate flags are required")
 	}
+	if !strings.Contains(help, "-force") {
+		t.Error("Help should mention -force flag")
+	}
+	if !strings.Contains(help, "-y") {
+		t.Error("Help should mention -y flag")
+	}
 }
 
 func TestRegistryProviderPlatformDeleteSynopsis(t *testing.T) {
@@ -147,6 +150,84 @@ func TestRegistryProviderPlatformDeleteSynopsis(t *testing.T) {
 	}
 	if synopsis != "Delete a platform binary of a private registry provider version" {
 		t.Errorf("expected 'Delete a platform binary of a private registry provider version', got %q", synopsis)
+	}
+}
+
+func TestRegistryProviderPlatformDeleteHandlesAPIError(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryProviderPlatformDeleteService{err: errors.New("boom")}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, svc)
+
+	args := []string{
+		"-organization=my-org",
+		"-name=aws",
+		"-version=1.0.0",
+		"-os=linux",
+		"-arch=amd64",
+		"-force",
+	}
+
+	if code := cmd.Run(args); code != 1 {
+		t.Fatalf("expected exit 1")
+	}
+	if svc.lastID.RegistryProviderVersionID.RegistryProviderID.Name != "aws" {
+		t.Fatalf("expected provider name aws, got %q", svc.lastID.RegistryProviderVersionID.RegistryProviderID.Name)
+	}
+	if svc.lastID.RegistryProviderVersionID.Version != "1.0.0" {
+		t.Fatalf("expected version 1.0.0, got %q", svc.lastID.RegistryProviderVersionID.Version)
+	}
+	if !strings.Contains(ui.ErrorWriter.String(), "boom") {
+		t.Fatalf("expected error output")
+	}
+}
+
+func TestRegistryProviderPlatformDeleteSuccess(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRegistryProviderPlatformDeleteService{}
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, svc)
+
+	args := []string{
+		"-organization=my-org",
+		"-name=aws",
+		"-version=1.0.0",
+		"-os=linux",
+		"-arch=amd64",
+		"-y",
+	}
+
+	if code := cmd.Run(args); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	expected := tfe.RegistryProviderPlatformID{
+		RegistryProviderVersionID: tfe.RegistryProviderVersionID{
+			RegistryProviderID: tfe.RegistryProviderID{
+				RegistryName: tfe.PrivateRegistry,
+				Namespace:    "my-org",
+				Name:         "aws",
+			},
+			Version: "1.0.0",
+		},
+		OS:   "linux",
+		Arch: "amd64",
+	}
+	if svc.lastID != expected {
+		t.Fatalf("unexpected delete id %#v", svc.lastID)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "deleted successfully") {
+		t.Fatalf("expected success message")
+	}
+}
+
+func TestRegistryProviderPlatformDeletePromptsWithoutForce(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("no\n")
+	cmd := newRegistryProviderPlatformDeleteCommand(ui, &mockRegistryProviderPlatformDeleteService{})
+
+	if code := cmd.Run([]string{"-organization=my-org", "-name=aws", "-version=1.0.0", "-os=linux", "-arch=amd64"}); code != 0 {
+		t.Fatalf("expected exit 0 on cancel, got %d", code)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Deletion cancelled") {
+		t.Fatalf("expected cancellation message")
 	}
 }
 

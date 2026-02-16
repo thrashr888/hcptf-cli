@@ -1,20 +1,29 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
+
+type registryProviderPlatformDeleter interface {
+	Delete(ctx context.Context, platformID tfe.RegistryProviderPlatformID) error
+}
 
 type RegistryProviderPlatformDeleteCommand struct {
 	Meta
-	organization string
-	name         string
-	namespace    string
-	version      string
-	os           string
-	arch         string
+	organization                string
+	name                        string
+	namespace                   string
+	version                     string
+	os                          string
+	arch                        string
+	force                       bool
+	yes                         bool
+	registryProviderPlatformSvc registryProviderPlatformDeleter
 }
 
 // Run executes the registry provider platform delete command
@@ -27,6 +36,9 @@ func (c *RegistryProviderPlatformDeleteCommand) Run(args []string) int {
 	flags.StringVar(&c.version, "version", "", "Version string (required)")
 	flags.StringVar(&c.os, "os", "", "Operating system (required)")
 	flags.StringVar(&c.arch, "arch", "", "Architecture (required)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -75,6 +87,18 @@ func (c *RegistryProviderPlatformDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete provider platform '%s/%s:%s (%s/%s)'? (yes/no): ", c.namespace, c.name, c.version, c.os, c.arch))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
+	}
+
 	// Delete provider platform
 	platformID := tfe.RegistryProviderPlatformID{
 		RegistryProviderVersionID: tfe.RegistryProviderVersionID{
@@ -89,7 +113,7 @@ func (c *RegistryProviderPlatformDeleteCommand) Run(args []string) int {
 		Arch: c.arch,
 	}
 
-	err = client.RegistryProviderPlatforms.Delete(client.Context(), platformID)
+	err = c.registryProviderPlatformService(client).Delete(client.Context(), platformID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error deleting provider platform: %s", err))
 		return 1
@@ -115,6 +139,9 @@ Options:
   -version=<semver>    Version string (required)
   -os=<os>             Operating system (required)
   -arch=<arch>         Architecture (required)
+  -force               Force delete without confirmation
+  -f                   Shorthand for -force
+  -y                   Confirm delete without prompt
 
 Example:
 
@@ -127,4 +154,11 @@ Example:
 // Synopsis returns a short synopsis for the registry provider platform delete command
 func (c *RegistryProviderPlatformDeleteCommand) Synopsis() string {
 	return "Delete a platform binary of a private registry provider version"
+}
+
+func (c *RegistryProviderPlatformDeleteCommand) registryProviderPlatformService(client *client.Client) registryProviderPlatformDeleter {
+	if c.registryProviderPlatformSvc != nil {
+		return c.registryProviderPlatformSvc
+	}
+	return client.RegistryProviderPlatforms
 }

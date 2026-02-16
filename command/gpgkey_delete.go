@@ -12,6 +12,8 @@ type GPGKeyDeleteCommand struct {
 	Meta
 	namespace string
 	keyID     string
+	force     bool
+	yes       bool
 	gpgKeySvc gpgKeyDeleter
 }
 
@@ -20,6 +22,9 @@ func (c *GPGKeyDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("gpgkey delete")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (organization name) (required)")
 	flags.StringVar(&c.keyID, "key-id", "", "GPG key ID (required)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -43,6 +48,18 @@ func (c *GPGKeyDeleteCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete GPG key '%s' from namespace '%s'? (yes/no): ", c.keyID, c.namespace))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
 	}
 
 	// Delete GPG key
@@ -73,10 +90,15 @@ Options:
 
   -namespace=<name>  Namespace (organization name) (required)
   -key-id=<id>       GPG key ID (required)
+  -force              Force delete without confirmation
+  -f                  Shorthand for -force
+  -y                  Confirm delete without prompt
 
 Example:
 
   hcptf gpgkey delete -namespace=my-org -key-id=32966F3FB5AC1129
+  hcptf gpgkey delete -namespace=my-org -key-id=32966F3FB5AC1129 -force
+  hcptf gpgkey delete -namespace=my-org -key-id=32966F3FB5AC1129 -y
 `
 	return strings.TrimSpace(helpText)
 }

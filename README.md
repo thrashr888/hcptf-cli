@@ -81,14 +81,23 @@ Note: `HCPTF_ADDRESS` takes precedence over `TFE_ADDRESS` for compatibility.
 ### Traditional Command Style
 
 ```bash
-# List workspaces
+# Canonical nested examples (implicit GET)
+# Omit `list` when collection scope is provided.
+hcptf workspace -org=my-org
+# Explicit form:
 hcptf workspace list -org=my-org
 
-# Create workspace and trigger a run
+# Read workspace by identity (implicit `read`)
+hcptf workspace -org=my-org -name=staging
+# Explicit form:
+hcptf workspace read -org=my-org -name=staging
 hcptf workspace create -org=my-org -name=staging -auto-apply=false
 hcptf run create -org=my-org -workspace=staging -message="Deploy changes"
 
 # Check run status and apply
+hcptf run -id=run-abc123
+# Explicit forms:
+hcptf run read -id=run-abc123
 hcptf run show -id=run-abc123
 hcptf run apply -id=run-abc123 -comment="Approved"
 
@@ -164,6 +173,19 @@ hcptf my-org my-workspace runs run-abc123 policychecks
 hcptf my-org projects
 hcptf my-org teams
 hcptf my-org policies
+```
+
+### Delete Confirmation
+
+All `delete` commands are guarded:
+
+- `-y`, `-f`, or `-force` bypasses confirmation.
+- Without those flags, the command prompts and only proceeds after typing `yes`.
+
+```bash
+hcptf workspace delete -org=my-org -name=staging
+hcptf workspace delete -org=my-org -name=staging -y
+hcptf workspace delete -org=my-org -name=staging -force
 ```
 
 Both styles work interchangeably - use whichever you prefer!
@@ -279,7 +301,7 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 |------|-------|-------------|
 | `-organization` | `-org` | Organization name |
 | `-output` | | `table` (default) or `json` |
-| `-force` | | Skip confirmation prompts |
+| `-force` | `-f`, `-y` | Skip confirmation prompts |
 
 ### Help
 

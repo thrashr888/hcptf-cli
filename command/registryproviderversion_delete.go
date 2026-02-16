@@ -14,6 +14,8 @@ type RegistryProviderVersionDeleteCommand struct {
 	name         string
 	namespace    string
 	version      string
+	force        bool
+	yes          bool
 	versionSvc   registryProviderVersionDeleter
 }
 
@@ -25,6 +27,9 @@ func (c *RegistryProviderVersionDeleteCommand) Run(args []string) int {
 	flags.StringVar(&c.name, "name", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")
 	flags.StringVar(&c.version, "version", "", "Version string (required)")
+	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
+	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
+	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
 
 	if err := flags.Parse(args); err != nil {
 		return 1
@@ -59,6 +64,18 @@ func (c *RegistryProviderVersionDeleteCommand) Run(args []string) int {
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if !c.force && !c.yes {
+		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete provider version '%s/%s:%s'? (yes/no): ", c.namespace, c.name, c.version))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading confirmation: %s", err))
+			return 1
+		}
+		if strings.TrimSpace(confirmation) != "yes" {
+			c.Ui.Output("Deletion cancelled")
+			return 0
+		}
 	}
 
 	// Delete provider version
@@ -102,6 +119,9 @@ Options:
   -name=<name>         Provider name (required)
   -namespace=<name>    Namespace (defaults to organization)
   -version=<semver>    Version string (required)
+  -force              Force delete without confirmation
+  -f                  Shorthand for -force
+  -y                  Confirm delete without prompt
 
 Example:
 
