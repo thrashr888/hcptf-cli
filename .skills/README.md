@@ -87,6 +87,46 @@ Guide for investigating and resolving policy check failures.
 - Policy troubleshooting and best practices
 - Tracking compliance metrics across organization
 
+### workspace-to-stack
+
+Guide for refactoring existing workspace-based infrastructure into a Terraform Stack.
+
+**Use when:**
+- Migrating a workspace to a stack for multi-environment orchestration
+- Consolidating multiple related workspaces into a single stack
+- Breaking a monolithic workspace into stack components
+- Combining per-environment workspaces (app-dev, app-staging, app-prod) into stack deployments
+
+**Key topics covered:**
+- Auditing existing workspaces (config, variables, state, dependencies)
+- Designing stack structure (single vs multi-component, deployments)
+- Creating stack configuration files (`.tfcomponent.hcl`, `.tfdeploy.hcl`)
+- Creating and deploying the stack in HCP Terraform
+- Validating the migration and comparing outputs
+- Decommissioning old workspaces safely
+- Common migration scenarios and troubleshooting
+
+### greenfield-deploy
+
+Guide for setting up a brand-new infrastructure project from scratch with HCP Terraform.
+
+**Use when:**
+- Starting a new infrastructure project from zero
+- Setting up HCP Terraform for the first time
+- Creating workspaces, variables, and triggering first deployments
+- Onboarding a new team to HCP Terraform
+- Building a multi-environment deployment from scratch
+
+**Key topics covered:**
+- Planning project and workspace hierarchy
+- Verifying authentication and organization setup
+- Creating projects and workspaces
+- Writing initial Terraform configuration
+- Configuring variables and cloud provider credentials
+- Triggering and reviewing the first run
+- Setting up notifications, team access, and health assessments
+- Post-deployment checklist and best practices
+
 ## Using Skills
 
 ### In Compatible Agents

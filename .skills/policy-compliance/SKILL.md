@@ -1,9 +1,16 @@
+---
+name: policy-compliance
+description: Investigate and resolve policy check failures in HCP Terraform. Use when runs are blocked by failed Sentinel or OPA policy checks, understanding why policies failed, deciding whether to fix code or override policies, or finding policy failures across the organization.
+---
+
 # Policy Compliance Skill
 
 ## Overview
+
 This skill helps investigate and resolve policy check failures in HCP Terraform. Policies enforce governance, security, and compliance standards using Sentinel or OPA. When policies fail, you need to understand what was checked, why it failed, and how to remediate.
 
 ## Prerequisites
+
 - Authenticated with `hcptf` CLI
 - Read access to workspaces and policy sets
 - Override permissions if you need to bypass failed policies
@@ -12,15 +19,18 @@ This skill helps investigate and resolve policy check failures in HCP Terraform.
 ## Core Concepts
 
 **Policy Types:**
+
 - **Sentinel**: HashiCorp's policy-as-code framework
 - **OPA (Open Policy Agent)**: CNCF policy framework
 
 **Enforcement Levels:**
+
 - **Advisory**: Logs a warning, run continues (informational)
 - **Soft-Mandatory**: Can be overridden by authorized users
 - **Hard-Mandatory**: Cannot be overridden, run fails
 
 **Policy Check Statuses:**
+
 - **Passed**: All policies passed
 - **Failed**: One or more mandatory policies failed
 - **Overridden**: Failed policy was manually overridden
@@ -145,13 +155,13 @@ hcptf <org> <workspace> runs <run-id> plan
 
 **Decision Matrix:**
 
-| Situation | Action | Command |
-|-----------|--------|---------|
-| Policy is correct, code is wrong | Fix code | Clone repo, edit .tf files, commit |
-| Policy is too strict for this case | Override policy | `hcptf policycheck override` |
-| Policy needs adjustment | Update policy set | Edit policy in VCS, update parameters |
-| Need temporary exception | Override with justification | `hcptf policycheck override` (requires permission) |
-| Policy is informational | Acknowledge and continue | Review advisory warnings, no action needed |
+| Situation                          | Action                      | Command                                            |
+| ---------------------------------- | --------------------------- | -------------------------------------------------- |
+| Policy is correct, code is wrong   | Fix code                    | Clone repo, edit .tf files, commit                 |
+| Policy is too strict for this case | Override policy             | `hcptf policycheck override`                       |
+| Policy needs adjustment            | Update policy set           | Edit policy in VCS, update parameters              |
+| Need temporary exception           | Override with justification | `hcptf policycheck override` (requires permission) |
+| Policy is informational            | Acknowledge and continue    | Review advisory warnings, no action needed         |
 
 ### 6. Remediation Options
 
@@ -423,21 +433,25 @@ policy "new-security-check" {
 ## Policy Troubleshooting
 
 **Policy check shows "unreachable":**
+
 - Policy code has syntax errors
 - Policy cannot access required data (tfplan, tfconfig)
 - Check policy set VCS repository for errors
 
 **Override button not available:**
+
 - Policy is hard-mandatory (cannot override)
 - User lacks override permissions
 - Check team access settings
 
 **Policy passes locally but fails in HCP Terraform:**
+
 - Sentinel CLI vs cloud environment differences
 - Check policy parameters and configuration
 - Verify policy set is correctly applied
 
 **Policy fails on every run:**
+
 - Policy configuration may be incorrect
 - Check if policy matches workspace type (EC2 policy on GCP workspace)
 - Review policy parameters

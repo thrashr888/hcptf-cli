@@ -1,9 +1,16 @@
+---
+name: version-upgrades
+description: Upgrade Terraform, provider, module, and policy versions in HCP Terraform workspaces. Use when upgrading workspace Terraform version, updating provider versions for security patches or new features, upgrading modules or policy sets, or planning organization-wide version updates.
+---
+
 # Version Upgrade Skill
 
 ## Overview
+
 This skill helps upgrade Terraform, provider, module, and policy versions in HCP Terraform workspaces. Keeping versions current improves security, performance, and access to new features.
 
 ## Prerequisites
+
 - Authenticated with `hcptf` CLI
 - Write access to target workspace
 - VCS access if updating provider/module/policy versions in code
@@ -11,6 +18,7 @@ This skill helps upgrade Terraform, provider, module, and policy versions in HCP
 ## Core Concepts
 
 **Version Types:**
+
 - **Terraform Version**: The Terraform CLI version used to run plans/applies
 - **Provider Versions**: API plugins defined in `required_providers` block
 - **Module Versions**: Reusable module versions called with `source` argument
@@ -69,16 +77,19 @@ hcptf explorer query -org=<org> -type=modules \
 ### 2. Find Latest Versions
 
 **Terraform versions:**
+
 - Official releases: https://releases.hashicorp.com/terraform/
 - What's in use across org: `hcptf explorer query -org=<org> -type=tf_versions`
 
 **Public provider versions:**
+
 - Provider registry page: `https://registry.terraform.io/providers/<namespace>/<name>/latest`
   - Example: https://registry.terraform.io/providers/hashicorp/aws/latest
   - Example: https://registry.terraform.io/providers/hashicorp/random/latest
 - Documentation includes changelog, upgrade guides, and version history
 - In use across org: `hcptf explorer query -org=<org> -type=providers`
 - CLI commands:
+
   ```bash
   # Get latest provider version and details
   hcptf publicregistry provider -name=hashicorp/aws
@@ -88,6 +99,7 @@ hcptf explorer query -org=<org> -type=modules \
   ```
 
 **Private provider versions:**
+
 ```bash
 # List private providers
 hcptf registry provider list -organization=<org>
@@ -101,12 +113,14 @@ hcptf registry provider version read -organization=<org> \
 ```
 
 **Public module versions:**
+
 - Module registry page: `https://registry.terraform.io/modules/<namespace>/<name>/<system>`
   - Example: https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws
   - Example: https://registry.terraform.io/modules/hashicorp/dir/template
 - Shows available versions, inputs/outputs, and usage examples
 - In use across org: `hcptf explorer query -org=<org> -type=modules`
 - CLI commands:
+
   ```bash
   # Get latest module version and details
   hcptf publicregistry module -name=terraform-aws-modules/vpc/aws
@@ -116,6 +130,7 @@ hcptf registry provider version read -organization=<org> \
   ```
 
 **Private module versions:**
+
 ```bash
 # List private modules
 hcptf registry module list -organization=<org>
@@ -125,11 +140,13 @@ hcptf registry module read -organization=<org> -namespace=<org> -name=<module>
 ```
 
 **Public policy versions:**
+
 - Policy registry page: `https://registry.terraform.io/policies/<namespace>/<name>`
   - Example: https://registry.terraform.io/policies/hashicorp/CIS-Policy-Set-for-AWS-Terraform
   - Example: https://registry.terraform.io/policies/hashicorp/gcp-networking-terraform
 - Shows available versions, included policies, and modules
 - CLI commands:
+
   ```bash
   # List all available public policies
   hcptf publicregistry policy list
@@ -145,6 +162,7 @@ hcptf registry module read -organization=<org> -namespace=<org> -name=<module>
   ```
 
 **Private policy versions:**
+
 ```bash
 # List private policies (via policy sets)
 hcptf policyset list -organization=<org>
@@ -224,6 +242,7 @@ hcptf <org> <workspace> runs <run-id> show
 ```
 
 If the plan shows issues:
+
 - Check plan output: `hcptf <org> <workspace> runs <run-id> plan`
 - View logs: `hcptf <org> <workspace> runs <run-id> logs`
 
@@ -456,6 +475,7 @@ hcptf policyset read -organization=my-org -id=<policy-set-id>
 ## Version Compatibility
 
 **Terraform version constraints:**
+
 - `1.9.0` - Exact version
 - `~> 1.9.0` - Pessimistic constraint (1.9.x only)
 - `~> 1.9` - Allow 1.x (1.9.0, 1.10.0, etc.)
@@ -464,34 +484,40 @@ hcptf policyset read -organization=my-org -id=<policy-set-id>
 
 **Provider version constraints:**
 Follow same syntax. Use pessimistic constraints to avoid breaking changes:
+
 - `~> 5.69.0` - Allow 5.69.x patches only
 - `~> 5.0` - Allow 5.x minor/patch updates
 
 ## Upgrade Considerations
 
 **Before upgrading:**
+
 1. Review changelogs for breaking changes
 2. Check workspace health (no drift, checks passing)
 3. Have rollback plan ready
 4. Test in non-production workspace first
 
 **Terraform version upgrades:**
+
 - Usually safe for patch versions (1.9.6 → 1.9.7)
 - Minor versions may have deprecations (1.9.x → 1.10.x)
 - Major versions have breaking changes (review upgrade guide)
 
 **Provider version upgrades:**
+
 - Patch versions are safe (5.69.0 → 5.69.1)
 - Minor versions may add deprecations (5.69.x → 5.70.x)
 - Major versions have breaking changes (5.x → 6.x)
 - Always review provider upgrade guide
 
 **Module version upgrades:**
+
 - Depends on module's versioning practice
 - Check module changelog and README
 - Test for interface changes (new required variables, removed outputs)
 
 **Policy version upgrades:**
+
 - Review policy changelog for new/removed checks
 - Check if new policies require additional parameters
 - Test in non-production workspace first

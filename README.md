@@ -315,15 +315,35 @@ hcptf workspace create --help
 
 This project includes [Agent Skills](https://agentskills.io/) that help AI agents use the CLI effectively. Skills are automatically discovered by compatible agents (Claude Code, Cursor, GitHub Copilot, etc.).
 
-**Available skills:**
+### Installing Skills
+
+To use these skills, clone or copy the `.skills/` directory into your project:
+
+```bash
+# Clone the repo and copy skills into your project
+git clone https://github.com/thrashr888/hcptf-cli.git
+cp -r hcptf-cli/.skills /path/to/your/project/.skills
+
+# Or add as a git submodule
+git submodule add https://github.com/thrashr888/hcptf-cli.git .hcptf-cli
+ln -s .hcptf-cli/.skills .skills
+```
+
+Compatible agents will automatically discover skills in the `.skills/` directory.
+
+### Available Skills
+
 - **hcptf-cli**: Comprehensive guide covering authentication, commands, workflows, and best practices
 - **drift**: Investigate and resolve infrastructure drift (detect drifted workspaces, view changes, fix violations)
 - **version-upgrades**: Upgrade Terraform, provider, module, and policy versions (find latest versions, update code, test changes)
 - **policy-compliance**: Investigate and resolve policy check failures (understand violations, fix code, override policies)
+- **workspace-to-stack**: Refactor existing workspaces into Terraform Stacks (audit, design, migrate, validate)
+- **greenfield-deploy**: Set up a new project from scratch with HCP Terraform (create workspace, configure, deploy, verify)
 
 The `.skills/` directory contains structured instructions that agents can load to:
 - Understand hierarchical command structure and URL-style navigation
 - Learn common workflows (drift investigation, version upgrades, policy compliance)
+- Set up greenfield projects and migrate workspaces to stacks
 - Use public registry commands to discover providers, modules, and policies
 - Follow best practices for remediation and automation
 - Handle errors and troubleshooting

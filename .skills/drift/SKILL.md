@@ -1,9 +1,16 @@
+---
+name: drift
+description: Investigate and resolve infrastructure drift in HCP Terraform workspaces. Use when infrastructure has changed outside of Terraform, investigating drift detection alerts, deciding whether to update code or fix infrastructure, or resolving continuous validation check failures.
+---
+
 # Drift Detection and Resolution Skill
 
 ## Overview
+
 This skill helps investigate and resolve infrastructure drift in HCP Terraform workspaces. Drift occurs when actual infrastructure state diverges from the Terraform configuration.
 
 ## Prerequisites
+
 - HCP Terraform Plus or Enterprise (health assessments feature)
 - Health assessments enabled in workspace settings
 - Authenticated with `hcptf` CLI (`TFE_TOKEN` or `~/.terraform.d/credentials.terraform.io`)
@@ -11,11 +18,13 @@ This skill helps investigate and resolve infrastructure drift in HCP Terraform w
 ## Core Concepts
 
 **Drift Types:**
+
 - **delete**: Resource was deleted outside Terraform - usually needs `terraform apply` to recreate
 - **update**: Resource was modified outside Terraform - may need code update or apply
 - **create**: Resource was created outside Terraform - may need import or removal
 
 **Resolution Strategies:**
+
 1. **Apply fixes infrastructure**: Run `terraform apply` to make infrastructure match code
 2. **Update code**: Modify Terraform configuration to match actual infrastructure state
 3. **Update variables**: Change variable values if drift is due to outdated variable values
@@ -51,6 +60,7 @@ hcptf assessmentresult list -org=<org-name> -name=<workspace-name>
 ```
 
 This shows:
+
 - Which resources drifted
 - What actions are needed (delete, update, create)
 - Which attributes changed (before/after values)
@@ -78,12 +88,14 @@ hcptf <org> <workspace> runs <run-id> configversion
 ```
 
 Or with JSON parsing:
+
 ```bash
 RUN_ID=$(hcptf <org> <workspace> -output=json | jq -r '.CurrentRunID')
 hcptf <org> <workspace> runs $RUN_ID configversion
 ```
 
 **For VCS-backed workspaces**, this provides:
+
 - Branch name
 - Commit SHA
 - Commit URL (direct link to GitHub/GitLab commit)
@@ -95,15 +107,16 @@ Review the drift details to determine the appropriate action:
 
 **Decision Matrix:**
 
-| Action Type | Common Cause | Typical Resolution |
-|-------------|-------------|-------------------|
-| `delete` | Manual deletion, autoscaling | Apply to recreate |
-| `update` with infrastructure values | Manual changes, console edits | Apply to revert OR update code to match |
-| `update` with computed values | Normal operation (IPs, timestamps) | Update code/variables to match |
-| Tags added | Tagging automation | Update code to include tags |
-| Check failures | Cert expiration, thresholds | Varies by check type |
+| Action Type                         | Common Cause                       | Typical Resolution                      |
+| ----------------------------------- | ---------------------------------- | --------------------------------------- |
+| `delete`                            | Manual deletion, autoscaling       | Apply to recreate                       |
+| `update` with infrastructure values | Manual changes, console edits      | Apply to revert OR update code to match |
+| `update` with computed values       | Normal operation (IPs, timestamps) | Update code/variables to match          |
+| Tags added                          | Tagging automation                 | Update code to include tags             |
+| Check failures                      | Cert expiration, thresholds        | Varies by check type                    |
 
 **Questions to ask:**
+
 - Is the current infrastructure state correct?
 - Should the code be updated to match reality?
 - Is this drift expected (computed values, auto-scaling)?
@@ -249,19 +262,23 @@ hcptf my-org my-workspace runs create \
 ## Troubleshooting
 
 **No assessment results found:**
+
 - Health assessments may not be enabled in workspace settings
 - Feature requires HCP Terraform Plus or Enterprise
 - Enable via UI or `hcptf workspace update`
 
 **401 Unauthorized on assessment results:**
+
 - Check your authentication token is valid
 - Ensure you have at least read access to the workspace
 
 **Drift shows but no resources listed:**
+
 - May be computed attribute changes (not shown in detail)
 - Check the log output URL for full details
 
 **Apply doesn't fix drift:**
+
 - Drift may be due to external automation re-applying changes
 - Consider updating code to match the pattern
 - Investigate what's causing the external changes

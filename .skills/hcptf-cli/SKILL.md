@@ -1,10 +1,6 @@
 ---
 name: hcptf-cli
 description: Manage HCP Terraform resources using the hcptf command-line tool. Use when working with HCP Terraform, Terraform Cloud, Terraform Enterprise, workspaces, runs, organizations, stacks, registry modules/providers, or infrastructure automation tasks.
-metadata:
-  author: thrashr888
-  version: "0.2.0"
-  category: infrastructure
 ---
 
 # HCP Terraform CLI (hcptf)
@@ -14,6 +10,7 @@ Use the CLI with workspace/run hierarchical commands and URL-style navigation.
 ## When to Use This Skill
 
 Use this skill when:
+
 - Managing HCP Terraform workspaces, runs, or organizations
 - Working with Terraform Stacks or private registry resources
 - Automating infrastructure deployments
@@ -23,6 +20,7 @@ Use this skill when:
 ## Authentication
 
 The CLI checks for credentials in this order:
+
 1. `TFE_TOKEN` environment variable
 2. `HCPTF_TOKEN` environment variable
 3. `~/.hcptfrc` configuration file
@@ -230,19 +228,22 @@ hcptf workspace list -org=my-org -output=json | jq '.data[].attributes.name'
    - URL-style is great for interactive use
 
 3. **Check status before applying**
-  ```bash
-  # Always review before apply
-  hcptf workspace run show -id=run-abc123
-  hcptf workspace run apply -id=run-abc123
-  ```
+
+```bash
+# Always review before apply
+hcptf workspace run show -id=run-abc123
+hcptf workspace run apply -id=run-abc123
+```
 
 4. **Use JSON output for parsing**
+
    ```bash
    hcptf workspace list -org=my-org -output=json | \
      jq -r '.data[].attributes.name'
    ```
 
 5. **Sensitive variables**
+
    ```bash
    # Always use -sensitive for secrets
    hcptf variable create -org=my-org -workspace=prod \
@@ -250,21 +251,22 @@ hcptf workspace list -org=my-org -output=json | jq '.data[].attributes.name'
    ```
 
 6. **Check drift before deployment**
-  ```bash
-  # Assessment results show drift
-  hcptf workspace run assessmentresult list -org=my-org -name=prod
-  hcptf workspace run assessmentresult read -id=ar-abc123 -show-drift
-  hcptf workspace run create -org=my-org -name=prod -refresh-only
-  ```
+
+```bash
+# Assessment results show drift
+hcptf workspace run assessmentresult list -org=my-org -name=prod
+hcptf workspace run assessmentresult read -id=ar-abc123 -show-drift
+hcptf workspace run create -org=my-org -name=prod -refresh-only
+```
 
 ## Common Flags
 
-| Flag | Alias | Description |
-|------|-------|-------------|
-| `-organization` | `-org` | Organization name |
-| `-name` | `-workspace` | Workspace name |
-| `-output` | | `table` (default) or `json` |
-| `-force` | | Skip confirmation prompts |
+| Flag            | Alias        | Description                 |
+| --------------- | ------------ | --------------------------- |
+| `-organization` | `-org`       | Organization name           |
+| `-name`         | `-workspace` | Workspace name              |
+| `-output`       |              | `table` (default) or `json` |
+| `-force`        |              | Skip confirmation prompts   |
 
 ## Getting Help
 
