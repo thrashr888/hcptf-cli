@@ -20,7 +20,7 @@ hcptf version
 
 Available platforms: Linux (amd64, arm64), macOS (Intel, Apple Silicon), Windows, FreeBSD.
 
-See [docs/RELEASING.md](docs/RELEASING.md) for checksum verification.
+Checksums are published on each GitHub release page.
 
 ### Build from Source
 
@@ -238,8 +238,8 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `policyset` | 7 | Policy set management |
 | `policycheck` | 3 | Policy check results |
 | `policyevaluation` | 1 | Policy evaluations |
-| `policysetoutcome` | 2 | Policy set outcomes |
-| `policysetparameter` | 4 | Policy set parameters |
+| `policyset outcome` | 2 | Policy set outcomes |
+| `policyset parameter` | 4 | Policy set parameters |
 | `sshkey` | 5 | SSH keys for VCS |
 | `notification` | 6 | Run notifications |
 | `variableset` | 10 | Reusable variable sets |
@@ -253,8 +253,8 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `apply` | 2 | Apply details and logs |
 | `planexport` | 3 | Plan exports |
 | `configversion` | 4 | Configuration versions |
-| `teamaccess` | 5 | Team workspace permissions |
-| `projectteamaccess` | 5 | Team project permissions |
+| `team access` | 5 | Team workspace permissions |
+| `project teamaccess` | 5 | Team project permissions |
 | `registry` | 1 | Private registry parent |
 | `registry module` | 6 | Private registry modules |
 | `registry provider` | 4 | Private registry providers |
@@ -270,21 +270,21 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `stack deployment` | 3 | Stack deployments |
 | `stack state` | 2 | Stack states |
 | `audittrail` | 2 | Audit trail events |
-| `audittrailtoken` | 4 | Audit trail tokens |
-| `organizationtoken` | 4 | Organization API tokens |
-| `usertoken` | 4 | User API tokens |
-| `teamtoken` | 4 | Team API tokens |
-| `organizationmembership` | 4 | Organization memberships |
-| `organizationmember` | 1 | Organization member details |
-| `organizationtag` | 2 | Organization tags |
-| `workspacetag` | 3 | Workspace tags |
+| `audittrail token` | 4 | Audit trail tokens |
+| `organization token` | 4 | Organization API tokens |
+| `user token` | 4 | User API tokens |
+| `team token` | 4 | Team API tokens |
+| `organization membership` | 4 | Organization memberships |
+| `organization member` | 1 | Organization member details |
+| `organization tag` | 2 | Organization tags |
+| `workspace tag` | 3 | Workspace tags |
 | `reservedtagkey` | 3 | Reserved tag keys |
 | `comment` | 3 | Run comments |
 | `awsoidc` | 4 | AWS OIDC integration |
 | `azureoidc` | 4 | Azure OIDC integration |
 | `gcpoidc` | 4 | GCP OIDC integration |
 | `vaultoidc` | 4 | Vault OIDC integration |
-| `workspaceresource` | 2 | Managed resources |
+| `workspace resource` | 2 | Managed resources |
 | `queryrun` | 1 | Search runs |
 | `queryworkspace` | 1 | Search workspaces |
 | `changerequest` | 4 | Change requests |

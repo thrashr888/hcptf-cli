@@ -44,7 +44,7 @@ hcptf policyset list -org=my-org
 ```bash
 hcptf my-org my-workspace
 ```
-Equivalent to: `hcptf workspace read -org=my-org -workspace=my-workspace`
+Equivalent to: `hcptf workspace read -org=my-org -name=my-workspace`
 
 **List workspace resources:**
 ```bash
@@ -141,7 +141,7 @@ For these operations, use the traditional command syntax with explicit flags.
 |-----------|-------------|
 | `hcptf my-org` | `hcptf organization show -org=my-org` |
 | `hcptf my-org workspaces` | `hcptf workspace list -org=my-org` |
-| `hcptf my-org my-ws` | `hcptf workspace read -org=my-org -workspace=my-ws` |
+| `hcptf my-org my-ws` | `hcptf workspace read -org=my-org -name=my-ws` |
 | `hcptf my-org my-ws runs` | `hcptf run list -org=my-org -workspace=my-ws` |
 | `hcptf my-org my-ws runs run-123` | `hcptf run show -id=run-123` |
 | `hcptf my-org my-ws runs run-123 apply` | `hcptf run apply -id=run-123` |

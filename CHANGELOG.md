@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Information architecture rework**:
+  - Canonical nested namespaces are now the primary command model.
+  - Removed legacy flattened namespace aliases for normalized command groups (pre-1.0 cleanup).
+  - Updated command help and docs to reflect canonical namespace paths.
+- **Router model generation**:
+  - Replaced hardcoded router known-command and resource keyword fallbacks with command-registry-derived model generation.
+  - Added model drift guard tests to ensure router roots stay aligned with the command registry.
+- **Command dispatch behavior**:
+  - Added implicit GET inference for concise usage (`list`/`read`/`show`) with deterministic ambiguity errors.
+  - Standardized delete bypass flags so `-f` and `-y` normalize to `-force` for delete commands.
+
 ## [0.2.0] - 2026-02-14
 
 ### Fixed
@@ -86,7 +99,7 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
   - Multi-platform binaries: Linux (amd64, arm64), macOS (Intel, Apple Silicon), Windows, FreeBSD
   - Automatic changelog generation from commits
   - SHA256 checksums for all binaries
-  - See [docs/RELEASING.md](docs/RELEASING.md) for release process
+  - Release process and checksums are published on GitHub Releases
 
 - **TFE_ADDRESS support**: Backward compatibility with Terraform Enterprise
   - Environment variable precedence: HCPTF_ADDRESS > TFE_ADDRESS > default
@@ -95,7 +108,7 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 - **Comprehensive testing infrastructure**:
   - Added internal/client tests (92.9% coverage)
-  - Added docs/TESTING.md guide following HashiCorp go-tfe patterns
+  - Added internal test guidance following HashiCorp go-tfe patterns
   - Added docs/TEST_COVERAGE.md with coverage report and roadmap
   - Internal packages average 79% coverage
   - Fixed broken test files and added test helpers
