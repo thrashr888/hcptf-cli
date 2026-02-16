@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-15
+
 ### Changed
 
 - **Information architecture rework**:
@@ -19,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Command dispatch behavior**:
   - Added implicit GET inference for concise usage (`list`/`read`/`show`) with deterministic ambiguity errors.
   - Standardized delete bypass flags so `-f` and `-y` normalize to `-force` for delete commands.
+
+### Fixed
+
+- Fixed Go formatting issues in command/commands.go, command/login.go, and command/whoami.go to pass CI checks.
 
 ## [0.2.0] - 2026-02-14
 
@@ -191,6 +197,7 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 Total: 229 commands across 59 resource types.
 
-[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thrashr888/hcptf-cli/releases/tag/v0.1.0
