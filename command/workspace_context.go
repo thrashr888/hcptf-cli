@@ -39,13 +39,18 @@ Available commands for this workspace:
 
   Runs:
     hcptf <org> <workspace> runs                    List runs
-    hcptf <org> <workspace> <run-id>                Show run details
-    hcptf <org> <workspace> runs <run-id> plan      Show plan
+    hcptf <org> <workspace> runs <run-id>           Show run details
+    hcptf <org> <workspace> runs <run-id> plan      Show plan details
     hcptf <org> <workspace> runs <run-id> logs      Show plan logs
-    hcptf <org> <workspace> runs <run-id> applyread Show apply details
-    hcptf <org> <workspace> runs <run-id> applylogs Show apply logs
+    hcptf <org> <workspace> runs <run-id> apply     Show apply details
+    hcptf <org> <workspace> runs <run-id> apply logs Show apply logs
     hcptf <org> <workspace> runs <run-id> comments  List run comments
     hcptf <org> <workspace> runs <run-id> policychecks List policy checks
+
+  Note: URL-style commands are read-only. To execute actions, use flag-based:
+    hcptf run apply -id=<run-id>      Execute apply (requires confirmation)
+    hcptf run discard -id=<run-id>    Discard run
+    hcptf run cancel -id=<run-id>     Cancel run
 
   Variables:
     hcptf <org> <workspace> variables               List variables

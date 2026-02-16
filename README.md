@@ -133,7 +133,9 @@ hcptf explorer query -org=my-org -type=workspaces -filter="current-run-status:po
 
 ### URL-Style Navigation
 
-For convenience, you can use a URL-like path syntax to access resources:
+For convenience, you can use a URL-like path syntax to access resources.
+
+**Important**: URL-style commands are **read-only** (safe navigation). To execute actions like applying runs, use flag-based commands.
 
 ```bash
 # Show organization details
@@ -152,8 +154,11 @@ hcptf my-org my-workspace runs list
 # Show a specific run
 hcptf my-org my-workspace runs run-abc123
 
-# Apply a run
+# View plan and apply details (read-only)
+hcptf my-org my-workspace runs run-abc123 plan
+hcptf my-org my-workspace runs run-abc123 logs
 hcptf my-org my-workspace runs run-abc123 apply
+hcptf my-org my-workspace runs run-abc123 apply logs
 
 # List workspace variables
 hcptf my-org my-workspace variables
@@ -173,6 +178,29 @@ hcptf my-org my-workspace runs run-abc123 policychecks
 hcptf my-org projects
 hcptf my-org teams
 hcptf my-org policies
+```
+
+### Actions (Flag-Based Commands)
+
+To execute actions like applying runs or deleting resources, use flag-based commands:
+
+```bash
+# Execute run apply (requires confirmation)
+hcptf run apply -id=run-abc123 -comment="Reviewed and approved"
+
+# Discard a run
+hcptf run discard -id=run-abc123 -comment="Changes not needed"
+
+# Cancel a run
+hcptf run cancel -id=run-abc123
+
+# Create resources
+hcptf workspace create -org=my-org -name=new-workspace
+hcptf variable create -org=my-org -workspace=staging -key=region -value=us-east-1
+
+# Delete resources (requires confirmation)
+hcptf workspace delete -org=my-org -name=staging
+hcptf run delete -id=run-abc123
 ```
 
 ### Delete Confirmation
