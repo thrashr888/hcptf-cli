@@ -10,7 +10,7 @@ import (
 // LoginCommand is a command to authenticate and save credentials
 type LoginCommand struct {
 	Meta
-	hostname string
+	hostname  string
 	showToken bool
 }
 

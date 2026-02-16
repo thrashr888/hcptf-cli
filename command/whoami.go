@@ -10,7 +10,7 @@ import (
 // WhoAmICommand returns information about the authenticated user.
 type WhoAmICommand struct {
 	Meta
-	format    string
+	format     string
 	accountSvc accountReader
 }
 
@@ -39,9 +39,9 @@ func (c *WhoAmICommand) Run(args []string) int {
 
 	formatter := c.Meta.NewFormatter(c.format)
 	data := map[string]interface{}{
-		"ID":             account.ID,
-		"Username":       account.Username,
-		"Email":          account.Email,
+		"ID":               account.ID,
+		"Username":         account.Username,
+		"Email":            account.Email,
 		"IsServiceAccount": account.IsServiceAccount,
 	}
 
