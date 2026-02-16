@@ -46,7 +46,9 @@ var testCommandPaths = []string{
 	"project delete",
 	"project read",
 	"team delete",
-	"team read",
+	"team show",
+	"team add-member",
+	"team remove-member",
 	"policy delete",
 	"policy read",
 	"policyset delete",
@@ -389,6 +391,16 @@ func TestTranslateArgs(t *testing.T) {
 			name:     "org workspace runs run-id policychecks (longer syntax)",
 			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "policychecks"},
 			expected: []string{"policycheck", "list", "-run-id=run-abc123"},
+		},
+		{
+			name:     "org workspace run-id assessment (shorter syntax)",
+			input:    []string{"myorg", "myworkspace", "run-abc123", "assessment"},
+			expected: []string{"assessmentresult", "list", "-org=myorg", "-workspace=myworkspace"},
+		},
+		{
+			name:     "org workspace runs run-id assessment (longer syntax)",
+			input:    []string{"myorg", "myworkspace", "runs", "run-abc123", "assessment"},
+			expected: []string{"assessmentresult", "list", "-org=myorg", "-workspace=myworkspace"},
 		},
 	}
 

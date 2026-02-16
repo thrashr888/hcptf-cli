@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func (c *SubscriptionReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/subscriptions/%s", c.subscriptionID), nil)
+	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/subscriptions/%s", url.PathEscape(c.subscriptionID)), nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error requesting subscription: %s", err))
 		return 1

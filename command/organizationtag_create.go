@@ -2,8 +2,10 @@ package command
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -44,9 +46,25 @@ func (c *OrganizationTagCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	endpoint := fmt.Sprintf("/api/v2/organizations/%s/tags", c.organization)
-	body := fmt.Sprintf(`{"data":{"type":"tags","attributes":{"name":%q}}}`, c.name)
-	responseBody, status, err := executeAPIRequest(client, http.MethodPost, endpoint, bytes.NewBufferString(body))
+	endpoint := fmt.Sprintf("/api/v2/organizations/%s/tags", url.PathEscape(c.organization))
+	requestBody := struct {
+		Data struct {
+			Type       string `json:"type"`
+			Attributes struct {
+				Name string `json:"name"`
+			} `json:"attributes"`
+		} `json:"data"`
+	}{}
+	requestBody.Data.Type = "tags"
+	requestBody.Data.Attributes.Name = c.name
+
+	body, err := json.Marshal(requestBody)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error creating organization tag request: %s", err))
+		return 1
+	}
+
+	responseBody, status, err := executeAPIRequest(client, http.MethodPost, endpoint, bytes.NewBuffer(body))
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating organization tag: %s", err))
 		return 1

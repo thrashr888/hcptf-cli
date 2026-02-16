@@ -11,7 +11,6 @@ type RegistryModuleDeleteCommand struct {
 	Meta
 	organization      string
 	name              string
-	provider          string
 	force             bool
 	yes               bool
 	registryModuleSvc registryModuleDeleter
@@ -23,7 +22,6 @@ func (c *RegistryModuleDeleteCommand) Run(args []string) int {
 	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Module name (required)")
-	flags.StringVar(&c.provider, "provider", "", "Provider name (optional, deletes specific provider)")
 	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
 	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")
 	flags.BoolVar(&c.yes, "y", false, "Confirm delete without prompt")
@@ -71,11 +69,7 @@ func (c *RegistryModuleDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.provider != "" {
-		c.Ui.Output(fmt.Sprintf("Registry module '%s/%s/%s' deleted successfully", c.organization, c.name, c.provider))
-	} else {
-		c.Ui.Output(fmt.Sprintf("Registry module '%s/%s' deleted successfully", c.organization, c.name))
-	}
+	c.Ui.Output(fmt.Sprintf("Registry module '%s/%s' deleted successfully", c.organization, c.name))
 	return 0
 }
 
@@ -89,27 +83,22 @@ func (c *RegistryModuleDeleteCommand) registryModuleService(client *client.Clien
 // Help returns help text for the registry module delete command
 func (c *RegistryModuleDeleteCommand) Help() string {
 	helpText := `
-Usage: hcptf registrymodule delete [options]
+	Usage: hcptf registry module delete [options]
 
   Delete a private registry module.
-
-  If provider is specified, only that provider version of the module
-  is deleted. Otherwise, the entire module is deleted.
 
 Options:
 
   -organization=<name>  Organization name (required)
   -org=<name>          Alias for -organization
   -name=<name>         Module name (required)
-  -provider=<name>     Provider name (optional)
   -force               Force delete without confirmation
   -f                   Shorthand for -force
   -y                   Confirm delete without prompt
 
 Example:
 
-  hcptf registrymodule delete -org=my-org -name=vpc -provider=aws
-  hcptf registrymodule delete -org=my-org -name=vpc
+  hcptf registry module delete -org=my-org -name=vpc
 `
 	return strings.TrimSpace(helpText)
 }

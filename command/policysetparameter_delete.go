@@ -82,7 +82,7 @@ func (c *PolicySetParameterDeleteCommand) Run(args []string) int {
 // Help returns help text for the policy set parameter delete command
 func (c *PolicySetParameterDeleteCommand) Help() string {
 	helpText := `
-Usage: hcptf policysetparameter delete [options]
+	Usage: hcptf policyset parameter delete [options]
 
   Delete a policy set parameter. This action cannot be undone.
 

@@ -169,15 +169,14 @@ func TestPolicyCheckReadRunSuccess(t *testing.T) {
 		},
 	}
 
-	output, code := captureStdout(t, func() int {
-		return cmd.Run([]string{
-			"-id=pchk-001",
-			"-output=json",
-		})
+	code := cmd.Run([]string{
+		"-id=pchk-001",
+		"-output=json",
 	})
 	if code != 0 {
 		t.Fatalf("expected exit code 0, got %d", code)
 	}
+	output := ui.OutputWriter.String()
 	if !strings.Contains(output, "pchk-001") {
 		t.Fatalf("expected output to include policy check id, got %q", output)
 	}

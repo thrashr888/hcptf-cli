@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func (c *CostEstimateReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/cost-estimates/%s", c.id), nil)
+	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/cost-estimates/%s", url.PathEscape(c.id)), nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error requesting cost estimate: %s", err))
 		return 1

@@ -113,38 +113,7 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 			}
 
 			if len(args) >= 4 {
-				action := args[3]
-				// Special case: plan, logs, and apply subcommands
-				if action == "plan" {
-					return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, 4), nil
-				}
-				if action == "logs" || action == "planlogs" {
-					return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, 4), nil
-				}
-				if action == "applylogs" {
-					return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, 4), nil
-				}
-				if action == "applyread" || action == "applydetails" {
-					return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, 4), nil
-				}
-				// Sub-resource lists
-				if action == "comments" {
-					return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, 4), nil
-				}
-				if action == "policychecks" {
-					return appendRemaining([]string{"policycheck", "list", "-run-id=" + runID}, args, 4), nil
-				}
-				// Workspace-level convenience shortcuts (when accessed via run)
-				if action == "state" || action == "stateversions" {
-					return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
-				}
-				if action == "outputs" {
-					return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, 4), nil
-				}
-				if action == "configversion" {
-					return appendRemaining([]string{"configversion", "read", "-run-id=" + runID}, args, 4), nil
-				}
-				return appendRemaining([]string{"run", action, "-id=" + runID}, args, 4), nil
+				return r.translateRunAction(org, workspace, runID, args[3], args, 4), nil
 			}
 		}
 
@@ -164,43 +133,7 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 				}
 
 				if len(args) >= 5 {
-					action := args[4]
-					// Special case: plan, logs, and apply subcommands
-					if action == "plan" {
-						return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, 5), nil
-					}
-					if action == "logs" || action == "planlogs" {
-						return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, 5), nil
-					}
-					if action == "applylogs" {
-						return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, 5), nil
-					}
-					if action == "applyread" || action == "applydetails" {
-						return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, 5), nil
-					}
-					// Sub-resource lists
-					if action == "comments" {
-						return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, 5), nil
-					}
-					if action == "policychecks" {
-						return appendRemaining([]string{"policycheck", "list", "-run-id=" + runID}, args, 5), nil
-					}
-					// Workspace-level convenience shortcuts (when accessed via run)
-					if action == "state" || action == "stateversions" {
-						return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
-					}
-					if action == "outputs" {
-						return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
-					}
-					if action == "configversion" {
-						// Show the config version used by this run
-						return appendRemaining([]string{"configversion", "read", "-run-id=" + runID}, args, 5), nil
-					}
-					if action == "assessment" {
-						// Show the current assessment for this workspace
-						return appendRemaining([]string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, args, 5), nil
-					}
-					return appendRemaining([]string{"run", action, "-id=" + runID}, args, 5), nil
+					return r.translateRunAction(org, workspace, runID, args[4], args, 5), nil
 				}
 			}
 		case "variables":
@@ -294,6 +227,36 @@ func (r *Router) ValidateWorkspace(ctx context.Context, org, workspace string) e
 		return fmt.Errorf("workspace %q not found in organization %q: %w", workspace, org, err)
 	}
 	return nil
+}
+
+// translateRunAction maps a run sub-resource action to the appropriate command args.
+// This is shared between the short-form (org workspace run-xxx action) and
+// long-form (org workspace runs run-xxx action) dispatch paths.
+func (r *Router) translateRunAction(org, workspace, runID, action string, args []string, consumed int) []string {
+	switch action {
+	case "plan":
+		return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, consumed)
+	case "logs", "planlogs":
+		return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, consumed)
+	case "applylogs":
+		return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, consumed)
+	case "applyread", "applydetails":
+		return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, consumed)
+	case "comments":
+		return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, consumed)
+	case "policychecks":
+		return appendRemaining([]string{"policycheck", "list", "-run-id=" + runID}, args, consumed)
+	case "state", "stateversions":
+		return appendRemaining([]string{"state", "list", "-org=" + org, "-workspace=" + workspace}, args, consumed)
+	case "outputs":
+		return appendRemaining([]string{"state", "outputs", "-org=" + org, "-workspace=" + workspace}, args, consumed)
+	case "configversion":
+		return appendRemaining([]string{"configversion", "read", "-run-id=" + runID}, args, consumed)
+	case "assessment":
+		return appendRemaining([]string{"assessmentresult", "list", "-org=" + org, "-workspace=" + workspace}, args, consumed)
+	default:
+		return appendRemaining([]string{"run", action, "-id=" + runID}, args, consumed)
+	}
 }
 
 // hasHelpFlag checks if help flag is present in args

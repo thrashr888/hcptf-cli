@@ -178,11 +178,7 @@ func inferImplicitGetVerb(args []string, getVerbIndex map[string]getVerbAvailabi
 	}
 	namespace := strings.Join(tokens[:matchLen], " ")
 
-	remaining := tokens[matchLen:]
-	if len(remaining) > 0 {
-		if isExplicitGetVerb(remaining[0]) {
-			return args, nil
-		}
+	if matchLen < len(tokens) {
 		return args, nil
 	}
 

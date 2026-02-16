@@ -3,9 +3,6 @@ package command
 import (
 	"fmt"
 	"strings"
-
-	"github.com/hashicorp/hcptf-cli/internal/output"
-	"os"
 )
 
 // PolicyCheckReadCommand is a command to read policy check details
@@ -48,9 +45,6 @@ func (c *PolicyCheckReadCommand) Run(args []string) int {
 
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
-	if c.Meta.OutputWriter == nil && c.Meta.ErrorWriter == nil {
-		formatter = output.NewFormatterWithWriters(c.format, os.Stdout, os.Stderr)
-	}
 
 	data := map[string]interface{}{
 		"ID":            policyCheck.ID,
@@ -139,13 +133,14 @@ func (c *PolicyCheckReadCommand) Run(args []string) int {
 
 				name := policyInfo["name"]
 				enforcementLevel := policyInfo["enforcement-level"]
-				result := policy["result"]
 				duration := policy["duration"]
 
-				// Determine status symbol
+				// Determine status symbol using safe type assertion
+				resultBool, resultOk := policy["result"].(bool)
+
 				statusSymbol := "✓"
 				statusText := "PASSED"
-				if !result.(bool) {
+				if resultOk && !resultBool {
 					statusSymbol = "✗"
 					statusText = "FAILED"
 				}
@@ -161,7 +156,7 @@ func (c *PolicyCheckReadCommand) Run(args []string) int {
 				}
 
 				// Show trace information for failures
-				if !result.(bool) {
+				if resultOk && !resultBool {
 					trace, ok := policy["trace"].(map[string]interface{})
 					if ok {
 						// Show print output (policy messages)

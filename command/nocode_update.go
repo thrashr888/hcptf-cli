@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func (c *NoCodeUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
-	endpoint := fmt.Sprintf("/api/v2/organizations/%s/no-code-provisioning", c.organization)
+	endpoint := fmt.Sprintf("/api/v2/organizations/%s/no-code-provisioning", url.PathEscape(c.organization))
 	responseBody, status, err := executeAPIRequest(client, http.MethodPatch, endpoint, strings.NewReader(c.payload))
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error updating no-code provisioning: %s", err))

@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -34,7 +35,7 @@ func (c *UserReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/users/%s", c.userID), nil)
+	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/users/%s", url.PathEscape(c.userID)), nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error requesting user: %s", err))
 		return 1

@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -35,7 +36,7 @@ func (c *NoCodeListCommand) Run(args []string) int {
 		return 1
 	}
 
-	endpoint := fmt.Sprintf("/api/v2/organizations/%s/no-code-provisioning", c.organization)
+	endpoint := fmt.Sprintf("/api/v2/organizations/%s/no-code-provisioning", url.PathEscape(c.organization))
 	responseBody, status, err := executeAPIRequest(client, http.MethodGet, endpoint, nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error requesting no-code provisioning: %s", err))

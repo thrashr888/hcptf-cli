@@ -66,7 +66,7 @@ func TestRegistryModuleDeleteHelp(t *testing.T) {
 	}
 
 	// Check for key help elements
-	if !strings.Contains(help, "hcptf registrymodule delete") {
+	if !strings.Contains(help, "hcptf registry module delete") {
 		t.Error("Help should contain usage")
 	}
 	if !strings.Contains(help, "-organization") {
@@ -78,14 +78,8 @@ func TestRegistryModuleDeleteHelp(t *testing.T) {
 	if !strings.Contains(help, "-name") {
 		t.Error("Help should mention -name flag")
 	}
-	if !strings.Contains(help, "-provider") {
-		t.Error("Help should mention -provider flag")
-	}
 	if !strings.Contains(help, "private registry module") {
 		t.Error("Help should mention private registry module")
-	}
-	if !strings.Contains(help, "(optional)") {
-		t.Error("Help should indicate provider is optional")
 	}
 	if !strings.Contains(help, "-force") {
 		t.Error("Help should mention -force flag")
@@ -174,35 +168,18 @@ func TestRegistryModuleDeleteFlagParsing(t *testing.T) {
 		args                 []string
 		expectedOrganization string
 		expectedName         string
-		expectedProvider     string
 	}{
 		{
-			name:                 "basic flags without provider",
+			name:                 "basic flags",
 			args:                 []string{"-organization=my-org", "-name=vpc"},
 			expectedOrganization: "my-org",
 			expectedName:         "vpc",
-			expectedProvider:     "",
-		},
-		{
-			name:                 "with provider specified",
-			args:                 []string{"-organization=my-org", "-name=vpc", "-provider=aws"},
-			expectedOrganization: "my-org",
-			expectedName:         "vpc",
-			expectedProvider:     "aws",
 		},
 		{
 			name:                 "using org alias",
 			args:                 []string{"-org=test-org", "-name=network"},
 			expectedOrganization: "test-org",
 			expectedName:         "network",
-			expectedProvider:     "",
-		},
-		{
-			name:                 "using org alias with provider",
-			args:                 []string{"-org=test-org", "-name=storage", "-provider=azure"},
-			expectedOrganization: "test-org",
-			expectedName:         "storage",
-			expectedProvider:     "azure",
 		},
 	}
 
@@ -214,25 +191,17 @@ func TestRegistryModuleDeleteFlagParsing(t *testing.T) {
 			flags.StringVar(&cmd.organization, "organization", "", "Organization name (required)")
 			flags.StringVar(&cmd.organization, "org", "", "Organization name (alias)")
 			flags.StringVar(&cmd.name, "name", "", "Module name (required)")
-			flags.StringVar(&cmd.provider, "provider", "", "Provider name (optional, deletes specific provider)")
 
 			if err := flags.Parse(tt.args); err != nil {
 				t.Fatalf("flag parsing failed: %v", err)
 			}
 
-			// Verify the organization was set correctly
 			if cmd.organization != tt.expectedOrganization {
 				t.Errorf("expected organization %q, got %q", tt.expectedOrganization, cmd.organization)
 			}
 
-			// Verify the name was set correctly
 			if cmd.name != tt.expectedName {
 				t.Errorf("expected name %q, got %q", tt.expectedName, cmd.name)
-			}
-
-			// Verify the provider was set correctly
-			if cmd.provider != tt.expectedProvider {
-				t.Errorf("expected provider %q, got %q", tt.expectedProvider, cmd.provider)
 			}
 		})
 	}

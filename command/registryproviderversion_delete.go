@@ -108,7 +108,7 @@ func (c *RegistryProviderVersionDeleteCommand) versionService(client *client.Cli
 // Help returns help text for the registry provider version delete command
 func (c *RegistryProviderVersionDeleteCommand) Help() string {
 	helpText := `
-Usage: hcptf registryproviderversion delete [options]
+	Usage: hcptf registry provider version delete [options]
 
   Delete a specific version of a private registry provider.
 

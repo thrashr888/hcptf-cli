@@ -10,10 +10,10 @@ type commandNode struct {
 // CommandTree stores command paths as a tokenized tree generated from
 // the command registry.
 type CommandTree struct {
-	root                  *commandNode
-	treeRoots             map[string]struct{}
-	orgCollection         map[string]string
-	resourceKeywords      map[string]struct{}
+	root             *commandNode
+	treeRoots        map[string]struct{}
+	orgCollection    map[string]string
+	resourceKeywords map[string]struct{}
 }
 
 // NewCommandTree builds a command tree from full command paths
@@ -175,6 +175,13 @@ func pluralize(token string) string {
 	}
 
 	if strings.HasSuffix(token, "y") {
+		if len(token) > 1 {
+			prev := token[len(token)-2]
+			switch prev {
+			case 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U':
+				return token + "s"
+			}
+		}
 		return strings.TrimSuffix(token, "y") + "ies"
 	}
 

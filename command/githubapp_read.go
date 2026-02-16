@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -35,7 +36,7 @@ func (c *GitHubAppReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/github-app-installations/%s", c.id), nil)
+	responseBody, status, err := executeAPIRequest(client, http.MethodGet, fmt.Sprintf("/api/v2/github-app-installations/%s", url.PathEscape(c.id)), nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error requesting GitHub App installation: %s", err))
 		return 1

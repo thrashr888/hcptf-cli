@@ -126,7 +126,7 @@ func (c *RegistryProviderPlatformDeleteCommand) Run(args []string) int {
 // Help returns help text for the registry provider platform delete command
 func (c *RegistryProviderPlatformDeleteCommand) Help() string {
 	helpText := `
-Usage: hcptf registryproviderplatform delete [options]
+	Usage: hcptf registry provider platform delete [options]
 
   Delete a specific platform binary of a private registry provider version.
 

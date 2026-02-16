@@ -99,7 +99,7 @@ func (c *RegistryProviderDeleteCommand) registryProviderService(client *client.C
 // Help returns help text for the registry provider delete command
 func (c *RegistryProviderDeleteCommand) Help() string {
 	helpText := `
-Usage: hcptf registryprovider delete [options]
+	Usage: hcptf registry provider delete [options]
 
   Delete a private registry provider and all its versions.
 
