@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-15
+
+### Security
+
+- **Critical dependency updates**: Updated golang.org/x/crypto from v0.38.0 to v0.48.0 to address security vulnerabilities
+  - Fixed unbounded memory consumption in golang.org/x/crypto/ssh
+  - Fixed panic vulnerability in golang.org/x/crypto/ssh/agent from malformed messages
+- Updated 30+ transitive dependencies to latest stable versions for security and stability
+
+### Changed
+
+- Updated Go version to 1.25
+- Updated github.com/hashicorp/go-slug v0.16.8 → v1.0.0
+- Updated github.com/hashicorp/jsonapi v1.4.3 → v1.5.0
+- Replaced github.com/imdario/mergo with dario.cat/mergo v1.0.2
+
 ## [0.3.0] - 2026-02-15
 
 ### Changed
@@ -197,7 +213,8 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 Total: 229 commands across 59 resource types.
 
-[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/thrashr888/hcptf-cli/releases/tag/v0.1.0
