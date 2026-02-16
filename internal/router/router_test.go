@@ -5,8 +5,45 @@ import (
 	"testing"
 )
 
+var testCommandPaths = []string{
+	"version",
+	"login",
+	"logout",
+	"whoami",
+	"workspace list",
+	"workspace read",
+	"workspace create",
+	"workspace update",
+	"workspace delete",
+	"run list",
+	"run show",
+	"run apply",
+	"organization show",
+	"organization list",
+	"project list",
+	"team list",
+	"policy list",
+	"policyset list",
+	"variable list",
+	"state list",
+	"state outputs",
+	"configversion list",
+	"workspaceresource list",
+	"workspacetag list",
+	"comment list",
+	"policycheck list",
+	"assessmentresult list",
+	"changerequest list",
+	"organization:context",
+	"workspace:context",
+}
+
+func newTestRouter() *Router {
+	return NewRouter(nil, testCommandPaths)
+}
+
 func TestTranslateArgs(t *testing.T) {
-	r := NewRouter(nil, nil)
+	r := newTestRouter()
 
 	tests := []struct {
 		name     string
@@ -255,7 +292,7 @@ func TestTranslateArgs(t *testing.T) {
 }
 
 func TestIsKnownCommand(t *testing.T) {
-	r := NewRouter(nil, nil)
+	r := newTestRouter()
 
 	tests := []struct {
 		arg      string
@@ -284,7 +321,7 @@ func TestIsKnownCommand(t *testing.T) {
 }
 
 func TestHasHelpFlag(t *testing.T) {
-	r := NewRouter(nil, nil)
+	r := newTestRouter()
 
 	tests := []struct {
 		name     string
@@ -311,7 +348,7 @@ func TestHasHelpFlag(t *testing.T) {
 }
 
 func TestIsResourceKeyword(t *testing.T) {
-	r := NewRouter(nil, nil)
+	r := newTestRouter()
 
 	tests := []struct {
 		arg      string
@@ -341,7 +378,7 @@ func TestIsResourceKeyword(t *testing.T) {
 }
 
 func TestIsKnownCommandWithInjectedCommands(t *testing.T) {
-	r := NewRouter(nil, []string{"alpha", "beta"})
+	r := NewRouter(nil, []string{"alpha", "beta echo"})
 
 	if !r.isKnownCommand("alpha") {
 		t.Fatal("expected injected command alpha to be known")

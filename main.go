@@ -51,12 +51,12 @@ func realMain() int {
 	meta.Ui = ui
 
 	commands := command.Commands(&meta)
-	knownRoots := extractCommandRoots(commands)
+	commandPaths := extractCommandPaths(commands)
 	getVerbIndex := buildGetVerbIndex(commands)
 
 	// Translate URL-like args if present
 	args := os.Args[1:]
-	r := router.NewRouter(nil, knownRoots) // Pass nil client for now - we don't need validation
+	r := router.NewRouter(nil, commandPaths) // Pass nil client for now - we don't need validation
 	translatedArgs, err := r.TranslateArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing arguments: %s\n", err.Error())
@@ -96,22 +96,16 @@ func GetVersion() string {
 	return Version
 }
 
-func extractCommandRoots(commands map[string]cli.CommandFactory) []string {
-	roots := make(map[string]struct{})
+func extractCommandPaths(commands map[string]cli.CommandFactory) []string {
+	paths := make([]string, 0, len(commands))
 	for key := range commands {
-		parts := strings.Split(key, " ")
-		if len(parts) == 0 || strings.TrimSpace(parts[0]) == "" {
+		if strings.TrimSpace(key) == "" {
 			continue
 		}
-		roots[parts[0]] = struct{}{}
+		paths = append(paths, key)
 	}
-
-	out := make([]string, 0, len(roots))
-	for root := range roots {
-		out = append(out, root)
-	}
-	sort.Strings(out)
-	return out
+	sort.Strings(paths)
+	return paths
 }
 
 type getVerbAvailability struct {

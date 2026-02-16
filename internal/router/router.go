@@ -10,29 +10,15 @@ import (
 
 // Router handles URL-like argument routing
 type Router struct {
-	client        *tfe.Client
-	knownCommands map[string]struct{}
+	client      *tfe.Client
+	commandTree *CommandTree
 }
 
 // NewRouter creates a new router
-func NewRouter(client *tfe.Client, knownCommands []string) *Router {
-	known := make(map[string]struct{})
-
-	for _, cmd := range knownCommands {
-		if strings.TrimSpace(cmd) == "" {
-			continue
-		}
-		known[cmd] = struct{}{}
-	}
-
-	// Keep a built-in fallback for direct router tests and safe defaults.
-	for _, cmd := range defaultKnownCommands() {
-		known[cmd] = struct{}{}
-	}
-
+func NewRouter(client *tfe.Client, commandPaths []string) *Router {
 	return &Router{
-		client:        client,
-		knownCommands: known,
+		client:      client,
+		commandTree: NewCommandTree(commandPaths),
 	}
 }
 
@@ -278,8 +264,10 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 
 // isKnownCommand checks if the arg is a known command
 func (r *Router) isKnownCommand(arg string) bool {
-	_, ok := r.knownCommands[arg]
-	return ok
+	if r.commandTree == nil {
+		return false
+	}
+	return r.commandTree.HasRoot(arg)
 }
 
 // ValidateOrg checks if the org exists (optional, for better UX)
@@ -331,28 +319,6 @@ func (r *Router) isResourceKeyword(arg string) bool {
 		}
 	}
 	return false
-}
-
-func defaultKnownCommands() []string {
-	return []string{
-		"account", "login", "logout", "version",
-		"workspace", "run", "organization", "variable", "team", "project",
-		"state", "policy", "policyset", "sshkey", "notification",
-		"variableset", "agentpool", "runtask", "oauthclient", "oauthtoken",
-		"runtrigger", "plan", "apply", "configversion", "teamaccess",
-		"projectteamaccess", "registry", "publicregistry", "gpgkey",
-		"stack",
-		"audittrail", "reservedtagkey", "comment", "policycheck",
-		"policyevaluation",
-		"awsoidc", "azureoidc", "gcpoidc", "vaultoidc",
-		"queryrun", "queryworkspace", "changerequest", "assessmentresult",
-		"hyok", "hyokkey",
-		"vcsevent", "planexport", "agent", "explorer",
-		"whoami",
-		"costestimate", "featureset", "githubapp", "iprange", "nocode",
-		"stabilitypolicy", "subscription", "user",
-		"organization:context", "workspace:context",
-	}
 }
 
 func orgCollectionNamespace(token string) (string, bool) {
