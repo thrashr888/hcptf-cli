@@ -2,7 +2,12 @@ package router
 
 import (
 	"reflect"
+	"sort"
+	"strings"
 	"testing"
+
+	"github.com/hashicorp/hcptf-cli/command"
+	"github.com/mitchellh/cli"
 )
 
 var testCommandPaths = []string{
@@ -10,6 +15,7 @@ var testCommandPaths = []string{
 	"login",
 	"logout",
 	"whoami",
+	"account create",
 	"workspace list",
 	"workspace read",
 	"workspace create",
@@ -18,6 +24,10 @@ var testCommandPaths = []string{
 	"run list",
 	"run show",
 	"run apply",
+	"plan read",
+	"planexport create",
+	"apply read",
+	"configversion list",
 	"organization show",
 	"organization list",
 	"project list",
@@ -27,19 +37,124 @@ var testCommandPaths = []string{
 	"variable list",
 	"state list",
 	"state outputs",
-	"configversion list",
-	"workspaceresource list",
-	"workspacetag list",
 	"comment list",
 	"policycheck list",
 	"assessmentresult list",
 	"changerequest list",
 	"organization:context",
 	"workspace:context",
+	"project delete",
+	"project read",
+	"team delete",
+	"team read",
+	"policy delete",
+	"policy read",
+	"policyset delete",
+	"policyset read",
+	"variableset list",
+	"policyevaluation list",
+	"sshkey list",
+	"notification list",
+	"runtask list",
+	"runtrigger list",
+	"agentpool list",
+	"agent list",
+	"oauthclient list",
+	"oauthtoken list",
+	"audittrail list",
+	"stack",
+	"registry",
+	"publicregistry",
+	"gpgkey list",
+	"costestimate read",
+	"featureset list",
+	"githubapp list",
+	"iprange list",
+	"nocode list",
+	"stabilitypolicy read",
+	"subscription list",
+	"user read",
+	"reservedtagkey list",
+	"awsoidc create",
+	"azureoidc create",
+	"gcpoidc create",
+	"vaultoidc create",
+	"queryrun list",
+	"queryworkspace list",
+	"explorer query",
+	"vcsevent list",
+	"hyok list",
+	"hyokkey create",
 }
 
 func newTestRouter() *Router {
 	return NewRouter(nil, testCommandPaths)
+}
+
+func sortedPaths(commands map[string]cli.CommandFactory) []string {
+	paths := make([]string, 0, len(commands))
+	for path := range commands {
+		if strings.TrimSpace(path) == "" {
+			continue
+		}
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+	return paths
+}
+
+func rootsFromPaths(paths []string) map[string]struct{} {
+	roots := make(map[string]struct{}, len(paths))
+	for _, path := range paths {
+		fields := strings.Fields(path)
+		if len(fields) == 0 {
+			continue
+		}
+		roots[fields[0]] = struct{}{}
+	}
+	return roots
+}
+
+func missingRoots(expected map[string]struct{}, actual map[string]struct{}) []string {
+	missing := make([]string, 0)
+	for root := range expected {
+		if _, ok := actual[root]; !ok {
+			missing = append(missing, root)
+		}
+	}
+	sort.Strings(missing)
+	return missing
+}
+
+func TestRouterModelRootsMatchCommandRegistry(t *testing.T) {
+	commands := command.Commands(&command.Meta{})
+	commandRoots := rootsFromPaths(sortedPaths(commands))
+
+	tests := []struct {
+		name         string
+		commandPaths []string
+	}{
+		{
+			name:         "router model includes all command roots",
+			commandPaths: testCommandPaths,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			modelRoots := rootsFromPaths(tt.commandPaths)
+
+			missingFromModel := missingRoots(commandRoots, modelRoots)
+			missingFromRegistry := missingRoots(modelRoots, commandRoots)
+
+			if len(missingFromModel) > 0 {
+				t.Fatalf("command registry roots missing from router model: %v", missingFromModel)
+			}
+			if len(missingFromRegistry) > 0 {
+				t.Fatalf("router model has command roots not present in registry: %v", missingFromRegistry)
+			}
+		})
+	}
 }
 
 func TestTranslateArgs(t *testing.T) {
@@ -286,6 +401,65 @@ func TestTranslateArgs(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf("TranslateArgs() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCommandTreeOrgCollectionNamespaceGeneratedFromCommandModel(t *testing.T) {
+	r := newTestRouter()
+
+	tests := []struct {
+		resource string
+		ns       string
+		want     bool
+	}{
+		{"workspaces", "workspace", true},
+		{"projects", "project", true},
+		{"teams", "team", true},
+		{"policies", "policy", true},
+		{"policysets", "policyset", true},
+		{"runs", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.resource, func(t *testing.T) {
+			ns, ok := r.commandTree.OrgCollectionNamespace(tt.resource)
+			if ok != tt.want {
+				t.Fatalf("OrgCollectionNamespace(%q) matched = %v, want %v", tt.resource, ok, tt.want)
+			}
+			if tt.want && ns != tt.ns {
+				t.Fatalf("OrgCollectionNamespace(%q) = %q, want %q", tt.resource, ns, tt.ns)
+			}
+		})
+	}
+}
+
+func TestCommandTreeResourceKeywordsGeneratedFromCommandModel(t *testing.T) {
+	r := newTestRouter()
+
+	tests := []struct {
+		token    string
+		expected bool
+	}{
+		{"workspaces", true},
+		{"projects", true},
+		{"teams", true},
+		{"policies", true},
+		{"policysets", true},
+		{"runs", true},
+		{"variables", true},
+		{"state", true},
+		{"workspace", false},
+		{"myworkspace", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.token, func(t *testing.T) {
+			got := r.commandTree.IsResourceKeyword(tt.token)
+			if got != tt.expected {
+				t.Fatalf("IsResourceKeyword(%q) = %v, want %v", tt.token, got, tt.expected)
 			}
 		})
 	}

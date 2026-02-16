@@ -61,7 +61,7 @@ func (r *Router) TranslateArgs(args []string) ([]string, error) {
 	second := args[1]
 
 	// Handle known subcommands that list resources in an org
-	if namespace, ok := orgCollectionNamespace(second); ok {
+	if namespace, ok := r.commandTree.OrgCollectionNamespace(second); ok {
 		if len(args) == 2 {
 			return []string{namespace, "list", "-org=" + org}, nil
 		}
@@ -306,36 +306,11 @@ func (r *Router) hasHelpFlag(args []string) bool {
 	return false
 }
 
-// isResourceKeyword checks if arg is a resource type keyword
 func (r *Router) isResourceKeyword(arg string) bool {
-	resourceKeywords := []string{
-		"workspaces", "projects", "teams", "policies", "policysets",
-		"runs", "variables", "state", "resources", "assessments",
-		"changerequests", "configversions", "tags",
+	if r.commandTree == nil {
+		return false
 	}
-	for _, keyword := range resourceKeywords {
-		if arg == keyword {
-			return true
-		}
-	}
-	return false
-}
-
-func orgCollectionNamespace(token string) (string, bool) {
-	switch token {
-	case "workspaces":
-		return "workspace", true
-	case "projects":
-		return "project", true
-	case "teams":
-		return "team", true
-	case "policies":
-		return "policy", true
-	case "policysets":
-		return "policyset", true
-	default:
-		return "", false
-	}
+	return r.commandTree.IsResourceKeyword(arg)
 }
 
 func appendRemaining(base []string, args []string, consumed int) []string {
