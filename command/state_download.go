@@ -130,7 +130,7 @@ func (c *StateDownloadCommand) Run(args []string) int {
 		c.Ui.Info(fmt.Sprintf("State file downloaded successfully to: %s", c.outputFile))
 		c.Ui.Info(fmt.Sprintf("State version: %s", stateVersion.ID))
 		c.Ui.Info(fmt.Sprintf("Serial: %d", stateVersion.Serial))
-		c.Ui.Info(fmt.Sprintf("Resources: %d", stateVersion.Resources))
+		c.Ui.Info(fmt.Sprintf("Resources: %d", len(stateVersion.Resources)))
 	} else {
 		// Otherwise, print to stdout
 		fmt.Println(string(stateContent))
