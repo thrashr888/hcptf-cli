@@ -8,18 +8,18 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hashicorp/hcptf-cli/internal/client"
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // StateDownloadCommand is a command to download state file contents
 type StateDownloadCommand struct {
 	Meta
-	organization      string
-	workspace         string
-	stateVersionID    string
-	outputFile        string
-	stateDownloadSvc  stateVersionReader
+	organization         string
+	workspace            string
+	stateVersionID       string
+	outputFile           string
+	stateDownloadSvc     stateVersionReader
 	workspaceDownloadSvc workspaceReader
 }
 
