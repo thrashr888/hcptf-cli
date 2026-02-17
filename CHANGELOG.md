@@ -7,12 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-02-16
+
+### Added
+
+- **State Analyzer Skill**: Comprehensive guide (549 lines) for analyzing Terraform state files
+  - Identifies security issues (exposed secrets, public access, unencrypted resources)
+  - Finds cost optimization opportunities (over-provisioned instances, unused resources)
+  - Detects best practice violations (tagging, naming conventions, deprecated resources)
+  - Includes jq-based analysis patterns and example workflows
+- **Plan Analyzer Skill**: Guide (476 lines) for reviewing Terraform plans before applying
+  - Identifies destructive changes, replacements, and high-risk resources
+  - Provides safety checklists and validation scripts
+  - Covers common scenarios (routine updates, unexpected changes, database modifications)
+- **State Download Command**: `hcptf state download` to retrieve state JSON from HCP Terraform
+  - Supports file output (`-output=state.json`) and stdout piping for jq workflows
+  - Downloads from current workspace state or specific state version by ID
+  - Essential for state analysis and debugging workflows
+- **Workspace-to-Stack Skill**: Guide for refactoring existing workspaces into Terraform Stacks
+  - Audit, design, migrate, and validate workflows
+  - Best practices for component organization and deployment structure
+- **Greenfield Deploy Skill**: Guide for setting up new projects from scratch with HCP Terraform
+  - Create workspace, configure settings, deploy infrastructure, verify results
+- **Dependabot Configuration**: Automated dependency update PRs for Go modules and GitHub Actions
+- Updated skill installation instructions with `npx skills add` command
+
 ### Changed
 
+- **URL-style navigation is now read-only** for safety (follows kubectl/gh/docker patterns)
+  - `hcptf <org> <workspace> runs <run-id> apply` now shows apply details (read-only)
+  - To execute apply, use flag-based command: `hcptf run apply -id=<run-id>`
+  - This prevents accidental destructive actions when navigating resources
+- Simplified command patterns with two-word actions: `apply logs`, `plan logs`
+- Updated GitHub Actions to latest versions (Dependabot PR)
 - Updated indirect dependencies for bug fixes and compatibility (PR #5)
   - github.com/clipperhouse/uax29/v2: v2.6.0 → v2.7.0 (Unicode text segmentation improvements)
   - github.com/go-test/deep: v1.0.3 → v1.1.1 (Deep equality testing enhancements)
   - github.com/rogpeppe/go-internal: v1.9.0 → v1.14.1 (Internal Go tooling utilities updates)
+
+### Documentation
+
+- Clarified separation between read-only URL-style commands and explicit flag-based action commands
+- Added "Actions (Flag-Based Commands)" section to README showing proper usage for destructive operations
+- Updated help text to indicate URL-style commands are for navigation only
 
 ## [0.3.1] - 2026-02-15
 
@@ -220,7 +257,8 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 Total: 229 commands across 59 resource types.
 
-[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.1.0...v0.2.0
