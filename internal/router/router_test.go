@@ -255,7 +255,7 @@ func TestTranslateArgs(t *testing.T) {
 		{
 			name:     "org workspace runs apply",
 			input:    []string{"myorg", "myworkspace", "runs", "run-123", "apply"},
-			expected: []string{"run", "apply", "-id=run-123"},
+			expected: []string{"apply", "read", "-id=run-123"},
 		},
 		{
 			name:     "org workspace variables",
@@ -310,7 +310,7 @@ func TestTranslateArgs(t *testing.T) {
 		{
 			name:     "org workspace run-id apply",
 			input:    []string{"myorg", "myworkspace", "run-abc123", "apply"},
-			expected: []string{"run", "apply", "-id=run-abc123"},
+			expected: []string{"apply", "read", "-id=run-abc123"},
 		},
 		{
 			name:     "org workspace resources",
