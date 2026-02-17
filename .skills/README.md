@@ -87,6 +87,49 @@ Guide for investigating and resolving policy check failures.
 - Policy troubleshooting and best practices
 - Tracking compliance metrics across organization
 
+### plan-analyzer
+
+Guide for analyzing Terraform plan results before applying changes.
+
+**Use when:**
+- Reviewing plans for safety before applying
+- Understanding the impact of proposed changes
+- Identifying risks and unintended changes
+- Validating infrastructure modifications
+- Checking for destructive operations
+- Ensuring changes match expectations
+
+**Key topics covered:**
+- Getting plan summaries and detailed output
+- Analyzing change patterns (additions, changes, destructions)
+- High-risk resource checks (databases, networks, IAM)
+- Safety checklists and validation scripts
+- Comparing with previous plans
+- Common scenarios (routine updates, unexpected changes, pre-production validation)
+- Troubleshooting plan issues
+
+### state-analyzer
+
+Guide for analyzing Terraform state files and providing improvement recommendations.
+
+**Use when:**
+- Investigating state health and resource configurations
+- Optimizing infrastructure costs
+- Reviewing security posture of deployed resources
+- Identifying best practices violations
+- Auditing resource configurations in HCP Terraform workspaces
+- Preparing for migrations or major changes
+
+**Key topics covered:**
+- Downloading state files from HCP Terraform workspaces
+- Security analysis (exposed secrets, public access, encryption)
+- Cost optimization (over-provisioned resources, unused resources)
+- Best practices checking (tagging, naming conventions, deprecated resources)
+- Performance analysis (dependencies, bottlenecks)
+- State health metrics (file size, complexity)
+- Generating comprehensive analysis reports
+- Common analysis scenarios (security audits, compliance checks)
+
 ### workspace-to-stack
 
 Guide for refactoring existing workspace-based infrastructure into a Terraform Stack.
@@ -137,6 +180,8 @@ npx skills add thrashr888/hcptf-cli
 
 # Install a specific skill
 npx skills add thrashr888/hcptf-cli@drift
+npx skills add thrashr888/hcptf-cli@plan-analyzer
+npx skills add thrashr888/hcptf-cli@state-analyzer
 npx skills add thrashr888/hcptf-cli@workspace-to-stack
 npx skills add thrashr888/hcptf-cli@greenfield-deploy
 

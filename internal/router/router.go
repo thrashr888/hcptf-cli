@@ -233,14 +233,23 @@ func (r *Router) ValidateWorkspace(ctx context.Context, org, workspace string) e
 // This is shared between the short-form (org workspace run-xxx action) and
 // long-form (org workspace runs run-xxx action) dispatch paths.
 func (r *Router) translateRunAction(org, workspace, runID, action string, args []string, consumed int) []string {
+	// Check for two-word actions first (e.g., "apply logs")
+	if consumed < len(args) {
+		nextArg := args[consumed]
+		if action == "apply" && nextArg == "logs" {
+			return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, consumed+1)
+		}
+	}
+
 	switch action {
 	case "plan":
 		return appendRemaining([]string{"plan", "read", "-id=" + runID}, args, consumed)
-	case "logs", "planlogs":
+	case "logs":
+		// Default to plan logs if just "logs"
 		return appendRemaining([]string{"plan", "logs", "-id=" + runID}, args, consumed)
-	case "applylogs":
-		return appendRemaining([]string{"apply", "logs", "-id=" + runID}, args, consumed)
-	case "applyread", "applydetails":
+	case "apply":
+		// URL-style "apply" shows apply details (read), not execute
+		// To execute apply, use: hcptf run apply -id=run-xxx
 		return appendRemaining([]string{"apply", "read", "-id=" + runID}, args, consumed)
 	case "comments":
 		return appendRemaining([]string{"comment", "list", "-run-id=" + runID}, args, consumed)

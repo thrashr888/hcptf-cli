@@ -526,6 +526,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"state download": func() (cli.Command, error) {
+			return &StateDownloadCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// Notification commands
 		"notification list": func() (cli.Command, error) {
