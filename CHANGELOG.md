@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated indirect dependencies for bug fixes and compatibility
-  - github.com/clipperhouse/uax29/v2: v2.6.0 → v2.7.0
-  - github.com/go-test/deep: v1.0.3 → v1.1.1
-  - github.com/rogpeppe/go-internal: v1.9.0 → v1.14.1
+- Updated indirect dependencies for bug fixes and compatibility (PR #5)
+  - github.com/clipperhouse/uax29/v2: v2.6.0 → v2.7.0 (Unicode text segmentation improvements)
+  - github.com/go-test/deep: v1.0.3 → v1.1.1 (Deep equality testing enhancements)
+  - github.com/rogpeppe/go-internal: v1.9.0 → v1.14.1 (Internal Go tooling utilities updates)
 
 ## [0.3.1] - 2026-02-15
 
