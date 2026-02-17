@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Updated indirect dependencies for bug fixes and compatibility
+  - github.com/clipperhouse/uax29/v2: v2.6.0 → v2.7.0
+  - github.com/go-test/deep: v1.0.3 → v1.1.1
+  - github.com/rogpeppe/go-internal: v1.9.0 → v1.14.1
+
 ## [0.3.1] - 2026-02-15
 
 ### Security
