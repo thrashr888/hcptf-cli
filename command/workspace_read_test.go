@@ -13,15 +13,23 @@ import (
 )
 
 type mockWorkspaceReader struct {
-	workspace *tfe.Workspace
-	err       error
-	lastOrg   string
-	lastName  string
+	workspace       *tfe.Workspace
+	err             error
+	lastOrg         string
+	lastName        string
+	lastReadOptions *tfe.WorkspaceReadOptions
 }
 
 func (m *mockWorkspaceReader) Read(_ context.Context, organization, workspace string) (*tfe.Workspace, error) {
 	m.lastOrg = organization
 	m.lastName = workspace
+	return m.workspace, m.err
+}
+
+func (m *mockWorkspaceReader) ReadWithOptions(_ context.Context, organization, workspace string, options *tfe.WorkspaceReadOptions) (*tfe.Workspace, error) {
+	m.lastOrg = organization
+	m.lastName = workspace
+	m.lastReadOptions = options
 	return m.workspace, m.err
 }
 
@@ -80,8 +88,12 @@ func TestWorkspaceReadOutputsJSON(t *testing.T) {
 		Name:             "prod",
 		TerraformVersion: "1.7.0",
 		AutoApply:        true,
-		CreatedAt:        time.Unix(0, 0),
-		UpdatedAt:        time.Unix(0, 0),
+		Project: &tfe.Project{
+			ID:   "prj-123",
+			Name: "platform-prod",
+		},
+		CreatedAt: time.Unix(0, 0),
+		UpdatedAt: time.Unix(0, 0),
 	}}
 	cmd := newWorkspaceReadCommand(ui, reader)
 
@@ -100,5 +112,11 @@ func TestWorkspaceReadOutputsJSON(t *testing.T) {
 
 	if data["Name"] != "prod" || data["TerraformVersion"] != "1.7.0" {
 		t.Fatalf("unexpected data: %#v", data)
+	}
+	if data["ProjectID"] != "prj-123" || data["ProjectName"] != "platform-prod" {
+		t.Fatalf("expected project metadata in output: %#v", data)
+	}
+	if reader.lastReadOptions == nil || len(reader.lastReadOptions.Include) == 0 {
+		t.Fatalf("expected read options include to be set")
 	}
 }

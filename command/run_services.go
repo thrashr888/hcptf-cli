@@ -30,3 +30,7 @@ type runDiscarder interface {
 type runReader interface {
 	Read(ctx context.Context, runID string) (*tfe.Run, error)
 }
+
+type runForceExecutor interface {
+	ForceExecute(ctx context.Context, runID string) error
+}

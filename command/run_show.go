@@ -1,24 +1,32 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
 // RunShowCommand is a command to show run details
 type RunShowCommand struct {
 	Meta
-	runID  string
-	format string
-	runSvc runReader
+	runID   string
+	include string
+	format  string
+	runSvc  runReader
+}
+
+type runReaderWithOptions interface {
+	ReadWithOptions(ctx context.Context, runID string, options *tfe.RunReadOptions) (*tfe.Run, error)
 }
 
 // Run executes the run show command
 func (c *RunShowCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("run show")
 	flags.StringVar(&c.runID, "id", "", "Run ID (required)")
+	flags.StringVar(&c.include, "include", "", "Comma-separated related resources to include")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -39,15 +47,50 @@ func (c *RunShowCommand) Run(args []string) int {
 		return 1
 	}
 
+	runSvc := c.runService(client)
+
 	// Read run
-	run, err := c.runService(client).Read(client.Context(), c.runID)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
-		return 1
+	var run *tfe.Run
+	if c.include != "" {
+		if withOptions, ok := any(runSvc).(runReaderWithOptions); ok {
+			options := &tfe.RunReadOptions{}
+			for _, include := range splitCommaList(c.include) {
+				if include == "" {
+					continue
+				}
+				options.Include = append(options.Include, tfe.RunIncludeOpt(include))
+			}
+			run, err = withOptions.ReadWithOptions(client.Context(), c.runID, options)
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+				return 1
+			}
+		} else {
+			run, err = runSvc.Read(client.Context(), c.runID)
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+				return 1
+			}
+		}
+	} else {
+		run, err = runSvc.Read(client.Context(), c.runID)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+			return 1
+		}
 	}
 
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
+
+	resourceAdditions := 0
+	resourceChanges := 0
+	resourceDestructions := 0
+	if run.Plan != nil {
+		resourceAdditions = run.Plan.ResourceAdditions
+		resourceChanges = run.Plan.ResourceChanges
+		resourceDestructions = run.Plan.ResourceDestructions
+	}
 
 	data := map[string]interface{}{
 		"ID":                   run.ID,
@@ -66,9 +109,9 @@ func (c *RunShowCommand) Run(args []string) int {
 		"PlanOnly":             run.PlanOnly,
 		"TerraformVersion":     run.TerraformVersion,
 		"PositionInQueue":      run.PositionInQueue,
-		"ResourceAdditions":    run.Plan.ResourceAdditions,
-		"ResourceChanges":      run.Plan.ResourceChanges,
-		"ResourceDestructions": run.Plan.ResourceDestructions,
+		"ResourceAdditions":    resourceAdditions,
+		"ResourceChanges":      resourceChanges,
+		"ResourceDestructions": resourceDestructions,
 	}
 
 	if run.ConfigurationVersion != nil {
@@ -101,11 +144,13 @@ Usage: hcptf workspace run show [options]
 Options:
 
   -id=<run-id>      Run ID (required)
+  -include=<values> Comma-separated include values
   -output=<format>  Output format: table (default) or json
 
 Example:
 
   hcptf workspace run show -id=run-abc123
+  hcptf workspace run show -id=run-abc123 -include=workspace,plan
   hcptf workspace run show -id=run-abc123 -output=json
 `
 	return strings.TrimSpace(helpText)

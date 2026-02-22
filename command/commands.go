@@ -81,6 +81,21 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"workspace lock": func() (cli.Command, error) {
+			return &WorkspaceLockCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"workspace unlock": func() (cli.Command, error) {
+			return &WorkspaceUnlockCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"workspace force-unlock": func() (cli.Command, error) {
+			return &WorkspaceForceUnlockCommand{
+				Meta: *meta,
+			}, nil
+		},
 		"workspace delete": func() (cli.Command, error) {
 			return &WorkspaceDeleteCommand{
 				Meta: *meta,
@@ -115,6 +130,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 		"run cancel": func() (cli.Command, error) {
 			return &RunCancelCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"run force-execute": func() (cli.Command, error) {
+			return &RunForceExecuteCommand{
 				Meta: *meta,
 			}, nil
 		},

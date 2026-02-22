@@ -179,13 +179,20 @@ func (m *mockRunDiscardService) Discard(_ context.Context, runID string, options
 }
 
 type mockRunReadService struct {
-	response *tfe.Run
-	err      error
-	lastRun  string
+	response        *tfe.Run
+	err             error
+	lastRun         string
+	lastReadOptions *tfe.RunReadOptions
 }
 
 func (m *mockRunReadService) Read(_ context.Context, runID string) (*tfe.Run, error) {
 	m.lastRun = runID
+	return m.response, m.err
+}
+
+func (m *mockRunReadService) ReadWithOptions(_ context.Context, runID string, options *tfe.RunReadOptions) (*tfe.Run, error) {
+	m.lastRun = runID
+	m.lastReadOptions = options
 	return m.response, m.err
 }
 
