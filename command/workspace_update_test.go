@@ -355,12 +355,12 @@ func TestWorkspaceUpdateTriggerPrefixes(t *testing.T) {
 func TestWorkspaceUpdateBoolFlags(t *testing.T) {
 	ui := cli.NewMockUi()
 	svc := &mockWorkspaceUpdateService{response: &tfe.Workspace{
-		ID:                 "ws-1",
-		Name:               "test",
-		AllowDestroyPlan:   true,
+		ID:                  "ws-1",
+		Name:                "test",
+		AllowDestroyPlan:    true,
 		FileTriggersEnabled: false,
-		QueueAllRuns:       true,
-		SpeculativeEnabled: false,
+		QueueAllRuns:        true,
+		SpeculativeEnabled:  false,
 	}}
 	cmd := newWorkspaceUpdateCommand(ui, svc)
 
