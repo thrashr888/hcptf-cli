@@ -12,6 +12,7 @@ import (
 type VariableSetReadCommand struct {
 	Meta
 	id        string
+	include   string
 	format    string
 	varSetSvc variableSetReader
 }
@@ -20,6 +21,7 @@ type VariableSetReadCommand struct {
 func (c *VariableSetReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variableset read")
 	flags.StringVar(&c.id, "id", "", "Variable set ID (required)")
+	flags.StringVar(&c.include, "include", "", "Comma-separated related resources to include")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -41,7 +43,18 @@ func (c *VariableSetReadCommand) Run(args []string) int {
 	}
 
 	// Read variable set
-	variableSet, err := c.varSetService(client).Read(client.Context(), c.id, nil)
+	var readOptions *tfe.VariableSetReadOptions
+	if c.include != "" {
+		includes := splitCommaList(c.include)
+		includeOpts := make([]tfe.VariableSetIncludeOpt, len(includes))
+		for i, inc := range includes {
+			includeOpts[i] = tfe.VariableSetIncludeOpt(inc)
+		}
+		readOptions = &tfe.VariableSetReadOptions{
+			Include: &includeOpts,
+		}
+	}
+	variableSet, err := c.varSetService(client).Read(client.Context(), c.id, readOptions)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading variable set: %s", err))
 		return 1
@@ -90,6 +103,7 @@ Usage: hcptf variableset read [options]
 Options:
 
   -id=<id>          Variable set ID (required)
+  -include=<values> Comma-separated related resources to include
   -output=<format>  Output format: table (default) or json
 
 Example:

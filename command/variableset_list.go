@@ -12,6 +12,8 @@ import (
 type VariableSetListCommand struct {
 	Meta
 	organization string
+	query        string
+	include      string
 	format       string
 	varSetSvc    variableSetLister
 }
@@ -21,6 +23,8 @@ func (c *VariableSetListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variableset list")
 	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.query, "query", "", "Filter variable sets by name")
+	flags.StringVar(&c.include, "include", "", "Comma-separated related resources to include")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -42,11 +46,14 @@ func (c *VariableSetListCommand) Run(args []string) int {
 	}
 
 	// List variable sets
-	variableSets, err := c.varSetService(client).List(client.Context(), c.organization, &tfe.VariableSetListOptions{
+	options := &tfe.VariableSetListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
-	})
+		Query:   c.query,
+		Include: c.include,
+	}
+	variableSets, err := c.varSetService(client).List(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing variable sets: %s", err))
 		return 1
@@ -104,6 +111,8 @@ Options:
 
   -organization=<name>  Organization name (required)
   -org=<name>          Alias for -organization
+  -query=<text>        Filter variable sets by name
+  -include=<values>    Comma-separated related resources to include
   -output=<format>     Output format: table (default) or json
 
 Example:
