@@ -188,11 +188,19 @@ To execute actions like applying runs or deleting resources, use flag-based comm
 # Execute run apply (requires confirmation)
 hcptf run apply -id=run-abc123 -comment="Reviewed and approved"
 
+# Force-execute a pending run
+hcptf run force-execute -id=run-abc123
+
 # Discard a run
 hcptf run discard -id=run-abc123 -comment="Changes not needed"
 
 # Cancel a run
 hcptf run cancel -id=run-abc123
+
+# Lock/unlock workspaces
+hcptf workspace lock -org=my-org -name=prod -reason="maintenance window"
+hcptf workspace unlock -org=my-org -name=prod
+hcptf workspace force-unlock -org=my-org -name=prod
 
 # Create resources
 hcptf workspace create -org=my-org -name=new-workspace
@@ -255,8 +263,8 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `whoami` | 1 | Show current authenticated user |
 | `login` / `logout` | 2 | Credential management |
 | `account` | 3 | User account CRUD |
-| `workspace` | 5 | Workspace management |
-| `run` | 6 | Run lifecycle |
+| `workspace` | 8 | Workspace management |
+| `run` | 7 | Run lifecycle |
 | `organization` | 5 | Organization management |
 | `variable` | 4 | Workspace variables |
 | `team` | 6 | Teams and membership |
