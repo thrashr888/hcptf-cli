@@ -17,3 +17,7 @@ type policyReader interface {
 type policyDownloader interface {
 	Download(ctx context.Context, policyID string) ([]byte, error)
 }
+
+type policyUploader interface {
+	Upload(ctx context.Context, policyID string, content []byte) error
+}

@@ -34,3 +34,7 @@ type runReader interface {
 type runForceExecutor interface {
 	ForceExecute(ctx context.Context, runID string) error
 }
+
+type runOrgLister interface {
+	ListForOrganization(ctx context.Context, organization string, options *tfe.RunListForOrganizationOptions) (*tfe.OrganizationRunList, error)
+}

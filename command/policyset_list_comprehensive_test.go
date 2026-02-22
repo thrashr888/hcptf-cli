@@ -111,3 +111,27 @@ func TestPolicySetListComprehensiveHandlesAPIError(t *testing.T) {
 		t.Fatalf("expected error output, got: %s", ui.ErrorWriter.String())
 	}
 }
+
+func TestPolicySetListComprehensivePassesFilters(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockPolicySetListService{
+		response: &tfe.PolicySetList{Items: []*tfe.PolicySet{}},
+	}
+	cmd := newPolicySetListCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-org=my-org", "-search=security", "-kind=opa", "-include=projects,workspaces"}); code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+	if svc.lastOpts == nil {
+		t.Fatalf("expected options")
+	}
+	if svc.lastOpts.Search != "security" {
+		t.Fatalf("expected search option, got %#v", svc.lastOpts)
+	}
+	if svc.lastOpts.Kind != tfe.OPA {
+		t.Fatalf("expected kind opa, got %#v", svc.lastOpts.Kind)
+	}
+	if len(svc.lastOpts.Include) != 2 {
+		t.Fatalf("expected include values, got %#v", svc.lastOpts.Include)
+	}
+}

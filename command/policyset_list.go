@@ -12,6 +12,9 @@ import (
 type PolicySetListCommand struct {
 	Meta
 	organization string
+	search       string
+	kind         string
+	include      string
 	format       string
 	policySetSvc policySetLister
 }
@@ -21,6 +24,9 @@ func (c *PolicySetListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policyset list")
 	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.search, "search", "", "Search policy set names by substring")
+	flags.StringVar(&c.kind, "kind", "", "Filter by policy set kind: sentinel or opa")
+	flags.StringVar(&c.include, "include", "", "Include related resources (comma-separated)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -41,12 +47,31 @@ func (c *PolicySetListCommand) Run(args []string) int {
 		return 1
 	}
 
-	// List policy sets
-	policySets, err := c.policySetService(client).List(client.Context(), c.organization, &tfe.PolicySetListOptions{
+	options := &tfe.PolicySetListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 100,
 		},
-	})
+		Search: c.search,
+	}
+	if c.kind != "" {
+		kind, parseErr := parsePolicyKind(c.kind)
+		if parseErr != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+			return 1
+		}
+		options.Kind = kind
+	}
+	if c.include != "" {
+		for _, include := range splitCommaList(c.include) {
+			if include == "" {
+				continue
+			}
+			options.Include = append(options.Include, tfe.PolicySetIncludeOpt(include))
+		}
+	}
+
+	// List policy sets
+	policySets, err := c.policySetService(client).List(client.Context(), c.organization, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing policy sets: %s", err))
 		return 1
@@ -95,11 +120,15 @@ Options:
 
   -organization=<name>  Organization name (required)
   -org=<name>          Alias for -organization
+  -search=<query>      Search policy set names by substring
+  -kind=<kind>         Filter by kind: sentinel or opa
+  -include=<values>    Include related resources (comma-separated)
   -output=<format>     Output format: table (default) or json
 
 Example:
 
   hcptf policyset list -org=my-org
+  hcptf policyset list -org=my-org -search=security -kind=opa -include=projects,policies
   hcptf policyset list -org=my-org -output=json
 `
 	return strings.TrimSpace(helpText)

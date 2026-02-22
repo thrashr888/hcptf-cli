@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/api-coverage.sh - Compare API resource coverage against registered CLI commands.
+# scripts/api-coverage.sh - Compare API/go-tfe operation coverage against registered CLI commands.
 #
 # Usage: ./scripts/api-coverage.sh [summary|detail|missing]
 #   summary - Show coverage table (default)
@@ -50,7 +50,7 @@ done < <(rg 'func\(\) \(cli.Command, error\)' "${COMMANDS_FILE}" | awk -F'"' '{p
 # Format: "api_doc_name|command_prefix|operations"
 # operations:
 #   L=list C=create R=read U=update D=delete
-#   plus custom ops (e.g. outputs, query, override)
+#   plus custom ops (e.g. lock, list-org, add-workspace, outputs, query, override)
 RESOURCES=(
     # Account & auth
     "account|account|C,R,U"
@@ -62,13 +62,13 @@ RESOURCES=(
     "organization-tokens|organizationtoken|L,C,R,D"
 
     # Workspaces
-    "workspaces|workspace|L,C,R,U,D"
+    "workspaces|workspace|L,C,R,U,D,lock,unlock,force-unlock"
     "workspace-variables|variable|L,C,U,D"
     "workspace-resources|workspaceresource|L,R"
     "workspace-tags|workspacetag|L,C,D"
 
     # Runs / plans / applies
-    "runs|run|L,C,R"
+    "runs|run|L,C,R,list-org,apply,discard,cancel,force-execute"
     "applies|apply|R"
     "plans|plan|R"
     "plan-exports|planexport|C,R,D"
@@ -80,7 +80,7 @@ RESOURCES=(
 
     # Config versions / variable sets
     "configuration-versions|configversion|L,C,R"
-    "variable-sets|variableset|L,C,R,U,D"
+    "variable-sets|variableset|L,C,R,U,D,apply-workspaces,remove-workspaces,apply-projects,remove-projects,apply-stacks,remove-stacks,list-workspace,list-project,update-workspaces,update-stacks"
 
     # Teams / access
     "teams|team|L,C,R,D"
@@ -93,8 +93,8 @@ RESOURCES=(
     "project-team-access|projectteamaccess|L,C,R,U,D"
 
     # Policies
-    "policies|policy|L,C,R,U,D"
-    "policy-sets|policyset|L,C,R,U,D"
+    "policies|policy|L,C,R,U,D,upload,download"
+    "policy-sets|policyset|L,C,R,U,D,add-policy,remove-policy,add-workspace,remove-workspace,add-workspace-exclusion,remove-workspace-exclusion,add-project,remove-project"
     "policy-checks|policycheck|L,R,override"
     "policy-evaluations|policyevaluation|L"
     "policy-set-params|policysetparameter|L,C,U,D"
@@ -179,6 +179,8 @@ op_label() {
 
 resolve_prefix() {
     case "$1" in
+        workspacetag) echo "workspace tag" ;;
+        workspaceresource) echo "workspace resource" ;;
         stackconfiguration) echo "stack configuration" ;;
         stackdeployment) echo "stack deployment" ;;
         stackstate) echo "stack state" ;;
@@ -219,8 +221,15 @@ has_command() {
 
     # Custom operation aliases.
     case "${prefix}:${action}" in
-        workspacetag:create) candidates+=("workspacetag add") ;;
-        workspacetag:delete) candidates+=("workspacetag remove") ;;
+        workspace\ tag:create) candidates+=("workspace tag add") ;;
+        workspace\ tag:delete) candidates+=("workspace tag remove") ;;
+        workspace:force-unlock) candidates+=("workspace force-unlock") ;;
+        variableset:apply-workspaces) candidates+=("variableset apply") ;;
+        variableset:remove-workspaces) candidates+=("variableset remove") ;;
+        variableset:apply-projects) candidates+=("variableset apply") ;;
+        variableset:remove-projects) candidates+=("variableset remove") ;;
+        variableset:apply-stacks) candidates+=("variableset apply") ;;
+        variableset:remove-stacks) candidates+=("variableset remove") ;;
         explorer:query) candidates+=("explorer query") ;;
         policycheck:override) candidates+=("policycheck override") ;;
         state:outputs) candidates+=("state outputs") ;;
@@ -244,6 +253,7 @@ has_command() {
 
 total_resources=0
 covered_resources=0
+fully_covered_resources=0
 total_ops=0
 covered_ops=0
 missing_resources=()
@@ -314,6 +324,9 @@ for entry in "${RESOURCES[@]}"; do
     else
         missing_resources+=("${api_doc}")
     fi
+    if [[ "${resource_found}" -eq "${resource_total}" ]]; then
+        fully_covered_resources=$((fully_covered_resources + 1))
+    fi
 
     if [[ "${resource_total}" -gt 0 ]]; then
         pct=$((resource_found * 100 / resource_total))
@@ -351,6 +364,7 @@ else
 fi
 
 echo -e "  Resources with any CLI coverage: ${BOLD}${covered_resources}/${total_resources}${NC} (${res_pct}%)"
+echo -e "  Resources fully covered:         ${BOLD}${fully_covered_resources}/${total_resources}${NC}"
 echo -e "  Total operations covered:        ${BOLD}${covered_ops}/${total_ops}${NC} (${ops_pct}%)"
 
 if [[ ${#missing_resources[@]} -gt 0 ]]; then

@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Run force-execute**: `run force-execute` command to force-execute a pending run
 - **Workspace read project metadata**: `workspace read` now includes `ProjectID` and `ProjectName` in output, with automatic project include
 - **List/read filter flags**: Added search, tag, status, include, and sort flags to `workspace list`, `run list`, `run show`, and `workspace read`
+- **Run org-level listing**: `run list-org` command for listing runs across an organization
+- **Policy upload/download**: `policy upload` and `policy download` commands
+- **Variable set management**: `variableset remove`, `variableset list-workspace`, `variableset list-project`, `variableset update-workspaces`, `variableset update-stacks` commands with `-query` and `-include` flags on list/read
+- **Policy set workspace/project management**: `policyset add-workspace`, `policyset remove-workspace`, `policyset add-workspace-exclusion`, `policyset remove-workspace-exclusion`, `policyset add-project`, `policyset remove-project` commands
+- **Expanded policy/policyset flags**: Added `-kind`, `-query`, `-include`, `-overridable`, `-agent-enabled`, `-policy-tool-version`, `-policies-path` flags to policy and policyset commands
 
 ## [0.4.0] - 2026-02-16
 

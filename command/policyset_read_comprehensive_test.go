@@ -76,3 +76,24 @@ func TestPolicySetReadOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected data: %#v", data)
 	}
 }
+
+func TestPolicySetReadPassesIncludeOptions(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockPolicySetReadService{
+		response: &tfe.PolicySet{
+			ID:   "polset-123",
+			Name: "test-policyset",
+		},
+	}
+	cmd := newPolicySetReadCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=polset-123", "-include=projects,workspaces"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastReadOptions == nil {
+		t.Fatalf("expected read options")
+	}
+	if len(svc.lastReadOptions.Include) != 2 {
+		t.Fatalf("expected include options, got %#v", svc.lastReadOptions.Include)
+	}
+}
