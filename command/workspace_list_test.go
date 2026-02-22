@@ -97,3 +97,39 @@ func TestWorkspaceListCommandOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected rows: %#v", rows)
 	}
 }
+
+func TestWorkspaceListCommandPassesFilterFlags(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockWorkspaceService{
+		response: &tfe.WorkspaceList{Items: []*tfe.Workspace{}},
+	}
+	cmd := newWorkspaceListCommand(ui, svc)
+
+	code := cmd.Run([]string{
+		"-organization=my-org",
+		"-search=prod",
+		"-tags=env:prod",
+		"-exclude-tags=archived",
+		"-wildcard-name=prod-*",
+		"-project-id=prj-123",
+		"-current-run-status=planned",
+		"-include=project,current_run",
+		"-sort=-name",
+	})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if svc.lastOptions == nil {
+		t.Fatalf("expected list options")
+	}
+	if svc.lastOptions.Search != "prod" || svc.lastOptions.ProjectID != "prj-123" {
+		t.Fatalf("expected filters in options, got %#v", svc.lastOptions)
+	}
+	if len(svc.lastOptions.Include) != 2 {
+		t.Fatalf("expected include options, got %#v", svc.lastOptions.Include)
+	}
+	if svc.lastOptions.Sort != "-name" {
+		t.Fatalf("expected sort value, got %q", svc.lastOptions.Sort)
+	}
+}

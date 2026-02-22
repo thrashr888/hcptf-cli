@@ -126,3 +126,38 @@ func TestRunListOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected rows: %#v", rows)
 	}
 }
+
+func TestRunListPassesFilterFlags(t *testing.T) {
+	ui := cli.NewMockUi()
+	ws := &mockWorkspaceReader{workspace: &tfe.Workspace{ID: "ws-123"}}
+	runs := &mockRunService{response: &tfe.RunList{Items: []*tfe.Run{}}}
+	cmd := newRunListCommand(ui, ws, runs)
+
+	code := cmd.Run([]string{
+		"-organization=my-org",
+		"-name=prod",
+		"-user=octocat",
+		"-commit=abc123",
+		"-search=drift",
+		"-status=planned,applied",
+		"-source=tfe-api",
+		"-operation=plan_only",
+		"-include=plan,workspace",
+	})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if runs.lastOptions == nil {
+		t.Fatalf("expected run list options")
+	}
+	if runs.lastOptions.User != "octocat" || runs.lastOptions.Commit != "abc123" {
+		t.Fatalf("expected user and commit filters, got %#v", runs.lastOptions)
+	}
+	if runs.lastOptions.Search != "drift" || runs.lastOptions.Status != "planned,applied" {
+		t.Fatalf("expected search and status filters, got %#v", runs.lastOptions)
+	}
+	if len(runs.lastOptions.Include) != 2 {
+		t.Fatalf("expected include filters, got %#v", runs.lastOptions.Include)
+	}
+}

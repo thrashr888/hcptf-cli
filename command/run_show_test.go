@@ -78,3 +78,25 @@ func TestRunShowOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected data: %#v", data)
 	}
 }
+
+func TestRunShowPassesIncludeOptions(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunReadService{response: &tfe.Run{
+		ID:      "run-1",
+		Status:  tfe.RunApplied,
+		Source:  tfe.RunSourceUI,
+		Plan:    &tfe.Plan{},
+		Message: "ok",
+	}}
+	cmd := newRunShowCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=run-1", "-include=workspace,plan"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastReadOptions == nil {
+		t.Fatalf("expected read-with-options call")
+	}
+	if len(svc.lastReadOptions.Include) != 2 {
+		t.Fatalf("expected include options, got %#v", svc.lastReadOptions.Include)
+	}
+}

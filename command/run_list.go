@@ -13,6 +13,13 @@ type RunListCommand struct {
 	Meta
 	organization string
 	workspace    string
+	user         string
+	commit       string
+	search       string
+	status       string
+	source       string
+	operation    string
+	include      string
 	format       string
 	workspaceSvc workspaceReader
 	runSvc       runLister
@@ -25,6 +32,13 @@ func (c *RunListCommand) Run(args []string) int {
 	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
 	flags.StringVar(&c.workspace, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (alias)")
+	flags.StringVar(&c.user, "user", "", "Filter runs by VCS username")
+	flags.StringVar(&c.commit, "commit", "", "Filter runs by commit SHA")
+	flags.StringVar(&c.search, "search", "", "Basic search across username/commit/run/message")
+	flags.StringVar(&c.status, "status", "", "Filter by run status (comma-separated)")
+	flags.StringVar(&c.source, "source", "", "Filter by run source (comma-separated)")
+	flags.StringVar(&c.operation, "operation", "", "Filter by run operation type (comma-separated)")
+	flags.StringVar(&c.include, "include", "", "Comma-separated related resources to include")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -58,12 +72,28 @@ func (c *RunListCommand) Run(args []string) int {
 		return 1
 	}
 
-	// List runs
-	runs, err := c.runService(client).List(client.Context(), ws.ID, &tfe.RunListOptions{
+	options := &tfe.RunListOptions{
 		ListOptions: tfe.ListOptions{
 			PageSize: 50,
 		},
-	})
+		User:      c.user,
+		Commit:    c.commit,
+		Search:    c.search,
+		Status:    c.status,
+		Source:    c.source,
+		Operation: c.operation,
+	}
+	if c.include != "" {
+		for _, include := range splitCommaList(c.include) {
+			if include == "" {
+				continue
+			}
+			options.Include = append(options.Include, tfe.RunIncludeOpt(include))
+		}
+	}
+
+	// List runs
+	runs, err := c.runService(client).List(client.Context(), ws.ID, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error listing runs: %s", err))
 		return 1
@@ -127,11 +157,19 @@ Options:
   -org=<name>          Alias for -organization
   -name=<name>         Workspace name (required)
   -workspace=<name>    Alias for -name
+  -user=<name>         Filter by VCS username
+  -commit=<sha>        Filter by commit SHA
+  -search=<query>      Search username/commit/run/message
+  -status=<values>     Filter by status (comma-separated)
+  -source=<values>     Filter by source (comma-separated)
+  -operation=<values>  Filter by operation type (comma-separated)
+  -include=<values>    Comma-separated include values
   -output=<format>     Output format: table (default) or json
 
 Example:
 
   hcptf workspace run list -org=my-org -name=my-workspace
+  hcptf workspace run list -org=my-org -name=my-workspace -status=planned,applied -include=plan
   hcptf workspace run list -org=my-org -name=prod -output=json
 `
 	return strings.TrimSpace(helpText)
