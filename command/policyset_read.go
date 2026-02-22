@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
@@ -11,6 +12,7 @@ import (
 type PolicySetReadCommand struct {
 	Meta
 	id           string
+	include      string
 	format       string
 	policySetSvc policySetReader
 }
@@ -19,6 +21,7 @@ type PolicySetReadCommand struct {
 func (c *PolicySetReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policyset read")
 	flags.StringVar(&c.id, "id", "", "Policy set ID (required)")
+	flags.StringVar(&c.include, "include", "", "Include related resources (comma-separated)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -39,11 +42,37 @@ func (c *PolicySetReadCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Read policy set
-	policySet, err := c.policySetService(client).Read(client.Context(), c.id)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading policy set: %s", err))
-		return 1
+	policySetSvc := c.policySetService(client)
+
+	var policySet *tfe.PolicySet
+	if c.include != "" {
+		if withOptions, ok := any(policySetSvc).(policySetReaderWithOptions); ok {
+			options := &tfe.PolicySetReadOptions{}
+			for _, include := range splitCommaList(c.include) {
+				if include == "" {
+					continue
+				}
+				options.Include = append(options.Include, tfe.PolicySetIncludeOpt(include))
+			}
+			policySet, err = withOptions.ReadWithOptions(client.Context(), c.id, options)
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error reading policy set: %s", err))
+				return 1
+			}
+		} else {
+			policySet, err = policySetSvc.Read(client.Context(), c.id)
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error reading policy set: %s", err))
+				return 1
+			}
+		}
+	} else {
+		// Read policy set
+		policySet, err = policySetSvc.Read(client.Context(), c.id)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading policy set: %s", err))
+			return 1
+		}
 	}
 
 	// Format output
@@ -79,11 +108,13 @@ Usage: hcptf policyset read [options]
 Options:
 
   -id=<id>          Policy set ID (required)
+  -include=<values> Include related resources (comma-separated)
   -output=<format>  Output format: table (default) or json
 
 Example:
 
   hcptf policyset read -id=polset-12345
+  hcptf policyset read -id=polset-12345 -include=projects,policies,workspaces
   hcptf policyset read -id=polset-12345 -output=json
 `
 	return strings.TrimSpace(helpText)

@@ -73,3 +73,24 @@ func TestVariableSetReadOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected data: %#v", data)
 	}
 }
+
+func TestVariableSetReadPassesIncludeOptions(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockVariableSetReadService{
+		response: &tfe.VariableSet{
+			ID:   "varset-123",
+			Name: "test-varset",
+		},
+	}
+	cmd := newVariableSetReadCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-id=varset-123", "-include=workspaces,projects,vars"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastReadOptions == nil || svc.lastReadOptions.Include == nil {
+		t.Fatalf("expected include options")
+	}
+	if got := len(*svc.lastReadOptions.Include); got != 3 {
+		t.Fatalf("expected 3 include values, got %d", got)
+	}
+}

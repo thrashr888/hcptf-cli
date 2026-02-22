@@ -108,6 +108,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"run list-org": func() (cli.Command, error) {
+			return &RunListOrgCommand{
+				Meta: *meta,
+			}, nil
+		},
 		"run create": func() (cli.Command, error) {
 			return &RunCreateCommand{
 				Meta: *meta,
@@ -287,6 +292,31 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"variableset remove": func() (cli.Command, error) {
+			return &VariableSetRemoveCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"variableset list-workspace": func() (cli.Command, error) {
+			return &VariableSetListWorkspaceCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"variableset list-project": func() (cli.Command, error) {
+			return &VariableSetListProjectCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"variableset update-workspaces": func() (cli.Command, error) {
+			return &VariableSetUpdateWorkspacesCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"variableset update-stacks": func() (cli.Command, error) {
+			return &VariableSetUpdateStacksCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// Variable Set Variable commands
 		"variableset variable list": func() (cli.Command, error) {
@@ -358,6 +388,16 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"policy upload": func() (cli.Command, error) {
+			return &PolicyUploadCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policy download": func() (cli.Command, error) {
+			return &PolicyDownloadCommand{
+				Meta: *meta,
+			}, nil
+		},
 		"policy update": func() (cli.Command, error) {
 			return &PolicyUpdateCommand{
 				Meta: *meta,
@@ -402,6 +442,36 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 		},
 		"policyset remove-policy": func() (cli.Command, error) {
 			return &PolicySetRemovePolicyCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset add-workspace": func() (cli.Command, error) {
+			return &PolicySetAddWorkspaceCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset remove-workspace": func() (cli.Command, error) {
+			return &PolicySetRemoveWorkspaceCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset add-workspace-exclusion": func() (cli.Command, error) {
+			return &PolicySetAddWorkspaceExclusionCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset remove-workspace-exclusion": func() (cli.Command, error) {
+			return &PolicySetRemoveWorkspaceExclusionCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset add-project": func() (cli.Command, error) {
+			return &PolicySetAddProjectCommand{
+				Meta: *meta,
+			}, nil
+		},
+		"policyset remove-project": func() (cli.Command, error) {
+			return &PolicySetRemoveProjectCommand{
 				Meta: *meta,
 			}, nil
 		},

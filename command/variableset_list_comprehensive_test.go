@@ -87,3 +87,24 @@ func TestVariableSetListOutputsJSON(t *testing.T) {
 		t.Fatalf("unexpected row: %#v", rows[0])
 	}
 }
+
+func TestVariableSetListPassesQueryAndInclude(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockVariableSetListService{
+		response: &tfe.VariableSetList{Items: []*tfe.VariableSet{}},
+	}
+	cmd := newVariableSetListCommand(ui, svc)
+
+	if code := cmd.Run([]string{"-organization=org", "-query=prod", "-include=workspaces,projects"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastOpts == nil {
+		t.Fatalf("expected options to be passed")
+	}
+	if svc.lastOpts.Query != "prod" {
+		t.Fatalf("expected query option, got %#v", svc.lastOpts)
+	}
+	if svc.lastOpts.Include != "workspaces,projects" {
+		t.Fatalf("expected include option, got %#v", svc.lastOpts)
+	}
+}

@@ -10,11 +10,15 @@ import (
 // PolicySetUpdateCommand is a command to update a policy set
 type PolicySetUpdateCommand struct {
 	Meta
-	id          string
-	name        string
-	description string
-	global      string
-	format      string
+	id           string
+	name         string
+	description  string
+	global       string
+	overridable  string
+	agentEnabled string
+	toolVersion  string
+	policiesPath string
+	format       string
 }
 
 // Run executes the policy set update command
@@ -24,6 +28,10 @@ func (c *PolicySetUpdateCommand) Run(args []string) int {
 	flags.StringVar(&c.name, "name", "", "Policy set name")
 	flags.StringVar(&c.description, "description", "", "Policy set description")
 	flags.StringVar(&c.global, "global", "", "Apply to all workspaces (true/false)")
+	flags.StringVar(&c.overridable, "overridable", "", "Allow failed policy overrides (true/false)")
+	flags.StringVar(&c.agentEnabled, "agent-enabled", "", "Run policy evaluations in an agent (true/false)")
+	flags.StringVar(&c.toolVersion, "policy-tool-version", "", "Policy tool version")
+	flags.StringVar(&c.policiesPath, "policies-path", "", "Subdirectory path for policy files in VCS")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {
@@ -64,6 +72,28 @@ func (c *PolicySetUpdateCommand) Run(args []string) int {
 			c.Ui.Error("Error: -global must be 'true' or 'false'")
 			return 1
 		}
+	}
+	if c.overridable != "" {
+		overridable, parseErr := parseBoolFlag(c.overridable, "overridable")
+		if parseErr != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+			return 1
+		}
+		options.Overridable = overridable
+	}
+	if c.agentEnabled != "" {
+		agentEnabled, parseErr := parseBoolFlag(c.agentEnabled, "agent-enabled")
+		if parseErr != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+			return 1
+		}
+		options.AgentEnabled = agentEnabled
+	}
+	if c.toolVersion != "" {
+		options.PolicyToolVersion = tfe.String(c.toolVersion)
+	}
+	if c.policiesPath != "" {
+		options.PoliciesPath = tfe.String(c.policiesPath)
 	}
 
 	// Update policy set
@@ -106,11 +136,16 @@ Options:
   -name=<name>          Policy set name
   -description=<text>   Policy set description
   -global=<bool>        Apply to all workspaces (true/false)
+  -overridable=<bool>   Allow failed policy overrides (true/false)
+  -agent-enabled=<bool> Run policy evaluations in an agent (true/false)
+  -policy-tool-version=<ver> Policy tool version
+  -policies-path=<path> Subdirectory path for policy files in VCS
   -output=<format>      Output format: table (default) or json
 
 Example:
 
   hcptf policyset update -id=polset-12345 -name=new-name
+  hcptf policyset update -id=polset-12345 -overridable=false -agent-enabled=true
   hcptf policyset update -id=polset-12345 -global=true
   hcptf policyset update -id=polset-12345 -description="Updated description"
 `

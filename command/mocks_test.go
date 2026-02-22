@@ -392,10 +392,15 @@ type mockPolicySetListService struct {
 	response *tfe.PolicySetList
 	err      error
 	lastOrg  string
+	lastOpts *tfe.PolicySetListOptions
 }
 
-func (m *mockPolicySetListService) List(_ context.Context, organization string, _ *tfe.PolicySetListOptions) (*tfe.PolicySetList, error) {
+func (m *mockPolicySetListService) List(_ context.Context, organization string, options *tfe.PolicySetListOptions) (*tfe.PolicySetList, error) {
 	m.lastOrg = organization
+	if options != nil {
+		copy := *options
+		m.lastOpts = &copy
+	}
 	return m.response, m.err
 }
 
@@ -454,10 +459,23 @@ func (m *mockPolicyDownloadService) Download(_ context.Context, policyID string)
 	return m.content, m.err
 }
 
-type mockPolicySetReadService struct {
-	response *tfe.PolicySet
+type mockPolicyUploadService struct {
 	err      error
 	lastID   string
+	lastData []byte
+}
+
+func (m *mockPolicyUploadService) Upload(_ context.Context, policyID string, content []byte) error {
+	m.lastID = policyID
+	m.lastData = content
+	return m.err
+}
+
+type mockPolicySetReadService struct {
+	response        *tfe.PolicySet
+	err             error
+	lastID          string
+	lastReadOptions *tfe.PolicySetReadOptions
 }
 
 func (m *mockPolicySetReadService) Read(_ context.Context, policySetID string) (*tfe.PolicySet, error) {
@@ -465,14 +483,22 @@ func (m *mockPolicySetReadService) Read(_ context.Context, policySetID string) (
 	return m.response, m.err
 }
 
-type mockVariableSetReadService struct {
-	response *tfe.VariableSet
-	err      error
-	lastID   string
+func (m *mockPolicySetReadService) ReadWithOptions(_ context.Context, policySetID string, options *tfe.PolicySetReadOptions) (*tfe.PolicySet, error) {
+	m.lastID = policySetID
+	m.lastReadOptions = options
+	return m.response, m.err
 }
 
-func (m *mockVariableSetReadService) Read(_ context.Context, variableSetID string, _ *tfe.VariableSetReadOptions) (*tfe.VariableSet, error) {
+type mockVariableSetReadService struct {
+	response        *tfe.VariableSet
+	err             error
+	lastID          string
+	lastReadOptions *tfe.VariableSetReadOptions
+}
+
+func (m *mockVariableSetReadService) Read(_ context.Context, variableSetID string, options *tfe.VariableSetReadOptions) (*tfe.VariableSet, error) {
 	m.lastID = variableSetID
+	m.lastReadOptions = options
 	return m.response, m.err
 }
 

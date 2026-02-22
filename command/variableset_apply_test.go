@@ -23,7 +23,7 @@ func TestVariableSetApplyRequiresID(t *testing.T) {
 	}
 }
 
-func TestVariableSetApplyRequiresWorkspacesOrProjects(t *testing.T) {
+func TestVariableSetApplyRequiresTargets(t *testing.T) {
 	ui := cli.NewMockUi()
 	cmd := &VariableSetApplyCommand{
 		Meta: newTestMeta(ui),
@@ -35,8 +35,8 @@ func TestVariableSetApplyRequiresWorkspacesOrProjects(t *testing.T) {
 	}
 
 	out := ui.ErrorWriter.String()
-	if !strings.Contains(out, "-workspaces") && !strings.Contains(out, "-projects") {
-		t.Fatalf("expected workspaces or projects error, got %q", out)
+	if !strings.Contains(out, "-workspaces") && !strings.Contains(out, "-projects") && !strings.Contains(out, "-stacks") {
+		t.Fatalf("expected target error, got %q", out)
 	}
 }
 
@@ -61,6 +61,9 @@ func TestVariableSetApplyHelp(t *testing.T) {
 	if !strings.Contains(help, "-projects") {
 		t.Error("Help should mention -projects flag")
 	}
+	if !strings.Contains(help, "-stacks") {
+		t.Error("Help should mention -stacks flag")
+	}
 	if !strings.Contains(help, "required") {
 		t.Error("Help should indicate -id is required")
 	}
@@ -73,8 +76,8 @@ func TestVariableSetApplySynopsis(t *testing.T) {
 	if synopsis == "" {
 		t.Fatal("Synopsis should not be empty")
 	}
-	if synopsis != "Apply a variable set to workspaces or projects" {
-		t.Errorf("expected 'Apply a variable set to workspaces or projects', got %q", synopsis)
+	if synopsis != "Apply a variable set to workspaces, projects, or stacks" {
+		t.Errorf("expected updated synopsis, got %q", synopsis)
 	}
 }
 
@@ -85,6 +88,7 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 		expectedID       string
 		expectedWS       string
 		expectedProjects string
+		expectedStacks   string
 	}{
 		{
 			name:             "apply to single workspace",
@@ -92,6 +96,7 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 			expectedID:       "varset-12345",
 			expectedWS:       "ws-abc123",
 			expectedProjects: "",
+			expectedStacks:   "",
 		},
 		{
 			name:             "apply to multiple workspaces",
@@ -99,6 +104,7 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 			expectedID:       "varset-xyz789",
 			expectedWS:       "ws-abc123,ws-def456,ws-ghi789",
 			expectedProjects: "",
+			expectedStacks:   "",
 		},
 		{
 			name:             "apply to single project",
@@ -106,13 +112,15 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 			expectedID:       "varset-abc123",
 			expectedWS:       "",
 			expectedProjects: "prj-xyz789",
+			expectedStacks:   "",
 		},
 		{
-			name:             "apply to both workspaces and projects",
-			args:             []string{"-id=varset-def456", "-workspaces=ws-123,ws-456", "-projects=prj-abc,prj-def"},
+			name:             "apply to workspaces projects and stacks",
+			args:             []string{"-id=varset-def456", "-workspaces=ws-123,ws-456", "-projects=prj-abc,prj-def", "-stacks=stack-123"},
 			expectedID:       "varset-def456",
 			expectedWS:       "ws-123,ws-456",
 			expectedProjects: "prj-abc,prj-def",
+			expectedStacks:   "stack-123",
 		},
 	}
 
@@ -124,6 +132,7 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 			flags.StringVar(&cmd.id, "id", "", "Variable set ID (required)")
 			flags.StringVar(&cmd.workspaces, "workspaces", "", "Comma-separated list of workspace IDs to apply to")
 			flags.StringVar(&cmd.projects, "projects", "", "Comma-separated list of project IDs to apply to")
+			flags.StringVar(&cmd.stacks, "stacks", "", "Comma-separated list of stack IDs to apply to")
 
 			if err := flags.Parse(tt.args); err != nil {
 				t.Fatalf("flag parsing failed: %v", err)
@@ -142,6 +151,9 @@ func TestVariableSetApplyFlagParsing(t *testing.T) {
 			// Verify the projects was set correctly
 			if cmd.projects != tt.expectedProjects {
 				t.Errorf("expected projects %q, got %q", tt.expectedProjects, cmd.projects)
+			}
+			if cmd.stacks != tt.expectedStacks {
+				t.Errorf("expected stacks %q, got %q", tt.expectedStacks, cmd.stacks)
 			}
 		})
 	}

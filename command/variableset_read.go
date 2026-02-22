@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
 )
 
