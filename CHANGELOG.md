@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-22
+
 ### Added
 
 - **Workspace project reassignment**: `hcptf workspace update -project-id=<id>` to move workspaces between projects
@@ -20,6 +22,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Variable set management**: `variableset remove`, `variableset list-workspace`, `variableset list-project`, `variableset update-workspaces`, `variableset update-stacks` commands with `-query` and `-include` flags on list/read
 - **Policy set workspace/project management**: `policyset add-workspace`, `policyset remove-workspace`, `policyset add-workspace-exclusion`, `policyset remove-workspace-exclusion`, `policyset add-project`, `policyset remove-project` commands
 - **Expanded policy/policyset flags**: Added `-kind`, `-query`, `-include`, `-overridable`, `-agent-enabled`, `-policy-tool-version`, `-policies-path` flags to policy and policyset commands
+- **API coverage Go tests**: Converted `scripts/api-coverage.sh` and `scripts/test-priority.sh` to Go tests in `command/commands_test.go` — now run automatically in CI via `go test ./...`
+  - `TestAllCommandsRegistered` — verifies every expected API operation has a registered CLI command
+  - `TestAllCommandsHaveHelpAndSynopsis` — asserts all commands have non-empty Help() and Synopsis()
+  - `TestAllCommandFilesHaveTests` — reports which command files lack test coverage
+  - `TestCommandNamesMatchFiles` — validates command-to-file naming conventions
+
+### Removed
+
+- Deleted `scripts/api-coverage.sh`, `scripts/test-priority.sh`, and `scripts/coverage.sh` — replaced by Go tests or no longer needed
 
 ## [0.4.0] - 2026-02-16
 
@@ -271,7 +282,8 @@ Initial release of the HCP Terraform CLI with comprehensive API coverage.
 
 Total: 229 commands across 59 resource types.
 
-[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/thrashr888/hcptf-cli/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/thrashr888/hcptf-cli/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/thrashr888/hcptf-cli/compare/v0.2.0...v0.3.0
