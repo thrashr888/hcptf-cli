@@ -143,6 +143,11 @@ func Commands(meta *Meta) map[string]cli.CommandFactory {
 				Meta: *meta,
 			}, nil
 		},
+		"run logs": func() (cli.Command, error) {
+			return &RunLogsCommand{
+				Meta: *meta,
+			}, nil
+		},
 
 		// Plan commands
 		"plan read": func() (cli.Command, error) {
