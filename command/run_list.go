@@ -3,6 +3,7 @@ package command
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tfe "github.com/hashicorp/go-tfe"
 	"github.com/hashicorp/hcptf-cli/internal/client"
@@ -108,7 +109,7 @@ func (c *RunListCommand) Run(args []string) int {
 	}
 
 	// Prepare table data
-	headers := []string{"ID", "Status", "Source", "Message", "Created At"}
+	headers := []string{"ID", "Status", "Source", "Message", "CreatedAt"}
 	var rows [][]string
 
 	for _, run := range runs.Items {
@@ -122,7 +123,7 @@ func (c *RunListCommand) Run(args []string) int {
 			string(run.Status),
 			string(run.Source),
 			message,
-			run.CreatedAt.Format("2006-01-02 15:04:05"),
+			run.CreatedAt.Format(time.RFC3339),
 		})
 	}
 
