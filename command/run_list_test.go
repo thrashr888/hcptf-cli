@@ -125,6 +125,10 @@ func TestRunListOutputsJSON(t *testing.T) {
 	if len(rows) != 1 || rows[0]["ID"] != "run-1" {
 		t.Fatalf("unexpected rows: %#v", rows)
 	}
+
+	if _, ok := rows[0]["CreatedAt"]; !ok {
+		t.Fatalf("expected CreatedAt key in JSON output, got keys: %v", rows[0])
+	}
 }
 
 func TestRunListPassesFilterFlags(t *testing.T) {
