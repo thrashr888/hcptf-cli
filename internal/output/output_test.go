@@ -139,6 +139,53 @@ func TestKeyValueTable(t *testing.T) {
 	}
 }
 
+func TestKeyValueFormatsStructValues(t *testing.T) {
+	type timestamps struct {
+		PlannedAt string `json:"PlannedAt"`
+		AppliedAt string `json:"AppliedAt"`
+	}
+
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
+
+	formatter.KeyValue(map[string]interface{}{
+		"ID":         "run-1",
+		"Timestamps": &timestamps{PlannedAt: "2026-01-01", AppliedAt: "2026-01-02"},
+	})
+
+	output := out.String()
+	// Should NOT contain &{ which is Go's default struct formatting
+	if contains(output, "&{") {
+		t.Fatalf("expected JSON-encoded struct, got Go default format: %q", output)
+	}
+	// Should contain JSON key
+	if !contains(output, "PlannedAt") {
+		t.Fatalf("expected JSON-encoded struct with PlannedAt key, got %q", output)
+	}
+}
+
+func TestFormatValuePrimitives(t *testing.T) {
+	if got := formatValue("hello"); got != "hello" {
+		t.Errorf("string: expected %q, got %q", "hello", got)
+	}
+	if got := formatValue(42); got != "42" {
+		t.Errorf("int: expected %q, got %q", "42", got)
+	}
+	if got := formatValue(true); got != "true" {
+		t.Errorf("bool: expected %q, got %q", "true", got)
+	}
+	if got := formatValue(nil); got != "<nil>" {
+		t.Errorf("nil: expected %q, got %q", "<nil>", got)
+	}
+}
+
+func TestFormatValueNilPointer(t *testing.T) {
+	var p *struct{ Name string }
+	if got := formatValue(p); got != "<nil>" {
+		t.Errorf("nil pointer: expected %q, got %q", "<nil>", got)
+	}
+}
+
 func TestKeyValueJSON(t *testing.T) {
 	out := &bytes.Buffer{}
 	formatter := NewFormatterWithWriters("json", out, &bytes.Buffer{})
