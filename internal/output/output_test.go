@@ -139,6 +139,37 @@ func TestKeyValueTable(t *testing.T) {
 	}
 }
 
+func TestKeyValueTableSortedOrder(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
+
+	formatter.KeyValue(map[string]interface{}{
+		"Zebra":   "last",
+		"Alpha":   "first",
+		"Middle":  "middle",
+	})
+
+	output := out.String()
+	alphaIdx := len(output)
+	middleIdx := len(output)
+	zebraIdx := len(output)
+	for i := 0; i < len(output); i++ {
+		if i+5 <= len(output) && output[i:i+5] == "Alpha" {
+			alphaIdx = i
+		}
+		if i+6 <= len(output) && output[i:i+6] == "Middle" {
+			middleIdx = i
+		}
+		if i+5 <= len(output) && output[i:i+5] == "Zebra" {
+			zebraIdx = i
+		}
+	}
+
+	if alphaIdx >= middleIdx || middleIdx >= zebraIdx {
+		t.Fatalf("expected sorted key order (Alpha < Middle < Zebra), got %q", output)
+	}
+}
+
 func TestKeyValueJSON(t *testing.T) {
 	out := &bytes.Buffer{}
 	formatter := NewFormatterWithWriters("json", out, &bytes.Buffer{})
