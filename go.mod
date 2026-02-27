@@ -5,6 +5,7 @@ go 1.25
 require (
 	github.com/hashicorp/go-tfe v1.101.0
 	github.com/hashicorp/hcl/v2 v2.24.0
+	github.com/hashicorp/jsonapi v1.5.0
 	github.com/mitchellh/cli v1.1.5
 	github.com/olekukonko/tablewriter v1.1.3
 )
@@ -30,9 +31,8 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
-	github.com/hashicorp/go-slug v1.0.0 // indirect
+	github.com/hashicorp/go-slug v0.16.8 // indirect
 	github.com/hashicorp/go-version v1.8.0 // indirect
-	github.com/hashicorp/jsonapi v1.5.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
