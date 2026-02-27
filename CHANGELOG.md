@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **KeyValue struct formatting**: Format struct and map values as JSON in KeyValue output instead of Go's default `&{...}` representation
+
 ## [0.5.0] - 2026-02-22
 
 ### Added
