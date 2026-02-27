@@ -144,9 +144,9 @@ func TestKeyValueTableSortedOrder(t *testing.T) {
 	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
 
 	formatter.KeyValue(map[string]interface{}{
-		"Zebra":   "last",
-		"Alpha":   "first",
-		"Middle":  "middle",
+		"Zebra":  "last",
+		"Alpha":  "first",
+		"Middle": "middle",
 	})
 
 	output := out.String()
