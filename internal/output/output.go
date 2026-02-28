@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
@@ -83,6 +84,27 @@ func (f *Formatter) Table(headers []string, rows [][]string) {
 	table.Render()
 }
 
+// TableWithFullRows outputs data in table format with truncated display values,
+// but uses full (untruncated) values for JSON output.
+func (f *Formatter) TableWithFullRows(headers []string, displayRows [][]string, fullRows [][]string) {
+	if f.format == FormatJSON {
+		var data []map[string]string
+		for _, row := range fullRows {
+			item := make(map[string]string)
+			for i, header := range headers {
+				if i < len(row) {
+					item[header] = row[i]
+				}
+			}
+			data = append(data, item)
+		}
+		f.JSON(data)
+		return
+	}
+
+	f.Table(headers, displayRows)
+}
+
 // JSON outputs data in JSON format
 func (f *Formatter) JSON(data interface{}) {
 	if f.format == FormatTable {
@@ -118,6 +140,7 @@ func (f *Formatter) KeyValue(data map[string]interface{}) {
 			maxKeyLen = len(k)
 		}
 	}
+	sort.Strings(keys)
 
 	for _, k := range keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k))

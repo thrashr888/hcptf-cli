@@ -49,28 +49,22 @@ func (c *RunShowCommand) Run(args []string) int {
 
 	runSvc := c.runService(client)
 
-	// Read run
+	// Read run — always include workspace so WorkspaceName is populated
 	var run *tfe.Run
-	if c.include != "" {
-		if withOptions, ok := any(runSvc).(runReaderWithOptions); ok {
-			options := &tfe.RunReadOptions{}
-			for _, include := range splitCommaList(c.include) {
-				if include == "" {
-					continue
-				}
-				options.Include = append(options.Include, tfe.RunIncludeOpt(include))
+	if withOptions, ok := any(runSvc).(runReaderWithOptions); ok {
+		options := &tfe.RunReadOptions{
+			Include: []tfe.RunIncludeOpt{tfe.RunIncludeOpt("workspace")},
+		}
+		for _, include := range splitCommaList(c.include) {
+			if include == "" || include == "workspace" {
+				continue
 			}
-			run, err = withOptions.ReadWithOptions(client.Context(), c.runID, options)
-			if err != nil {
-				c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
-				return 1
-			}
-		} else {
-			run, err = runSvc.Read(client.Context(), c.runID)
-			if err != nil {
-				c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
-				return 1
-			}
+			options.Include = append(options.Include, tfe.RunIncludeOpt(include))
+		}
+		run, err = withOptions.ReadWithOptions(client.Context(), c.runID, options)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading run: %s", err))
+			return 1
 		}
 	} else {
 		run, err = runSvc.Read(client.Context(), c.runID)
@@ -112,6 +106,14 @@ func (c *RunShowCommand) Run(args []string) int {
 		"ResourceAdditions":    resourceAdditions,
 		"ResourceChanges":      resourceChanges,
 		"ResourceDestructions": resourceDestructions,
+	}
+
+	if run.Plan != nil {
+		data["PlanID"] = run.Plan.ID
+	}
+
+	if run.Apply != nil {
+		data["ApplyID"] = run.Apply.ID
 	}
 
 	if run.ConfigurationVersion != nil {

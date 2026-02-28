@@ -56,10 +56,12 @@ func TestRunShowOutputsJSON(t *testing.T) {
 		Source:    tfe.RunSourceUI,
 		CreatedAt: time.Unix(0, 0),
 		Plan: &tfe.Plan{
+			ID:                   "plan-1",
 			ResourceAdditions:    1,
 			ResourceChanges:      2,
 			ResourceDestructions: 3,
 		},
+		Apply: &tfe.Apply{ID: "apply-1"},
 	}}
 	cmd := newRunShowCommand(ui, svc)
 
@@ -76,6 +78,43 @@ func TestRunShowOutputsJSON(t *testing.T) {
 	}
 	if data["ID"] != "run-1" {
 		t.Fatalf("unexpected data: %#v", data)
+	}
+	if data["PlanID"] != "plan-1" {
+		t.Fatalf("expected PlanID plan-1, got %v", data["PlanID"])
+	}
+	if data["ApplyID"] != "apply-1" {
+		t.Fatalf("expected ApplyID apply-1, got %v", data["ApplyID"])
+	}
+}
+
+func TestRunShowOutputsPlanAndApplyIDs(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunReadService{response: &tfe.Run{
+		ID:      "run-2",
+		Status:  tfe.RunPlanned,
+		Source:  tfe.RunSourceAPI,
+		Message: "test",
+		Plan:    &tfe.Plan{ID: "plan-abc"},
+		Apply:   &tfe.Apply{ID: "apply-xyz"},
+	}}
+	cmd := newRunShowCommand(ui, svc)
+
+	output, code := captureStdout(t, func() int {
+		return cmd.Run([]string{"-id=run-2", "-output=json"})
+	})
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(output), &data); err != nil {
+		t.Fatalf("failed to decode json: %v", err)
+	}
+	if data["PlanID"] != "plan-abc" {
+		t.Fatalf("expected PlanID plan-abc, got %v", data["PlanID"])
+	}
+	if data["ApplyID"] != "apply-xyz" {
+		t.Fatalf("expected ApplyID apply-xyz, got %v", data["ApplyID"])
 	}
 }
 
@@ -98,5 +137,64 @@ func TestRunShowPassesIncludeOptions(t *testing.T) {
 	}
 	if len(svc.lastReadOptions.Include) != 2 {
 		t.Fatalf("expected include options, got %#v", svc.lastReadOptions.Include)
+	}
+}
+
+func TestRunShowAlwaysIncludesWorkspace(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunReadService{response: &tfe.Run{
+		ID:      "run-1",
+		Status:  tfe.RunApplied,
+		Source:  tfe.RunSourceUI,
+		Plan:    &tfe.Plan{},
+		Message: "ok",
+	}}
+	cmd := newRunShowCommand(ui, svc)
+
+	// Even without -include flag, workspace should be included
+	if code := cmd.Run([]string{"-id=run-1"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastReadOptions == nil {
+		t.Fatalf("expected ReadWithOptions to be called even without -include")
+	}
+	hasWorkspace := false
+	for _, inc := range svc.lastReadOptions.Include {
+		if string(inc) == "workspace" {
+			hasWorkspace = true
+			break
+		}
+	}
+	if !hasWorkspace {
+		t.Fatalf("expected workspace in includes, got %#v", svc.lastReadOptions.Include)
+	}
+}
+
+func TestRunShowDeduplicatesWorkspaceInclude(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockRunReadService{response: &tfe.Run{
+		ID:      "run-1",
+		Status:  tfe.RunApplied,
+		Source:  tfe.RunSourceUI,
+		Plan:    &tfe.Plan{},
+		Message: "ok",
+	}}
+	cmd := newRunShowCommand(ui, svc)
+
+	// Explicit -include=workspace should not duplicate
+	if code := cmd.Run([]string{"-id=run-1", "-include=workspace,plan"}); code != 0 {
+		t.Fatalf("expected exit 0")
+	}
+	if svc.lastReadOptions == nil {
+		t.Fatalf("expected ReadWithOptions call")
+	}
+	workspaceCount := 0
+	for _, inc := range svc.lastReadOptions.Include {
+		if string(inc) == "workspace" {
+			workspaceCount++
+		}
+	}
+	if workspaceCount != 1 {
+		t.Fatalf("expected exactly 1 workspace include, got %d in %#v", workspaceCount, svc.lastReadOptions.Include)
 	}
 }
