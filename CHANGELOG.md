@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Run show workspace name**: Automatically include workspace relation in `run show` so WorkspaceName is always populated
 - **KeyValue output ordering**: Sort keys alphabetically for deterministic, reproducible output
 - **Variable list JSON output**: Preserve full variable values in JSON output instead of truncating to 50 characters (truncation still applies to table display)
 
