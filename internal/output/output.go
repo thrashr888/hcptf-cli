@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
@@ -138,6 +139,7 @@ func (f *Formatter) KeyValue(data map[string]interface{}) {
 			maxKeyLen = len(k)
 		}
 	}
+	sort.Strings(keys)
 
 	for _, k := range keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k))
