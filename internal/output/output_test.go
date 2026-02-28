@@ -236,6 +236,40 @@ func stringContains(s, sub string) bool {
 	return false
 }
 
+func TestTableWithFullRowsUsesFullValuesForJSON(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("json", out, &bytes.Buffer{})
+
+	headers := []string{"Key", "Value"}
+	displayRows := [][]string{{"kafka_config", `{"broker_count...`}}
+	fullRows := [][]string{{"kafka_config", `{"broker_count_per_az":1,"version":"3.5.1"}`}}
+
+	formatter.TableWithFullRows(headers, displayRows, fullRows)
+
+	var rows []map[string]string
+	if err := json.Unmarshal(out.Bytes(), &rows); err != nil {
+		t.Fatalf("failed to parse json: %v", err)
+	}
+	if rows[0]["Value"] != `{"broker_count_per_az":1,"version":"3.5.1"}` {
+		t.Fatalf("expected full value in JSON, got %q", rows[0]["Value"])
+	}
+}
+
+func TestTableWithFullRowsUsesDisplayRowsForTable(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
+
+	headers := []string{"Key", "Value"}
+	displayRows := [][]string{{"kafka_config", `{"broker_count...`}}
+	fullRows := [][]string{{"kafka_config", `{"broker_count_per_az":1,"version":"3.5.1"}`}}
+
+	formatter.TableWithFullRows(headers, displayRows, fullRows)
+
+	if !contains(out.String(), `{"broker_count...`) {
+		t.Fatalf("expected truncated value in table, got %q", out.String())
+	}
+}
+
 func TestListRespectsFormats(t *testing.T) {
 	list := []string{"one", "two"}
 	outBuf := &bytes.Buffer{}

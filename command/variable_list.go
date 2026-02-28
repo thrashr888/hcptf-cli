@@ -76,14 +76,12 @@ func (c *VariableListCommand) Run(args []string) int {
 	// Prepare table data
 	headers := []string{"ID", "Key", "Value", "Category", "Sensitive", "HCL"}
 	var rows [][]string
+	var fullRows [][]string
 
 	for _, v := range variables.Items {
 		value := v.Value
 		if v.Sensitive {
 			value = "(sensitive)"
-		}
-		if len(value) > 50 {
-			value = value[:47] + "..."
 		}
 
 		hcl := "false"
@@ -96,7 +94,7 @@ func (c *VariableListCommand) Run(args []string) int {
 			sensitive = "true"
 		}
 
-		rows = append(rows, []string{
+		fullRows = append(fullRows, []string{
 			v.ID,
 			v.Key,
 			value,
@@ -104,9 +102,24 @@ func (c *VariableListCommand) Run(args []string) int {
 			sensitive,
 			hcl,
 		})
+
+		// Truncate display value for table output only
+		displayValue := value
+		if len(displayValue) > 50 {
+			displayValue = displayValue[:47] + "..."
+		}
+
+		rows = append(rows, []string{
+			v.ID,
+			v.Key,
+			displayValue,
+			string(v.Category),
+			sensitive,
+			hcl,
+		})
 	}
 
-	formatter.Table(headers, rows)
+	formatter.TableWithFullRows(headers, rows, fullRows)
 	return 0
 }
 

@@ -114,6 +114,14 @@ func (c *RunShowCommand) Run(args []string) int {
 		"ResourceDestructions": resourceDestructions,
 	}
 
+	if run.Plan != nil {
+		data["PlanID"] = run.Plan.ID
+	}
+
+	if run.Apply != nil {
+		data["ApplyID"] = run.Apply.ID
+	}
+
 	if run.ConfigurationVersion != nil {
 		data["ConfigurationVersionID"] = run.ConfigurationVersion.ID
 	}
