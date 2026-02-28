@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -143,7 +144,7 @@ func (f *Formatter) KeyValue(data map[string]interface{}) {
 
 	for _, k := range keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k))
-		fmt.Fprintf(f.out, "%s:%s %v\n", k, padding, data[k])
+		fmt.Fprintf(f.out, "%s:%s %s\n", k, padding, formatValue(data[k]))
 	}
 }
 
@@ -157,6 +158,36 @@ func (f *Formatter) List(items []string) {
 	for _, item := range items {
 		fmt.Fprintln(f.out, item)
 	}
+}
+
+// formatValue converts a value to a human-readable string for table output.
+// Struct and pointer-to-struct values are JSON-encoded instead of using Go's
+// default %v formatting (which produces unreadable &{...} output).
+func formatValue(v interface{}) string {
+	if v == nil {
+		return "<nil>"
+	}
+
+	rv := reflect.ValueOf(v)
+
+	// Dereference pointers
+	for rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return "<nil>"
+		}
+		rv = rv.Elem()
+	}
+
+	// JSON-encode structs and maps for readable output
+	if rv.Kind() == reflect.Struct || rv.Kind() == reflect.Map {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Sprintf("%v", v)
+		}
+		return string(b)
+	}
+
+	return fmt.Sprintf("%v", v)
 }
 
 // GetFormat returns the current output format
