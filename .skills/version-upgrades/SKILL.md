@@ -211,7 +211,7 @@ hcptf <org> <workspace> runs $RUN_ID configversion
 > 2. Check the module's documentation/changelog for supported provider versions
 > 3. Fork and modify the module (not recommended for registry modules)
 >
-> Use `terraform init` output to identify where provider version constraints originate.
+> Use `terraform providers` to see the provider dependency tree and identify where constraints originate.
 
 ```hcl
 # In versions.tf or terraform block (ROOT-LEVEL ONLY)
@@ -328,9 +328,17 @@ git checkout main
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-changelog
 
 # IMPORTANT: Check where the provider version constraint comes from
-# Run `terraform init` to see if constraints are in your root config or in modules
+# Run `terraform providers` to see the provider dependency tree
+# This shows which modules declare which provider version constraints
 # If the version is declared in a consumed module, you cannot change it here -
 # you must update the module version instead.
+#
+# Example output:
+# Providers required by configuration:
+# .
+# ├── provider[registry.terraform.io/hashicorp/aws] ~> 6.0
+# └── module.vpc
+#     └── provider[registry.terraform.io/hashicorp/aws] ~> 5.0  ← Module constraint!
 
 # Edit versions.tf or terraform block (if constraint is at ROOT level):
 # Change:
