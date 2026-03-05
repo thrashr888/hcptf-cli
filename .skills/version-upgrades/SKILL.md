@@ -202,8 +202,19 @@ hcptf <org> <workspace> runs $RUN_ID configversion
 
 **Update provider version in code:**
 
+> **Important**: Provider version constraints can come from multiple sources:
+> - **Root-level** `required_providers` blocks in your workspace code (you can update these directly)
+> - **Module-level** `required_providers` blocks in consumed modules (you CANNOT update these directly)
+>
+> If provider versions are declared within a module you're consuming, you must either:
+> 1. Update to a newer version of the module that supports the desired provider version
+> 2. Check the module's documentation/changelog for supported provider versions
+> 3. Fork and modify the module (not recommended for registry modules)
+>
+> Use `terraform init` output to identify where provider version constraints originate.
+
 ```hcl
-# In versions.tf or terraform block
+# In versions.tf or terraform block (ROOT-LEVEL ONLY)
 terraform {
   required_providers {
     aws = {
@@ -316,7 +327,12 @@ git checkout main
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-upgrade
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/version-6-changelog
 
-# Edit versions.tf or terraform block:
+# IMPORTANT: Check where the provider version constraint comes from
+# Run `terraform init` to see if constraints are in your root config or in modules
+# If the version is declared in a consumed module, you cannot change it here -
+# you must update the module version instead.
+
+# Edit versions.tf or terraform block (if constraint is at ROOT level):
 # Change:
 #   aws = { version = "~> 5.69.0" }
 # To:
