@@ -202,6 +202,92 @@ hcptf explorer query -org=my-org \
   -output=versions.csv
 ```
 
+## Agent-Friendly Features
+
+The CLI is designed to work well when driven by AI agents. **Always use these features** when automating with hcptf.
+
+### Schema Introspection
+
+Before constructing commands, discover available flags as structured JSON:
+
+```bash
+# Get machine-readable flag schema for any command
+hcptf schema workspace create
+hcptf schema variable create
+hcptf schema run apply
+```
+
+Returns JSON with flag names, types, required status, aliases, and defaults. **Always use `hcptf schema` instead of parsing `--help` text.**
+
+### Dry Run (validate without executing)
+
+**Always use `-dry-run` before mutations** to validate inputs without making API calls:
+
+```bash
+# Preview what would happen
+hcptf workspace delete -org=my-org -name=staging -dry-run
+hcptf variable create -org=my-org -workspace=prod -key=region -value=us-east-1 -dry-run
+hcptf run apply -id=run-abc123 -dry-run
+```
+
+Returns JSON describing the planned action. No API call is made.
+
+### JSON Input for Mutations
+
+Pass full API payloads instead of individual flags using `-json-input`:
+
+```bash
+# Inline JSON
+hcptf variable create -org=my-org -workspace=prod \
+  -json-input='{"key":"region","value":"us-east-1","category":"terraform"}'
+
+# From file
+hcptf workspace create -org=my-org -json-input=@workspace.json
+
+# From stdin
+cat config.json | hcptf workspace create -org=my-org -json-input=-
+```
+
+Note: Routing flags like `-org` and `-workspace` are still required alongside `-json-input`.
+
+### Field Filtering
+
+Limit output to specific fields with `-fields` to reduce response size:
+
+```bash
+# Only return ID and Name
+hcptf workspace list -org=my-org -fields=Name,ID -output=json
+hcptf workspace read -org=my-org -name=prod -fields=ID,Name,Status
+hcptf variable create -org=my-org -workspace=prod -key=x -value=y -fields=ID,Key
+```
+
+### Input Validation
+
+All mutation commands validate inputs against common agent mistakes:
+- Path traversal (`../`) is rejected
+- Query injection (`?`, `&`) is rejected
+- URL-encoded sequences (`%2f`) are rejected
+- Control characters are rejected
+- Overly long strings are rejected
+
+### Recommended Agent Workflow
+
+```bash
+# 1. Discover flags for the command
+hcptf schema workspace create
+
+# 2. Dry-run to validate
+hcptf workspace create -org=my-org -name=staging -dry-run
+
+# 3. Execute with JSON output and field filtering
+hcptf workspace create -org=my-org -name=staging -output=json -fields=ID,Name
+
+# 4. For complex mutations, use JSON input
+hcptf workspace create -org=my-org \
+  -json-input='{"name":"staging","terraform-version":"1.6.0","auto-apply":false}' \
+  -output=json -fields=ID,Name
+```
+
 ## Output Formats
 
 ### Table Output (Default)
@@ -210,24 +296,38 @@ hcptf explorer query -org=my-org \
 hcptf workspace list -org=my-org
 ```
 
-### JSON Output (for scripting)
+### JSON Output (for scripting and agents)
 
 ```bash
-hcptf workspace list -org=my-org -output=json | jq '.data[].attributes.name'
+hcptf workspace list -org=my-org -output=json
+```
+
+### Filtered JSON Output
+
+```bash
+hcptf workspace list -org=my-org -output=json -fields=Name,ID,Status
 ```
 
 ## Best Practices
 
-1. **Use hierarchical commands for clarity**
+1. **Always use `-dry-run` before write/delete commands** to confirm the action is correct before executing
+
+2. **Always confirm with user before write/delete commands** — never auto-execute mutations without user approval
+
+3. **Use `hcptf schema` to discover flags** — never guess flag names or parse help text
+
+4. **Use `-output=json` and `-fields` for automation** — reduces output size and gives structured data
+
+5. **Use hierarchical commands for clarity**
    - `hcptf workspace run create` for run workflows
    - `hcptf workspace run assessmentresult list` for drift workflows
 
-2. **Prefer explicit flags for automation**
+6. **Prefer explicit flags for automation**
    - Use `-org=` and `-name=` in scripts
    - `-workspace=` remains available as alias
    - URL-style is great for interactive use
 
-3. **Check status before applying**
+7. **Check status before applying**
 
 ```bash
 # Always review before apply
@@ -235,14 +335,7 @@ hcptf workspace run show -id=run-abc123
 hcptf workspace run apply -id=run-abc123
 ```
 
-4. **Use JSON output for parsing**
-
-   ```bash
-   hcptf workspace list -org=my-org -output=json | \
-     jq -r '.data[].attributes.name'
-   ```
-
-5. **Sensitive variables**
+8. **Sensitive variables**
 
    ```bash
    # Always use -sensitive for secrets
@@ -250,7 +343,7 @@ hcptf workspace run apply -id=run-abc123
      -key=API_KEY -value=secret -sensitive
    ```
 
-6. **Check drift before deployment**
+9. **Check drift before deployment**
 
 ```bash
 # Assessment results show drift
@@ -261,12 +354,15 @@ hcptf workspace run create -org=my-org -name=prod -refresh-only
 
 ## Common Flags
 
-| Flag            | Alias        | Description                 |
-| --------------- | ------------ | --------------------------- |
-| `-organization` | `-org`       | Organization name           |
-| `-name`         | `-workspace` | Workspace name              |
-| `-output`       |              | `table` (default) or `json` |
-| `-force`        |              | Skip confirmation prompts   |
+| Flag            | Alias        | Description                          |
+| --------------- | ------------ | ------------------------------------ |
+| `-organization` | `-org`       | Organization name                    |
+| `-name`         | `-workspace` | Workspace name                       |
+| `-output`       |              | `table` (default) or `json`          |
+| `-force`        |              | Skip confirmation prompts            |
+| `-dry-run`      |              | Validate without making API calls    |
+| `-fields`       |              | Comma-separated output field filter  |
+| `-json-input`   |              | JSON payload (inline, `@file`, `-`)  |
 
 ## Getting Help
 

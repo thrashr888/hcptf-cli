@@ -226,6 +226,42 @@ hcptf workspace delete -org=my-org -name=staging -force
 
 Both styles work interchangeably - use whichever you prefer!
 
+### Agent-Friendly Features
+
+The CLI includes features designed for AI agent automation:
+
+**Schema introspection** — discover flags for any command as structured JSON:
+
+```bash
+hcptf schema workspace create
+hcptf schema variable create
+```
+
+**Dry run** — validate mutations without executing them:
+
+```bash
+hcptf workspace delete -org=my-org -name=staging -dry-run
+hcptf variable create -org=my-org -workspace=prod -key=region -value=us-east-1 -dry-run
+```
+
+**JSON input** — pass full API payloads instead of individual flags:
+
+```bash
+hcptf variable create -org=my-org -workspace=prod \
+  -json-input='{"key":"region","value":"us-east-1","category":"terraform"}'
+hcptf workspace create -org=my-org -json-input=@workspace.json
+cat config.json | hcptf workspace create -org=my-org -json-input=-
+```
+
+**Field filtering** — limit output to specific fields:
+
+```bash
+hcptf workspace list -org=my-org -fields=Name,ID -output=json
+hcptf workspace read -org=my-org -name=prod -fields=ID,Name,Status
+```
+
+**Input validation** — all mutation commands reject path traversal, query injection, URL-encoded sequences, control characters, and overly long strings.
+
 ### Hierarchical Command Namespaces
 
 Registry, stack, and public registry commands use a hierarchical namespace structure for better organization:
@@ -329,6 +365,7 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `hyokkey` | 3 | HYOK key versions |
 | `vcsevent` | 2 | VCS integration events |
 | `explorer` | 1 | Query resources across org |
+| `schema` | 1 | Machine-readable command flag introspection |
 | `version` | 1 | CLI version |
 
 ### Common flags
@@ -338,6 +375,9 @@ hcptf stack state list -stack-id=stk-123         # List state versions
 | `-organization` | `-org` | Organization name |
 | `-output` | | `table` (default) or `json` |
 | `-force` | `-f`, `-y` | Skip confirmation prompts |
+| `-dry-run` | | Validate without making API calls |
+| `-fields` | | Comma-separated output field filter |
+| `-json-input` | | JSON payload (inline, `@file`, or `-` for stdin) |
 
 ### Help
 
@@ -401,12 +441,14 @@ hcptf-cli/
 ├── main.go                  # Entry point
 ├── command/                 # CLI commands
 │   ├── commands.go          # Command registry
-│   ├── meta.go              # Shared command base
+│   ├── meta.go              # Shared command base (dry-run, fields, json-input)
+│   ├── schema.go            # Schema introspection command
 │   └── <resource>_<action>.go
 ├── internal/
 │   ├── client/              # go-tfe API client wrapper
 │   ├── config/              # Configuration loading
-│   └── output/              # Table/JSON formatting
+│   ├── output/              # Table/JSON formatting with field filtering
+│   └── validate/            # Input validation (IDs, names, strings)
 ├── docs/                    # Documentation
 └── go.mod
 ```
