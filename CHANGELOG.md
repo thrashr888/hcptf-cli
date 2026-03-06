@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-05
+
 ### Added
 
 - **`--dry-run` for mutation commands**: All create, update, delete, apply, cancel, and discard commands now support `-dry-run` to validate inputs and show the planned action as JSON without making API calls
