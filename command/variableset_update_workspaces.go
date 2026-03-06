@@ -33,22 +33,43 @@ func (c *VariableSetUpdateWorkspacesCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
 	}
 
-	workspaces := make([]*tfe.Workspace, 0)
-	for _, workspaceID := range splitCommaList(c.workspaces) {
-		if strings.TrimSpace(workspaceID) == "" {
-			continue
+	options := &tfe.VariableSetUpdateWorkspacesOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
 		}
-		workspaces = append(workspaces, &tfe.Workspace{ID: strings.TrimSpace(workspaceID)})
+	} else {
+		workspaces := make([]*tfe.Workspace, 0)
+		for _, workspaceID := range splitCommaList(c.workspaces) {
+			if strings.TrimSpace(workspaceID) == "" {
+				continue
+			}
+			workspaces = append(workspaces, &tfe.Workspace{ID: strings.TrimSpace(workspaceID)})
+		}
+		options.Workspaces = workspaces
 	}
 
-	options := &tfe.VariableSetUpdateWorkspacesOptions{
-		Workspaces: workspaces,
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "variableset-workspaces",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 	updated, err := c.varSetService(client).UpdateWorkspaces(client.Context(), c.id, options)
 	if err != nil {

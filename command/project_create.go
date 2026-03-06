@@ -36,7 +36,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -49,13 +49,48 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create project
-	options := tfe.ProjectCreateOptions{
-		Name: c.name,
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.description != "" {
-		options.Description = &c.description
+	// Create project
+	options := tfe.ProjectCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options.Name = c.name
+		if c.description != "" {
+			options.Description = &c.description
+		}
+	}
+
+	if options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "project",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	project, err := client.Projects.Create(client.Context(), c.organization, options)

@@ -43,20 +43,20 @@ func (c *VariableSetVariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.key == "" {
+	if c.Meta.JSONInput == "" && c.key == "" {
 		c.Ui.Error("Error: -key flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.value == "" && !c.sensitive {
+	if c.Meta.JSONInput == "" && c.value == "" && !c.sensitive {
 		c.Ui.Error("Error: -value flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
 	// Validate category
-	if c.category != "terraform" && c.category != "env" {
+	if c.Meta.JSONInput == "" && c.category != "terraform" && c.category != "env" {
 		c.Ui.Error("Error: -category must be 'terraform' or 'env'")
 		c.Ui.Error(c.Help())
 		return 1
@@ -69,17 +69,54 @@ func (c *VariableSetVariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create variable
-	options := tfe.VariableSetVariableCreateOptions{
-		Key:       tfe.String(c.key),
-		Value:     tfe.String(c.value),
-		Category:  tfe.Category(tfe.CategoryType(c.category)),
-		Sensitive: tfe.Bool(c.sensitive),
-		HCL:       tfe.Bool(c.hcl),
+	if !c.Meta.ValidateID(c.variableSetID, "-variableset-id") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	// Create variable
+	options := tfe.VariableSetVariableCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.VariableSetVariableCreateOptions{
+			Key:       tfe.String(c.key),
+			Value:     tfe.String(c.value),
+			Category:  tfe.Category(tfe.CategoryType(c.category)),
+			Sensitive: tfe.Bool(c.sensitive),
+			HCL:       tfe.Bool(c.hcl),
+		}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+	}
+
+	if options.Key == nil || *options.Key == "" {
+		c.Ui.Error("Error: -key flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(*options.Key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":         "create",
+			"resource":       "variableset-variable",
+			"variableset_id": c.variableSetID,
+			"options":        options,
+		})
+		return 0
 	}
 
 	variable, err := client.VariableSetVariables.Create(client.Context(), c.variableSetID, &options)

@@ -19,6 +19,13 @@ type PolicyCreateCommand struct {
 	format       string
 }
 
+type policyCreateJSONInput struct {
+	Name             *string               `json:"name"`
+	Description      *string               `json:"description,omitempty"`
+	EnforcementLevel *tfe.EnforcementLevel `json:"enforcement_level,omitempty"`
+	Policy           string                `json:"policy,omitempty"`
+}
+
 // Run executes the policy create command
 func (c *PolicyCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policy create")
@@ -41,36 +48,15 @@ func (c *PolicyCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.policyFile == "" {
+	if c.Meta.JSONInput == "" && c.policyFile == "" {
 		c.Ui.Error("Error: -policy-file flag is required")
 		c.Ui.Error(c.Help())
-		return 1
-	}
-
-	// Validate enforcement level
-	var enforcementLevel tfe.EnforcementLevel
-	switch c.enforce {
-	case "advisory":
-		enforcementLevel = tfe.EnforcementAdvisory
-	case "soft-mandatory":
-		enforcementLevel = tfe.EnforcementSoft
-	case "hard-mandatory":
-		enforcementLevel = tfe.EnforcementHard
-	default:
-		c.Ui.Error("Error: -enforce must be 'advisory', 'soft-mandatory', or 'hard-mandatory'")
-		return 1
-	}
-
-	// Read policy file
-	policyContent, err := os.ReadFile(c.policyFile)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error reading policy file: %s", err))
 		return 1
 	}
 
@@ -81,14 +67,81 @@ func (c *PolicyCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create policy
-	options := tfe.PolicyCreateOptions{
-		Name:             tfe.String(c.name),
-		EnforcementLevel: &enforcementLevel,
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	options := tfe.PolicyCreateOptions{}
+	var policyContent []byte
+	if c.Meta.JSONInput != "" {
+		var payload policyCreateJSONInput
+		if err := c.Meta.ParseJSONInput(&payload); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+		options.Name = payload.Name
+		options.Description = payload.Description
+		options.EnforcementLevel = payload.EnforcementLevel
+		policyContent = []byte(payload.Policy)
+	} else {
+		var enforcementLevel tfe.EnforcementLevel
+		switch c.enforce {
+		case "advisory":
+			enforcementLevel = tfe.EnforcementAdvisory
+		case "soft-mandatory":
+			enforcementLevel = tfe.EnforcementSoft
+		case "hard-mandatory":
+			enforcementLevel = tfe.EnforcementHard
+		default:
+			c.Ui.Error("Error: -enforce must be 'advisory', 'soft-mandatory', or 'hard-mandatory'")
+			return 1
+		}
+
+		policyContent, err = os.ReadFile(c.policyFile)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error reading policy file: %s", err))
+			return 1
+		}
+
+		options = tfe.PolicyCreateOptions{
+			Name:             tfe.String(c.name),
+			EnforcementLevel: &enforcementLevel,
+		}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+	}
+
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if len(policyContent) == 0 {
+		c.Ui.Error("Error: policy content is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":               "create",
+			"resource":             "policy",
+			"organization":         c.organization,
+			"options":              options,
+			"policy_content_bytes": len(policyContent),
+		})
+		return 0
 	}
 
 	policy, err := client.Policies.Create(client.Context(), c.organization, options)

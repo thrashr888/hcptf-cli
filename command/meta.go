@@ -1,13 +1,16 @@
 package command
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/config"
+	"github.com/hashicorp/hcptf-cli/internal/validate"
 	"github.com/hashicorp/hcptf-cli/internal/output"
 	"github.com/mitchellh/cli"
 )
@@ -22,6 +25,15 @@ type Meta struct {
 
 	// ErrorWriter is the destination for formatter JSON encoding errors.
 	ErrorWriter io.Writer
+
+	// Fields for command output filtering.
+	Fields string
+
+	// DryRun skips API calls for mutation commands.
+	DryRun bool
+
+	// JSONInput reads API payloads for mutation commands.
+	JSONInput string
 
 	// Ui is the CLI user interface
 	Ui cli.Ui
@@ -78,7 +90,9 @@ func (m *Meta) formatterErrorWriter() io.Writer {
 }
 
 func (m *Meta) NewFormatter(format string) *output.Formatter {
-	return output.NewFormatterWithWriters(format, m.formatterWriter(), m.formatterErrorWriter())
+	f := output.NewFormatterWithWriters(format, m.formatterWriter(), m.formatterErrorWriter())
+	f.SetFields(parseFields(m.Fields))
+	return f
 }
 
 // Config returns the CLI configuration, loading it if necessary
@@ -94,8 +108,75 @@ func (m *Meta) Config() (*config.Config, error) {
 // FlagSet returns a FlagSet with common flags
 func (m *Meta) FlagSet(name string) *flag.FlagSet {
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
+
+	// Common agent-friendly flags
+	f.StringVar(&m.Fields, "fields", "", "Output field filter (comma-separated list)")
+	f.BoolVar(&m.DryRun, "dry-run", false, "Print planned mutation without API call")
+	f.StringVar(&m.JSONInput, "json-input", "", "JSON payload for mutation commands")
+
 	f.Usage = func() {}
 	return f
+}
+
+// ParseJSONInput parses JSON from a file path, inline JSON, or stdin.
+func (m *Meta) ParseJSONInput(target interface{}) error {
+	if m.JSONInput == "-" {
+		body, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(body, target)
+	}
+
+	if strings.HasPrefix(m.JSONInput, "@") {
+		path := strings.TrimPrefix(m.JSONInput, "@")
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(body, target)
+	}
+
+	return json.Unmarshal([]byte(m.JSONInput), target)
+}
+
+// ValidateID validates an ID-like value and emits an error message on failure.
+func (m *Meta) ValidateID(value, flagName string) bool {
+	if err := validate.ID(value, flagName); err != nil {
+		m.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return false
+	}
+	return true
+}
+
+// ValidateName validates a name-like value and emits an error message on failure.
+func (m *Meta) ValidateName(value, flagName string) bool {
+	if err := validate.Name(value, flagName); err != nil {
+		m.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return false
+	}
+	return true
+}
+
+// ValidateString validates a text value and emits an error message on failure.
+func (m *Meta) ValidateString(value, flagName string) bool {
+	if err := validate.SafeString(value, flagName); err != nil {
+		m.Ui.Error(fmt.Sprintf("Error: %s", err))
+		return false
+	}
+	return true
+}
+
+func parseFields(raw string) []string {
+	var fields []string
+	for _, field := range strings.Split(raw, ",") {
+		f := strings.TrimSpace(field)
+		if f == "" {
+			continue
+		}
+		fields = append(fields, f)
+	}
+	return fields
 }
 
 // AutocompleteFlags returns a set of flags for autocomplete

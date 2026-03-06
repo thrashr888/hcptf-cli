@@ -35,6 +35,11 @@ func (c *ProjectUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.projectID, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -44,13 +49,39 @@ func (c *ProjectUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.ProjectUpdateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		if c.name != "" {
+			options.Name = &c.name
+		}
 
-	if c.name != "" {
-		options.Name = &c.name
+		if c.description != "" {
+			options.Description = &c.description
+		}
 	}
 
-	if c.description != "" {
-		options.Description = &c.description
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "project",
+			"id":       c.projectID,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update project

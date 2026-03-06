@@ -317,6 +317,58 @@ func TestTableWithFullRowsUsesDisplayRowsForTable(t *testing.T) {
 	}
 }
 
+func TestTableFiltersHeaders(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
+	formatter.SetFields([]string{"Name", "Status"})
+	formatter.Table([]string{"Name", "ID", "Status"}, [][]string{{"ws-1", "id-1", "active"}})
+
+	if !contains(out.String(), "Name") || !contains(out.String(), "Status") {
+		t.Fatalf("expected filtered headers in table output, got %q", out.String())
+	}
+	if contains(out.String(), "ID") {
+		t.Fatalf("unexpected unrequested header in table output, got %q", out.String())
+	}
+}
+
+func TestTableJSONFiltersHeaders(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("json", out, &bytes.Buffer{})
+	formatter.SetFields([]string{"ID", "Name"})
+
+	formatter.Table([]string{"Name", "ID", "Status"}, [][]string{{"ws-1", "id-1", "active"}})
+
+	var rows []map[string]string
+	if err := json.Unmarshal([]byte(out.String()), &rows); err != nil {
+		t.Fatalf("expected valid json: %v", err)
+	}
+	if _, ok := rows[0]["Status"]; ok {
+		t.Fatalf("expected filtered key removed from json output")
+	}
+	if _, ok := rows[0]["ID"]; !ok {
+		t.Fatalf("expected ID in json output")
+	}
+}
+
+func TestKeyValueFiltersFields(t *testing.T) {
+	out := &bytes.Buffer{}
+	formatter := NewFormatterWithWriters("table", out, &bytes.Buffer{})
+	formatter.SetFields([]string{"Name", "Status"})
+
+	formatter.KeyValue(map[string]interface{}{
+		"Name":   "workspace",
+		"Status": "active",
+		"ID":     "ws-123",
+	})
+
+	if !contains(out.String(), "Name") || !contains(out.String(), "Status") {
+		t.Fatalf("expected requested fields, got %q", out.String())
+	}
+	if contains(out.String(), "ID") {
+		t.Fatalf("did not expect unrequested field, got %q", out.String())
+	}
+}
+
 func TestListRespectsFormats(t *testing.T) {
 	list := []string{"one", "two"}
 	outBuf := &bytes.Buffer{}

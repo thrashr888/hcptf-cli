@@ -38,13 +38,13 @@ func (c *SSHKeyCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.value == "" {
+	if c.Meta.JSONInput == "" && c.value == "" {
 		c.Ui.Error("Error: -value flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -58,9 +58,55 @@ func (c *SSHKeyCreateCommand) Run(args []string) int {
 	}
 
 	// Create SSH key
-	options := tfe.SSHKeyCreateOptions{
-		Name:  tfe.String(c.name),
-		Value: tfe.String(c.value),
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	options := tfe.SSHKeyCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.SSHKeyCreateOptions{
+			Name:  tfe.String(c.name),
+			Value: tfe.String(c.value),
+		}
+	}
+
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Value == nil || *options.Value == "" {
+		c.Ui.Error("Error: -value flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.Value, "-value") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "sshkey",
+			"organization": c.organization,
+			"options": map[string]interface{}{
+				"name":  *options.Name,
+				"value": "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	sshKey, err := c.sshKeyService(client).Create(client.Context(), c.organization, options)

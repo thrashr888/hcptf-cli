@@ -33,22 +33,43 @@ func (c *VariableSetUpdateStacksCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
 	}
 
-	stacks := make([]*tfe.Stack, 0)
-	for _, stackID := range splitCommaList(c.stacks) {
-		if strings.TrimSpace(stackID) == "" {
-			continue
+	options := &tfe.VariableSetUpdateStacksOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
 		}
-		stacks = append(stacks, &tfe.Stack{ID: strings.TrimSpace(stackID)})
+	} else {
+		stacks := make([]*tfe.Stack, 0)
+		for _, stackID := range splitCommaList(c.stacks) {
+			if strings.TrimSpace(stackID) == "" {
+				continue
+			}
+			stacks = append(stacks, &tfe.Stack{ID: strings.TrimSpace(stackID)})
+		}
+		options.Stacks = stacks
 	}
 
-	options := &tfe.VariableSetUpdateStacksOptions{
-		Stacks: stacks,
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "variableset-stacks",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 	updated, err := c.varSetService(client).UpdateStacks(client.Context(), c.id, options)
 	if err != nil {

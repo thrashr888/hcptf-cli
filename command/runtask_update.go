@@ -45,6 +45,11 @@ func (c *RunTaskUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -54,40 +59,76 @@ func (c *RunTaskUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.RunTaskUpdateOptions{}
-
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
-	}
-
-	if c.url != "" {
-		options.URL = tfe.String(c.url)
-	}
-
-	if c.hmacKey != "" {
-		options.HMACKey = tfe.String(c.hmacKey)
-	}
-
-	if c.category != "" {
-		if c.category != "task" && c.category != "advisory" {
-			c.Ui.Error("Error: -category must be 'task' or 'advisory'")
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-		options.Category = tfe.String(c.category)
-	}
-
-	if c.enabled != "" {
-		if c.enabled == "true" {
-			options.Enabled = tfe.Bool(true)
-		} else if c.enabled == "false" {
-			options.Enabled = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -enabled must be 'true' or 'false'")
-			return 1
+	} else {
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
+		}
+		if c.url != "" {
+			options.URL = tfe.String(c.url)
+		}
+		if c.hmacKey != "" {
+			options.HMACKey = tfe.String(c.hmacKey)
+		}
+		if c.category != "" {
+			if c.category != "task" && c.category != "advisory" {
+				c.Ui.Error("Error: -category must be 'task' or 'advisory'")
+				return 1
+			}
+			options.Category = tfe.String(c.category)
+		}
+		if c.enabled != "" {
+			if c.enabled == "true" {
+				options.Enabled = tfe.Bool(true)
+			} else if c.enabled == "false" {
+				options.Enabled = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -enabled must be 'true' or 'false'")
+				return 1
+			}
+		}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
 		}
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.URL != nil && !c.Meta.ValidateString(*options.URL, "-url") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.HMACKey != nil && !c.Meta.ValidateString(*options.HMACKey, "-hmac-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "runtask",
+			"id":       c.id,
+			"options": map[string]interface{}{
+				"name":        options.Name,
+				"url":         options.URL,
+				"category":    options.Category,
+				"enabled":     options.Enabled,
+				"description": options.Description,
+				"hmac_key":    "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	// Update run task

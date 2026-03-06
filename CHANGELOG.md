@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`--dry-run` for mutation commands**: All create, update, delete, apply, cancel, and discard commands now support `-dry-run` to validate inputs and show the planned action as JSON without making API calls
+- **`--fields` output filtering**: All commands support `-fields=Name,ID,...` to limit output to specific fields, reducing response size for AI agent context windows
+- **`--json-input` for mutations**: Create and update commands accept `-json-input='{"key":"val"}'` (inline), `-json-input=@file.json`, or `-json-input=-` (stdin) to pass API payloads directly instead of individual flags
+- **`hcptf schema` command**: Returns machine-readable JSON describing a command's flags, types, required status, aliases, and defaults (e.g. `hcptf schema workspace create`)
+- **Input validation**: All mutation commands validate names, IDs, and text inputs against path traversal, query injection, URL-encoded sequences, control characters, and excessive length
+- **`hcptf login` browser flow**: Login now emulates `terraform login` — prompts for confirmation, opens browser to the tokens page, and displays a welcome banner with the authenticated username
+
 ## [0.5.1] - 2026-02-27
 
 ### Fixed

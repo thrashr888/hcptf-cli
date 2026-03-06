@@ -16,6 +16,12 @@ type VariableSetApplyCommand struct {
 	stacks     string
 }
 
+type variableSetApplyPayload struct {
+	Workspaces []string `json:"workspaces"`
+	Projects   []string `json:"projects"`
+	Stacks     []string `json:"stacks"`
+}
+
 // Run executes the variable set apply command
 func (c *VariableSetApplyCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variableset apply")
@@ -36,7 +42,14 @@ func (c *VariableSetApplyCommand) Run(args []string) int {
 	}
 
 	if c.workspaces == "" && c.projects == "" && c.stacks == "" {
-		c.Ui.Error("Error: at least one of -workspaces, -projects, or -stacks is required")
+		if c.Meta.JSONInput == "" {
+			c.Ui.Error("Error: at least one of -workspaces, -projects, or -stacks is required")
+			c.Ui.Error(c.Help())
+			return 1
+		}
+	}
+
+	if !c.Meta.ValidateID(c.id, "-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -48,9 +61,38 @@ func (c *VariableSetApplyCommand) Run(args []string) int {
 		return 1
 	}
 
+	payload := variableSetApplyPayload{
+		Workspaces: splitCommaList(c.workspaces),
+		Projects:   splitCommaList(c.projects),
+		Stacks:     splitCommaList(c.stacks),
+	}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&payload); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	}
+
+	if len(payload.Workspaces) == 0 && len(payload.Projects) == 0 && len(payload.Stacks) == 0 {
+		c.Ui.Error("Error: at least one of workspaces, projects, or stacks is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "apply",
+			"resource": "variableset",
+			"id":       c.id,
+			"options":  payload,
+		})
+		return 0
+	}
+
 	// Apply to workspaces
-	if c.workspaces != "" {
-		workspaceIDs := strings.Split(c.workspaces, ",")
+	if len(payload.Workspaces) > 0 {
+		workspaceIDs := payload.Workspaces
 		workspaces := make([]*tfe.Workspace, 0, len(workspaceIDs))
 		for _, wsID := range workspaceIDs {
 			workspaces = append(workspaces, &tfe.Workspace{ID: strings.TrimSpace(wsID)})
@@ -70,8 +112,8 @@ func (c *VariableSetApplyCommand) Run(args []string) int {
 	}
 
 	// Apply to projects
-	if c.projects != "" {
-		projectIDs := strings.Split(c.projects, ",")
+	if len(payload.Projects) > 0 {
+		projectIDs := payload.Projects
 		projects := make([]*tfe.Project, 0, len(projectIDs))
 		for _, projID := range projectIDs {
 			projects = append(projects, &tfe.Project{ID: strings.TrimSpace(projID)})
@@ -91,8 +133,8 @@ func (c *VariableSetApplyCommand) Run(args []string) int {
 	}
 
 	// Apply to stacks
-	if c.stacks != "" {
-		stackIDs := splitCommaList(c.stacks)
+	if len(payload.Stacks) > 0 {
+		stackIDs := payload.Stacks
 		stacks := make([]*tfe.Stack, 0, len(stackIDs))
 		for _, stackID := range stackIDs {
 			stacks = append(stacks, &tfe.Stack{ID: strings.TrimSpace(stackID)})

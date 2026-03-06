@@ -47,7 +47,7 @@ func TestVariableUpdateValidatesBools(t *testing.T) {
 	ui := cli.NewMockUi()
 	cmd := newVariableUpdateCommand(ui, &mockWorkspaceReader{}, &mockVariableUpdateService{})
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var", "-sensitive=maybe"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var-123", "-sensitive=maybe"}); code != 1 {
 		t.Fatalf("expected exit 1 sensitive")
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "sensitive") {
@@ -55,7 +55,7 @@ func TestVariableUpdateValidatesBools(t *testing.T) {
 	}
 
 	ui.ErrorWriter.Reset()
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var", "-hcl=maybe"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var-123", "-hcl=maybe"}); code != 1 {
 		t.Fatalf("expected exit 1 hcl")
 	}
 	if !strings.Contains(ui.ErrorWriter.String(), "hcl") {
@@ -69,10 +69,10 @@ func TestVariableUpdateHandlesAPIError(t *testing.T) {
 	vars := &mockVariableUpdateService{err: errors.New("boom")}
 	cmd := newVariableUpdateCommand(ui, ws, vars)
 
-	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var", "-value=hi", "-sensitive=true"}); code != 1 {
+	if code := cmd.Run([]string{"-organization=my-org", "-workspace=prod", "-id=var-123", "-value=hi", "-sensitive=true"}); code != 1 {
 		t.Fatalf("expected exit 1")
 	}
-	if vars.lastWorkspace != "ws-1" || vars.lastID != "var" {
+	if vars.lastWorkspace != "ws-1" || vars.lastID != "var-123" {
 		t.Fatalf("unexpected request")
 	}
 	if vars.lastOptions.Sensitive == nil || !*vars.lastOptions.Sensitive {

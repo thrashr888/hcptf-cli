@@ -29,6 +29,11 @@ func (c *PolicyDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.policyID, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -36,7 +41,16 @@ func (c *PolicyDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Read policy to get the name for confirmation
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "delete",
+			"resource": "policy",
+			"id":       c.policyID,
+		})
+		return 0
+	}
+
 	policy, err := client.Policies.Read(client.Context(), c.policyID)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading policy: %s", err))

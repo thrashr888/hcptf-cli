@@ -38,6 +38,11 @@ func (c *WorkspaceTagRemoveCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.workspaceID, "-workspace-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -65,6 +70,17 @@ func (c *WorkspaceTagRemoveCommand) Run(args []string) int {
 	// Remove tags from workspace
 	options := tfe.WorkspaceRemoveTagsOptions{
 		Tags: tagItems,
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "delete",
+			"resource":     "workspace-tag",
+			"workspace_id": c.workspaceID,
+			"options":      options,
+		})
+		return 0
 	}
 
 	err = client.Workspaces.RemoveTags(client.Context(), c.workspaceID, options)

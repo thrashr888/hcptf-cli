@@ -48,11 +48,31 @@ func (c *VariableSetVariableDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.variableSetID, "-variableset-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateID(c.variableID, "-variable-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":          "delete",
+			"resource":        "variableset-variable",
+			"variableset_id":  c.variableSetID,
+			"variable_id":     c.variableID,
+		})
+		return 0
 	}
 
 	if !c.force && !c.yes {

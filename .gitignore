@@ -1,6 +1,7 @@
 # Binaries
 /hcptf
 /hcptf-cli
+/hcptf-*
 *.exe
 *.exe~
 *.dll

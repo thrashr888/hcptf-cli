@@ -114,6 +114,8 @@ func (c *WorkspaceUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	usingJSONInput := c.Meta.JSONInput != ""
+
 	// Validate required flags
 	if c.organization == "" {
 		c.Ui.Error("Error: -organization flag is required")
@@ -165,133 +167,170 @@ func (c *WorkspaceUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && c.newName != "" && !c.Meta.ValidateName(c.newName, "-new-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateString(c.description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Build update options
-	options := tfe.WorkspaceUpdateOptions{}
-
-	if c.newName != "" {
-		options.Name = tfe.String(c.newName)
-	}
-
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
-	}
-
-	if c.terraformVersion != "" {
-		options.TerraformVersion = tfe.String(c.terraformVersion)
-	}
-
-	if c.executionMode != "" {
-		options.ExecutionMode = tfe.String(c.executionMode)
-	}
-
-	if c.workingDirectory != "" {
-		options.WorkingDirectory = tfe.String(c.workingDirectory)
-	}
-
-	if c.agentPoolID != "" {
-		options.AgentPoolID = tfe.String(c.agentPoolID)
-	}
-
-	if c.projectID != "" {
-		options.Project = &tfe.Project{ID: c.projectID}
-	}
-
-	// Parse boolean toggle flags
-	boolFlags := []struct {
-		value    string
-		flagName string
-		target   **bool
-	}{
-		{c.autoApply, "auto-apply", &options.AutoApply},
-		{c.allowDestroyPlan, "allow-destroy-plan", &options.AllowDestroyPlan},
-		{c.assessmentsEnabled, "assessments-enabled", &options.AssessmentsEnabled},
-		{c.autoApplyRunTrigger, "auto-apply-run-trigger", &options.AutoApplyRunTrigger},
-		{c.fileTriggersEnabled, "file-triggers-enabled", &options.FileTriggersEnabled},
-		{c.globalRemoteState, "global-remote-state", &options.GlobalRemoteState},
-		{c.projectRemoteState, "project-remote-state", &options.ProjectRemoteState},
-		{c.queueAllRuns, "queue-all-runs", &options.QueueAllRuns},
-		{c.speculativeEnabled, "speculative-enabled", &options.SpeculativeEnabled},
-		{c.structuredRunOutputEnabled, "structured-run-output-enabled", &options.StructuredRunOutputEnabled},
-		{c.inheritsProjectAutoDestroy, "inherits-project-auto-destroy", &options.InheritsProjectAutoDestroy},
-	}
-
-	for _, bf := range boolFlags {
-		parsed, parseErr := parseBoolFlag(bf.value, bf.flagName)
-		if parseErr != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+	var options tfe.WorkspaceUpdateOptions
+	if usingJSONInput {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-		if parsed != nil {
-			*bf.target = parsed
-		}
-	}
+	} else {
+		options = tfe.WorkspaceUpdateOptions{}
 
-	// HYOK (already validated above)
-	if c.hyokEnabled == "true" {
-		options.HYOKEnabled = tfe.Bool(true)
-	}
+		if c.newName != "" {
+			options.Name = tfe.String(c.newName)
+		}
 
-	// Trigger prefixes/patterns
-	if c.triggerPrefixes != "" {
-		options.TriggerPrefixes = splitCommaList(c.triggerPrefixes)
-	}
-	if c.triggerPatterns != "" {
-		options.TriggerPatterns = splitCommaList(c.triggerPatterns)
-	}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
 
-	// VCS repo options
-	if c.removeVCS {
-		options.VCSRepo = &tfe.VCSRepoOptions{}
-	} else if c.vcsIdentifier != "" || c.vcsBranch != "" || c.vcsOAuthTokenID != "" ||
-		c.vcsIngressSubmodules != "" || c.vcsTagsRegex != "" || c.vcsGHAInstallationID != "" {
-		vcsRepo := &tfe.VCSRepoOptions{}
-		if c.vcsIdentifier != "" {
-			vcsRepo.Identifier = tfe.String(c.vcsIdentifier)
+		if c.terraformVersion != "" {
+			options.TerraformVersion = tfe.String(c.terraformVersion)
 		}
-		if c.vcsBranch != "" {
-			vcsRepo.Branch = tfe.String(c.vcsBranch)
+
+		if c.executionMode != "" {
+			options.ExecutionMode = tfe.String(c.executionMode)
 		}
-		if c.vcsOAuthTokenID != "" {
-			vcsRepo.OAuthTokenID = tfe.String(c.vcsOAuthTokenID)
+
+		if c.workingDirectory != "" {
+			options.WorkingDirectory = tfe.String(c.workingDirectory)
 		}
-		if c.vcsIngressSubmodules != "" {
-			parsed, parseErr := parseBoolFlag(c.vcsIngressSubmodules, "vcs-ingress-submodules")
+
+		if c.agentPoolID != "" {
+			options.AgentPoolID = tfe.String(c.agentPoolID)
+		}
+
+		if c.projectID != "" {
+			options.Project = &tfe.Project{ID: c.projectID}
+		}
+
+		// Parse boolean toggle flags
+		boolFlags := []struct {
+			value    string
+			flagName string
+			target   **bool
+		}{
+			{c.autoApply, "auto-apply", &options.AutoApply},
+			{c.allowDestroyPlan, "allow-destroy-plan", &options.AllowDestroyPlan},
+			{c.assessmentsEnabled, "assessments-enabled", &options.AssessmentsEnabled},
+			{c.autoApplyRunTrigger, "auto-apply-run-trigger", &options.AutoApplyRunTrigger},
+			{c.fileTriggersEnabled, "file-triggers-enabled", &options.FileTriggersEnabled},
+			{c.globalRemoteState, "global-remote-state", &options.GlobalRemoteState},
+			{c.projectRemoteState, "project-remote-state", &options.ProjectRemoteState},
+			{c.queueAllRuns, "queue-all-runs", &options.QueueAllRuns},
+			{c.speculativeEnabled, "speculative-enabled", &options.SpeculativeEnabled},
+			{c.structuredRunOutputEnabled, "structured-run-output-enabled", &options.StructuredRunOutputEnabled},
+			{c.inheritsProjectAutoDestroy, "inherits-project-auto-destroy", &options.InheritsProjectAutoDestroy},
+		}
+
+		for _, bf := range boolFlags {
+			parsed, parseErr := parseBoolFlag(bf.value, bf.flagName)
 			if parseErr != nil {
 				c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
 				return 1
 			}
-			vcsRepo.IngressSubmodules = parsed
-		}
-		if c.vcsTagsRegex != "" {
-			vcsRepo.TagsRegex = tfe.String(c.vcsTagsRegex)
-		}
-		if c.vcsGHAInstallationID != "" {
-			vcsRepo.GHAInstallationID = tfe.String(c.vcsGHAInstallationID)
-		}
-		options.VCSRepo = vcsRepo
-	}
-
-	// Auto-destroy-at
-	if c.autoDestroyAt != "" {
-		if c.autoDestroyAt == "none" {
-			options.AutoDestroyAt = tfe.NullTime()
-		} else {
-			t, parseErr := time.Parse(time.RFC3339, c.autoDestroyAt)
-			if parseErr != nil {
-				c.Ui.Error(fmt.Sprintf("Error: -auto-destroy-at must be a valid RFC3339 time or 'none': %s", parseErr))
-				return 1
+			if parsed != nil {
+				*bf.target = parsed
 			}
-			options.AutoDestroyAt = tfe.NullableTime(t)
+		}
+
+		// HYOK (already validated above)
+		if c.hyokEnabled == "true" {
+			options.HYOKEnabled = tfe.Bool(true)
+		}
+
+		// Trigger prefixes/patterns
+		if c.triggerPrefixes != "" {
+			options.TriggerPrefixes = splitCommaList(c.triggerPrefixes)
+		}
+		if c.triggerPatterns != "" {
+			options.TriggerPatterns = splitCommaList(c.triggerPatterns)
+		}
+
+		// VCS repo options
+		if c.removeVCS {
+			options.VCSRepo = &tfe.VCSRepoOptions{}
+		} else if c.vcsIdentifier != "" || c.vcsBranch != "" || c.vcsOAuthTokenID != "" ||
+			c.vcsIngressSubmodules != "" || c.vcsTagsRegex != "" || c.vcsGHAInstallationID != "" {
+			vcsRepo := &tfe.VCSRepoOptions{}
+			if c.vcsIdentifier != "" {
+				vcsRepo.Identifier = tfe.String(c.vcsIdentifier)
+			}
+			if c.vcsBranch != "" {
+				vcsRepo.Branch = tfe.String(c.vcsBranch)
+			}
+			if c.vcsOAuthTokenID != "" {
+				vcsRepo.OAuthTokenID = tfe.String(c.vcsOAuthTokenID)
+			}
+			if c.vcsIngressSubmodules != "" {
+				parsed, parseErr := parseBoolFlag(c.vcsIngressSubmodules, "vcs-ingress-submodules")
+				if parseErr != nil {
+					c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+					return 1
+				}
+				vcsRepo.IngressSubmodules = parsed
+			}
+			if c.vcsTagsRegex != "" {
+				vcsRepo.TagsRegex = tfe.String(c.vcsTagsRegex)
+			}
+			if c.vcsGHAInstallationID != "" {
+				vcsRepo.GHAInstallationID = tfe.String(c.vcsGHAInstallationID)
+			}
+			options.VCSRepo = vcsRepo
+		}
+
+		// Auto-destroy-at
+		if c.autoDestroyAt != "" {
+			if c.autoDestroyAt == "none" {
+				options.AutoDestroyAt = tfe.NullTime()
+			} else {
+				t, parseErr := time.Parse(time.RFC3339, c.autoDestroyAt)
+				if parseErr != nil {
+					c.Ui.Error(fmt.Sprintf("Error: -auto-destroy-at must be a valid RFC3339 time or 'none': %s", parseErr))
+					return 1
+				}
+				options.AutoDestroyAt = tfe.NullableTime(t)
+			}
+		}
+
+		// Auto-destroy-activity-duration
+		if c.autoDestroyActivityDuration != "" {
+			if c.autoDestroyActivityDuration == "none" {
+				options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
+			} else {
+				options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(c.autoDestroyActivityDuration)
+			}
 		}
 	}
 
-	// Auto-destroy-activity-duration
-	if c.autoDestroyActivityDuration != "" {
-		if c.autoDestroyActivityDuration == "none" {
-			options.AutoDestroyActivityDuration = jsonapi.NewNullNullableAttr[string]()
-		} else {
-			options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(c.autoDestroyActivityDuration)
-		}
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "update",
+			"resource":     "workspace",
+			"organization": c.organization,
+			"name":         c.name,
+			"options":      options,
+		})
+		return 0
 	}
 
 	// Update workspace

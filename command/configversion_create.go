@@ -49,6 +49,15 @@ func (c *ConfigVersionCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -64,10 +73,29 @@ func (c *ConfigVersionCreateCommand) Run(args []string) int {
 	}
 
 	// Create configuration version
-	options := tfe.ConfigurationVersionCreateOptions{
-		AutoQueueRuns: tfe.Bool(c.autoQueueRuns),
-		Speculative:   tfe.Bool(c.speculative),
-		Provisional:   tfe.Bool(c.provisional),
+	options := tfe.ConfigurationVersionCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.ConfigurationVersionCreateOptions{
+			AutoQueueRuns: tfe.Bool(c.autoQueueRuns),
+			Speculative:   tfe.Bool(c.speculative),
+			Provisional:   tfe.Bool(c.provisional),
+		}
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "configversion",
+			"workspace_id": ws.ID,
+			"options":      options,
+		})
+		return 0
 	}
 
 	configVersion, err := c.configVersionService(client).Create(client.Context(), ws.ID, options)

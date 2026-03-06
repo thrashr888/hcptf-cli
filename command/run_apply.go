@@ -33,11 +33,27 @@ func (c *RunApplyCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.runID, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "apply",
+			"resource": "run",
+			"id":       c.runID,
+			"comment":  c.comment,
+		})
+		return 0
 	}
 
 	// Apply run

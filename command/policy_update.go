@@ -18,6 +18,12 @@ type PolicyUpdateCommand struct {
 	format      string
 }
 
+type policyUpdateJSONInput struct {
+	Description      *string               `json:"description,omitempty"`
+	EnforcementLevel *tfe.EnforcementLevel `json:"enforcement_level,omitempty"`
+	Policy           string                `json:"policy,omitempty"`
+}
+
 // Run executes the policy update command
 func (c *PolicyUpdateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policy update")
@@ -38,6 +44,11 @@ func (c *PolicyUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.policyID, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -47,25 +58,53 @@ func (c *PolicyUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.PolicyUpdateOptions{}
-
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
-	}
-
-	if c.enforce != "" {
-		var enforcementLevel tfe.EnforcementLevel
-		switch c.enforce {
-		case "advisory":
-			enforcementLevel = tfe.EnforcementAdvisory
-		case "soft-mandatory":
-			enforcementLevel = tfe.EnforcementSoft
-		case "hard-mandatory":
-			enforcementLevel = tfe.EnforcementHard
-		default:
-			c.Ui.Error("Error: -enforce must be 'advisory', 'soft-mandatory', or 'hard-mandatory'")
+	var policyContent []byte
+	if c.Meta.JSONInput != "" {
+		var payload policyUpdateJSONInput
+		if err := c.Meta.ParseJSONInput(&payload); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-		options.EnforcementLevel = &enforcementLevel
+		options.Description = payload.Description
+		options.EnforcementLevel = payload.EnforcementLevel
+		policyContent = []byte(payload.Policy)
+	} else {
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+
+		if c.enforce != "" {
+			var enforcementLevel tfe.EnforcementLevel
+			switch c.enforce {
+			case "advisory":
+				enforcementLevel = tfe.EnforcementAdvisory
+			case "soft-mandatory":
+				enforcementLevel = tfe.EnforcementSoft
+			case "hard-mandatory":
+				enforcementLevel = tfe.EnforcementHard
+			default:
+				c.Ui.Error("Error: -enforce must be 'advisory', 'soft-mandatory', or 'hard-mandatory'")
+				return 1
+			}
+			options.EnforcementLevel = &enforcementLevel
+		}
+	}
+
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":               "update",
+			"resource":             "policy",
+			"id":                   c.policyID,
+			"options":              options,
+			"policy_content_bytes": len(policyContent),
+		})
+		return 0
 	}
 
 	// Update policy
@@ -83,6 +122,12 @@ func (c *PolicyUpdateCommand) Run(args []string) int {
 			return 1
 		}
 
+		err = client.Policies.Upload(client.Context(), c.policyID, policyContent)
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error uploading policy content: %s", err))
+			return 1
+		}
+	} else if len(policyContent) > 0 {
 		err = client.Policies.Upload(client.Context(), c.policyID, policyContent)
 		if err != nil {
 			c.Ui.Error(fmt.Sprintf("Error uploading policy content: %s", err))

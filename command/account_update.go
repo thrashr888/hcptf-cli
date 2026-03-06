@@ -30,8 +30,22 @@ func (c *AccountUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	options := tfe.UserUpdateOptions{}
+	if c.email != "" {
+		options.Email = tfe.String(c.email)
+	}
+	if c.username != "" {
+		options.Username = tfe.String(c.username)
+	}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	}
+
 	// Check if any update is requested
-	if c.email == "" && c.username == "" && c.newPassword == "" {
+	if options.Email == nil && options.Username == nil && c.newPassword == "" {
 		c.Ui.Error("Error: at least one of -email, -username, or -new-password must be provided")
 		c.Ui.Error(c.Help())
 		return 1
@@ -57,12 +71,6 @@ func (c *AccountUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Build update options (using Users API)
-	options := tfe.UserUpdateOptions{
-		Email:    tfe.String(c.email),
-		Username: tfe.String(c.username),
-	}
-
 	// Note: go-tfe's UserUpdateOptions doesn't support password changes
 	// This would require a direct API call if needed
 	if c.newPassword != "" {
@@ -70,6 +78,17 @@ func (c *AccountUpdateCommand) Run(args []string) int {
 		c.Ui.Error("Please use the web UI to change your password:")
 		c.Ui.Error("  https://app.terraform.io/app/settings/profile")
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":            "update",
+			"resource":          "account",
+			"password_provided": c.password != "",
+			"options":           options,
+		})
+		return 0
 	}
 
 	// Update account (using Users API)

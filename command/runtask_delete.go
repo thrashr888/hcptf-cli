@@ -32,6 +32,11 @@ func (c *RunTaskDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -39,7 +44,16 @@ func (c *RunTaskDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Read run task to get its name for confirmation
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "delete",
+			"resource": "runtask",
+			"id":       c.id,
+		})
+		return 0
+	}
+
 	runTask, err := c.runTaskService(client).Read(client.Context(), c.id)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading run task: %s", err))

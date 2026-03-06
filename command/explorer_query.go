@@ -18,7 +18,7 @@ type ExplorerQueryCommand struct {
 	queryType    string
 	sort         string
 	filter       string
-	fields       string
+	apiFields    string
 	limit        int
 	pageNumber   int
 	pageSize     int
@@ -34,7 +34,7 @@ func (c *ExplorerQueryCommand) Run(args []string) int {
 	flags.StringVar(&c.queryType, "type", "", "Query type: workspaces, tf_versions, providers, modules (required)")
 	flags.StringVar(&c.sort, "sort", "", "Sort field (prefix with - for descending)")
 	flags.StringVar(&c.filter, "filter", "", "Filter conditions")
-	flags.StringVar(&c.fields, "fields", "", "Comma-separated fields to return")
+	flags.StringVar(&c.apiFields, "api-fields", "", "Comma-separated API fields to return")
 	flags.IntVar(&c.limit, "limit", 0, "Maximum number of results to return (overrides page-size)")
 	flags.IntVar(&c.pageNumber, "page", 1, "Page number")
 	flags.IntVar(&c.pageSize, "page-size", 20, "Page size")
@@ -102,8 +102,8 @@ func (c *ExplorerQueryCommand) Run(args []string) int {
 	if c.filter != "" {
 		params.Add("filter", c.filter)
 	}
-	if c.fields != "" {
-		params.Add("fields", c.fields)
+	if c.apiFields != "" {
+		params.Add("fields", c.apiFields)
 	}
 	if !c.exportCSV {
 		params.Add("page[number]", fmt.Sprintf("%d", c.pageNumber))
@@ -213,8 +213,8 @@ func (c *ExplorerQueryCommand) Run(args []string) int {
 
 		// First item: build headers
 		if i == 0 {
-			if c.fields != "" {
-				headers = strings.Split(c.fields, ",")
+			if c.apiFields != "" {
+				headers = strings.Split(c.apiFields, ",")
 			} else {
 				// Use all attribute keys as headers
 				for k := range attrs {

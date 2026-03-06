@@ -41,6 +41,11 @@ func (c *OrganizationUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -50,28 +55,50 @@ func (c *OrganizationUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.OrganizationUpdateOptions{}
-
-	if c.email != "" {
-		options.Email = tfe.String(c.email)
-	}
-
-	if c.sessionTimeout > 0 {
-		options.SessionTimeout = tfe.Int(c.sessionTimeout)
-	}
-
-	if c.sessionRemember > 0 {
-		options.SessionRemember = tfe.Int(c.sessionRemember)
-	}
-
-	if c.costEstimationEnabled != "" {
-		if c.costEstimationEnabled == "true" {
-			options.CostEstimationEnabled = tfe.Bool(true)
-		} else if c.costEstimationEnabled == "false" {
-			options.CostEstimationEnabled = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -cost-estimation must be 'true' or 'false'")
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
+	} else {
+		if c.email != "" {
+			options.Email = tfe.String(c.email)
+		}
+
+		if c.sessionTimeout > 0 {
+			options.SessionTimeout = tfe.Int(c.sessionTimeout)
+		}
+
+		if c.sessionRemember > 0 {
+			options.SessionRemember = tfe.Int(c.sessionRemember)
+		}
+
+		if c.costEstimationEnabled != "" {
+			if c.costEstimationEnabled == "true" {
+				options.CostEstimationEnabled = tfe.Bool(true)
+			} else if c.costEstimationEnabled == "false" {
+				options.CostEstimationEnabled = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -cost-estimation must be 'true' or 'false'")
+				return 1
+			}
+		}
+	}
+
+	if options.Email != nil && !c.Meta.ValidateString(*options.Email, "-email") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "organization",
+			"name":     c.name,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update organization

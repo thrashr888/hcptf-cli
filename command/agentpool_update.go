@@ -38,24 +38,7 @@ func (c *AgentPoolUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Parse organization-scoped flag if provided
-	if orgScopedFlag != "" {
-		if orgScopedFlag == "true" {
-			val := true
-			c.organizationScoped = &val
-		} else if orgScopedFlag == "false" {
-			val := false
-			c.organizationScoped = &val
-		} else {
-			c.Ui.Error("Error: -organization-scoped must be 'true' or 'false'")
-			c.Ui.Error(c.Help())
-			return 1
-		}
-	}
-
-	// Check if any update flags are provided
-	if c.name == "" && c.organizationScoped == nil {
-		c.Ui.Error("Error: At least one update flag must be provided")
+	if !c.Meta.ValidateID(c.id, "-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -69,13 +52,57 @@ func (c *AgentPoolUpdateCommand) Run(args []string) int {
 
 	// Update agent pool
 	options := tfe.AgentPoolUpdateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		// Parse organization-scoped flag if provided
+		if orgScopedFlag != "" {
+			if orgScopedFlag == "true" {
+				val := true
+				c.organizationScoped = &val
+			} else if orgScopedFlag == "false" {
+				val := false
+				c.organizationScoped = &val
+			} else {
+				c.Ui.Error("Error: -organization-scoped must be 'true' or 'false'")
+				c.Ui.Error(c.Help())
+				return 1
+			}
+		}
 
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
+		// Check if any update flags are provided
+		if c.name == "" && c.organizationScoped == nil {
+			c.Ui.Error("Error: At least one update flag must be provided")
+			c.Ui.Error(c.Help())
+			return 1
+		}
+
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
+		}
+
+		if c.organizationScoped != nil {
+			options.OrganizationScoped = tfe.Bool(*c.organizationScoped)
+		}
 	}
 
-	if c.organizationScoped != nil {
-		options.OrganizationScoped = tfe.Bool(*c.organizationScoped)
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "agentpool",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 
 	agentPool, err := client.AgentPools.Update(client.Context(), c.id, options)

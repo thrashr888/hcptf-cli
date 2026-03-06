@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -201,27 +202,31 @@ func LoadTerraformCredentialsFile() (*TerraformCredentials, error) {
 
 // ValidateToken validates a token by making a test API call
 func ValidateToken(hostname, token string) error {
+	_, err := ValidateTokenAndGetUser(hostname, token)
+	return err
+}
+
+// ValidateTokenAndGetUser validates a token and returns the username
+func ValidateTokenAndGetUser(hostname, token string) (string, error) {
 	address := fmt.Sprintf("https://%s", hostname)
 
-	config := &tfe.Config{
+	cfg := &tfe.Config{
 		Address:    address,
 		Token:      token,
 		HTTPClient: http.DefaultClient,
 	}
 
-	client, err := tfe.NewClient(config)
+	client, err := tfe.NewClient(cfg)
 	if err != nil {
-		return fmt.Errorf("failed to create client: %w", err)
+		return "", fmt.Errorf("failed to create client: %w", err)
 	}
 
-	// Make a simple API call to validate the token
-	// We'll try to read the account details
-	_, err = client.Users.ReadCurrent(nil)
+	user, err := client.Users.ReadCurrent(context.TODO())
 	if err != nil {
-		return fmt.Errorf("token validation failed: %w", err)
+		return "", fmt.Errorf("token validation failed: %w", err)
 	}
 
-	return nil
+	return user.Username, nil
 }
 
 // SaveCredential saves a credential to the Terraform CLI credentials file

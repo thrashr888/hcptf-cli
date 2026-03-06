@@ -47,32 +47,37 @@ func (c *HYOKCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.kekID == "" {
+	if c.Meta.JSONInput == "" && c.kekID == "" {
 		c.Ui.Error("Error: -kek-id flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.agentPoolID == "" {
+	if c.Meta.JSONInput == "" && c.agentPoolID == "" {
 		c.Ui.Error("Error: -agent-pool-id flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.oidcConfigID == "" {
+	if c.Meta.JSONInput == "" && c.oidcConfigID == "" {
 		c.Ui.Error("Error: -oidc-config-id flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.oidcType == "" {
+	if c.Meta.JSONInput == "" && c.oidcType == "" {
 		c.Ui.Error("Error: -oidc-type flag is required (must be: aws, azure, gcp, or vault)")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if !c.Meta.ValidateName(c.organization, "-organization") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -84,41 +89,74 @@ func (c *HYOKCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Build KMS options if any were provided
-	var kmsOptions *tfe.KMSOptions
-	if c.keyRegion != "" || c.keyLocation != "" || c.keyRingID != "" {
-		kmsOptions = &tfe.KMSOptions{
-			KeyRegion:   c.keyRegion,
-			KeyLocation: c.keyLocation,
-			KeyRingID:   c.keyRingID,
+	options := tfe.HYOKConfigurationsCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		// Build KMS options if any were provided
+		var kmsOptions *tfe.KMSOptions
+		if c.keyRegion != "" || c.keyLocation != "" || c.keyRingID != "" {
+			kmsOptions = &tfe.KMSOptions{
+				KeyRegion:   c.keyRegion,
+				KeyLocation: c.keyLocation,
+				KeyRingID:   c.keyRingID,
+			}
+		}
+
+		// Build OIDC configuration based on type
+		oidcConfig := &tfe.OIDCConfigurationTypeChoice{}
+		switch strings.ToLower(c.oidcType) {
+		case "aws":
+			oidcConfig.AWSOIDCConfiguration = &tfe.AWSOIDCConfiguration{ID: c.oidcConfigID}
+		case "azure":
+			oidcConfig.AzureOIDCConfiguration = &tfe.AzureOIDCConfiguration{ID: c.oidcConfigID}
+		case "gcp":
+			oidcConfig.GCPOIDCConfiguration = &tfe.GCPOIDCConfiguration{ID: c.oidcConfigID}
+		case "vault":
+			oidcConfig.VaultOIDCConfiguration = &tfe.VaultOIDCConfiguration{ID: c.oidcConfigID}
+		default:
+			c.Ui.Error("Error: -oidc-type must be one of: aws, azure, gcp, vault")
+			return 1
+		}
+
+		// Create HYOK configuration
+		options = tfe.HYOKConfigurationsCreateOptions{
+			Name:       c.name,
+			KEKID:      c.kekID,
+			KMSOptions: kmsOptions,
+			AgentPool: &tfe.AgentPool{
+				ID: c.agentPoolID,
+			},
+			OIDCConfiguration: oidcConfig,
 		}
 	}
 
-	// Build OIDC configuration based on type
-	oidcConfig := &tfe.OIDCConfigurationTypeChoice{}
-	switch strings.ToLower(c.oidcType) {
-	case "aws":
-		oidcConfig.AWSOIDCConfiguration = &tfe.AWSOIDCConfiguration{ID: c.oidcConfigID}
-	case "azure":
-		oidcConfig.AzureOIDCConfiguration = &tfe.AzureOIDCConfiguration{ID: c.oidcConfigID}
-	case "gcp":
-		oidcConfig.GCPOIDCConfiguration = &tfe.GCPOIDCConfiguration{ID: c.oidcConfigID}
-	case "vault":
-		oidcConfig.VaultOIDCConfiguration = &tfe.VaultOIDCConfiguration{ID: c.oidcConfigID}
-	default:
-		c.Ui.Error("Error: -oidc-type must be one of: aws, azure, gcp, vault")
+	if options.Name == "" || options.KEKID == "" || options.AgentPool == nil || options.AgentPool.ID == "" || options.OIDCConfiguration == nil {
+		c.Ui.Error("Error: missing required HYOK create options")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateID(options.AgentPool.ID, "-agent-pool-id") {
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	// Create HYOK configuration
-	options := tfe.HYOKConfigurationsCreateOptions{
-		Name:       c.name,
-		KEKID:      c.kekID,
-		KMSOptions: kmsOptions,
-		AgentPool: &tfe.AgentPool{
-			ID: c.agentPoolID,
-		},
-		OIDCConfiguration: oidcConfig,
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "hyok",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	config, err := client.HYOKConfigurations.Create(client.Context(), c.organization, options)

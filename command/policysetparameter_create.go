@@ -37,14 +37,19 @@ func (c *PolicySetParameterCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.key == "" {
+	if c.Meta.JSONInput == "" && c.key == "" {
 		c.Ui.Error("Error: -key flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.value == "" {
+	if c.Meta.JSONInput == "" && c.value == "" {
 		c.Ui.Error("Error: -value flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if !c.Meta.ValidateID(c.policySetID, "-policy-set-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -58,11 +63,47 @@ func (c *PolicySetParameterCreateCommand) Run(args []string) int {
 
 	// Create policy set parameter
 	category := tfe.CategoryPolicySet
-	options := tfe.PolicySetParameterCreateOptions{
-		Key:       tfe.String(c.key),
-		Value:     tfe.String(c.value),
-		Category:  &category,
-		Sensitive: tfe.Bool(c.sensitive),
+	options := tfe.PolicySetParameterCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.PolicySetParameterCreateOptions{
+			Key:       tfe.String(c.key),
+			Value:     tfe.String(c.value),
+			Category:  &category,
+			Sensitive: tfe.Bool(c.sensitive),
+		}
+	}
+
+	if options.Key == nil || *options.Key == "" || options.Value == nil || *options.Value == "" {
+		c.Ui.Error("Error: key and value are required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Category == nil {
+		options.Category = &category
+	}
+	if !c.Meta.ValidateName(*options.Key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.Value, "-value") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":        "create",
+			"resource":      "policyset-parameter",
+			"policy_set_id": c.policySetID,
+			"options":       options,
+		})
+		return 0
 	}
 
 	parameter, err := client.PolicySetParameters.Create(client.Context(), c.policySetID, options)

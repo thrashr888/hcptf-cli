@@ -43,11 +43,31 @@ func (c *GPGKeyDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.namespace, "-namespace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(c.keyID, "-key-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":    "delete",
+			"resource":  "gpgkey",
+			"namespace": c.namespace,
+			"key_id":    c.keyID,
+		})
+		return 0
 	}
 
 	if !c.force && !c.yes {

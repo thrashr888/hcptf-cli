@@ -48,7 +48,7 @@ func (c *PolicySetCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -61,43 +61,80 @@ func (c *PolicySetCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	kind, parseErr := parsePolicyKind(c.kind)
-	if parseErr != nil {
-		c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	// Create policy set
-	options := tfe.PolicySetCreateOptions{
-		Name:   tfe.String(c.name),
-		Global: tfe.Bool(c.global),
-		Kind:   kind,
+	options := tfe.PolicySetCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		kind, parseErr := parsePolicyKind(c.kind)
+		if parseErr != nil {
+			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+			return 1
+		}
+
+		options = tfe.PolicySetCreateOptions{
+			Name:   tfe.String(c.name),
+			Global: tfe.Bool(c.global),
+			Kind:   kind,
+		}
+
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+		if c.overridable != "" {
+			overridable, err := parseBoolFlag(c.overridable, "overridable")
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error: %s", err))
+				return 1
+			}
+			options.Overridable = overridable
+		}
+		if c.agentEnabled != "" {
+			agentEnabled, err := parseBoolFlag(c.agentEnabled, "agent-enabled")
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error: %s", err))
+				return 1
+			}
+			options.AgentEnabled = agentEnabled
+		}
+		if c.toolVersion != "" {
+			options.PolicyToolVersion = tfe.String(c.toolVersion)
+		}
+		if c.policiesPath != "" {
+			options.PoliciesPath = tfe.String(c.policiesPath)
+		}
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
 	}
-	if c.overridable != "" {
-		overridable, err := parseBoolFlag(c.overridable, "overridable")
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", err))
-			return 1
-		}
-		options.Overridable = overridable
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
-	if c.agentEnabled != "" {
-		agentEnabled, err := parseBoolFlag(c.agentEnabled, "agent-enabled")
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", err))
-			return 1
-		}
-		options.AgentEnabled = agentEnabled
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
-	if c.toolVersion != "" {
-		options.PolicyToolVersion = tfe.String(c.toolVersion)
-	}
-	if c.policiesPath != "" {
-		options.PoliciesPath = tfe.String(c.policiesPath)
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "policyset",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	policySet, err := client.PolicySets.Create(client.Context(), c.organization, options)

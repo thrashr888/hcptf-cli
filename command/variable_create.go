@@ -42,6 +42,8 @@ func (c *VariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	usingJSONInput := c.Meta.JSONInput != ""
+
 	// Validate required flags
 	if c.organization == "" {
 		c.Ui.Error("Error: -organization flag is required")
@@ -55,13 +57,13 @@ func (c *VariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.key == "" {
+	if !usingJSONInput && c.key == "" {
 		c.Ui.Error("Error: -key flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.value == "" {
+	if !usingJSONInput && c.value == "" {
 		c.Ui.Error("Error: -value flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -69,7 +71,7 @@ func (c *VariableCreateCommand) Run(args []string) int {
 
 	// Validate category
 	var category tfe.CategoryType
-	if c.category == "terraform" {
+	if usingJSONInput || c.category == "terraform" {
 		category = tfe.CategoryTerraform
 	} else if c.category == "env" {
 		category = tfe.CategoryEnv
@@ -85,6 +87,23 @@ func (c *VariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !usingJSONInput && !c.Meta.ValidateName(c.key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateString(c.description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get workspace first
 	ws, err := c.workspaceService(client).Read(client.Context(), c.organization, c.workspace)
 	if err != nil {
@@ -92,17 +111,37 @@ func (c *VariableCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create variable
-	options := tfe.VariableCreateOptions{
-		Key:       tfe.String(c.key),
-		Value:     tfe.String(c.value),
-		Category:  &category,
-		Sensitive: tfe.Bool(c.sensitive),
-		HCL:       tfe.Bool(c.hcl),
+	// Build create options
+	var options tfe.VariableCreateOptions
+	if usingJSONInput {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.VariableCreateOptions{
+			Key:       tfe.String(c.key),
+			Value:     tfe.String(c.value),
+			Category:  &category,
+			Sensitive: tfe.Bool(c.sensitive),
+			HCL:       tfe.Bool(c.hcl),
+		}
+
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "variable",
+			"workspace_id": ws.ID,
+			"options":      options,
+		})
+		return 0
 	}
 
 	variable, err := c.variableService(client).Create(client.Context(), ws.ID, options)

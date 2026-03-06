@@ -120,6 +120,8 @@ func (c *WorkspaceCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	usingJSONInput := c.Meta.JSONInput != ""
+
 	// Validate required flags
 	if c.organization == "" {
 		c.Ui.Error("Error: -organization flag is required")
@@ -127,7 +129,7 @@ func (c *WorkspaceCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if !usingJSONInput && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -150,139 +152,171 @@ func (c *WorkspaceCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateName(c.name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateString(c.description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Create workspace
-	options := tfe.WorkspaceCreateOptions{
-		Name:      tfe.String(c.name),
-		AutoApply: tfe.Bool(c.autoApply),
-	}
-
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
-	}
-
-	if c.terraformVersion != "" {
-		options.TerraformVersion = tfe.String(c.terraformVersion)
-	}
-
-	if c.executionMode != "" {
-		options.ExecutionMode = tfe.String(c.executionMode)
-	}
-
-	if c.workingDirectory != "" {
-		options.WorkingDirectory = tfe.String(c.workingDirectory)
-	}
-
-	if c.agentPoolID != "" {
-		options.AgentPoolID = tfe.String(c.agentPoolID)
-	}
-
-	if c.projectID != "" {
-		options.Project = &tfe.Project{ID: c.projectID}
-	}
-
-	if c.sourceName != "" {
-		options.SourceName = tfe.String(c.sourceName)
-	}
-
-	if c.sourceURL != "" {
-		options.SourceURL = tfe.String(c.sourceURL)
-	}
-
-	if c.migrationEnvironment != "" {
-		options.MigrationEnvironment = tfe.String(c.migrationEnvironment)
-	}
-
-	// Parse boolean toggle flags
-	boolFlags := []struct {
-		value    string
-		flagName string
-		target   **bool
-	}{
-		{c.allowDestroyPlan, "allow-destroy-plan", &options.AllowDestroyPlan},
-		{c.assessmentsEnabled, "assessments-enabled", &options.AssessmentsEnabled},
-		{c.autoApplyRunTrigger, "auto-apply-run-trigger", &options.AutoApplyRunTrigger},
-		{c.fileTriggersEnabled, "file-triggers-enabled", &options.FileTriggersEnabled},
-		{c.globalRemoteState, "global-remote-state", &options.GlobalRemoteState},
-		{c.projectRemoteState, "project-remote-state", &options.ProjectRemoteState},
-		{c.queueAllRuns, "queue-all-runs", &options.QueueAllRuns},
-		{c.speculativeEnabled, "speculative-enabled", &options.SpeculativeEnabled},
-		{c.structuredRunOutputEnabled, "structured-run-output-enabled", &options.StructuredRunOutputEnabled},
-		{c.inheritsProjectAutoDestroy, "inherits-project-auto-destroy", &options.InheritsProjectAutoDestroy},
-		{c.hyokEnabled, "hyok-enabled", &options.HYOKEnabled},
-	}
-
-	for _, bf := range boolFlags {
-		parsed, parseErr := parseBoolFlag(bf.value, bf.flagName)
-		if parseErr != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+	var options tfe.WorkspaceCreateOptions
+	if usingJSONInput {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-		if parsed != nil {
-			*bf.target = parsed
+	} else {
+		options = tfe.WorkspaceCreateOptions{
+			Name:      tfe.String(c.name),
+			AutoApply: tfe.Bool(c.autoApply),
 		}
-	}
 
-	// Trigger prefixes/patterns
-	if c.triggerPrefixes != "" {
-		options.TriggerPrefixes = splitCommaList(c.triggerPrefixes)
-	}
-	if c.triggerPatterns != "" {
-		options.TriggerPatterns = splitCommaList(c.triggerPatterns)
-	}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
 
-	// Tags
-	if c.tags != "" {
-		tagNames := splitCommaList(c.tags)
-		tags := make([]*tfe.Tag, len(tagNames))
-		for i, name := range tagNames {
-			tags[i] = &tfe.Tag{Name: name}
+		if c.terraformVersion != "" {
+			options.TerraformVersion = tfe.String(c.terraformVersion)
 		}
-		options.Tags = tags
-	}
 
-	// VCS repo options
-	if c.vcsIdentifier != "" || c.vcsBranch != "" || c.vcsOAuthTokenID != "" ||
-		c.vcsIngressSubmodules != "" || c.vcsTagsRegex != "" || c.vcsGHAInstallationID != "" {
-		vcsRepo := &tfe.VCSRepoOptions{}
-		if c.vcsIdentifier != "" {
-			vcsRepo.Identifier = tfe.String(c.vcsIdentifier)
+		if c.executionMode != "" {
+			options.ExecutionMode = tfe.String(c.executionMode)
 		}
-		if c.vcsBranch != "" {
-			vcsRepo.Branch = tfe.String(c.vcsBranch)
+
+		if c.workingDirectory != "" {
+			options.WorkingDirectory = tfe.String(c.workingDirectory)
 		}
-		if c.vcsOAuthTokenID != "" {
-			vcsRepo.OAuthTokenID = tfe.String(c.vcsOAuthTokenID)
+
+		if c.agentPoolID != "" {
+			options.AgentPoolID = tfe.String(c.agentPoolID)
 		}
-		if c.vcsIngressSubmodules != "" {
-			parsed, parseErr := parseBoolFlag(c.vcsIngressSubmodules, "vcs-ingress-submodules")
+
+		if c.projectID != "" {
+			options.Project = &tfe.Project{ID: c.projectID}
+		}
+
+		if c.sourceName != "" {
+			options.SourceName = tfe.String(c.sourceName)
+		}
+
+		if c.sourceURL != "" {
+			options.SourceURL = tfe.String(c.sourceURL)
+		}
+
+		if c.migrationEnvironment != "" {
+			options.MigrationEnvironment = tfe.String(c.migrationEnvironment)
+		}
+
+		// Parse boolean toggle flags
+		boolFlags := []struct {
+			value    string
+			flagName string
+			target   **bool
+		}{
+			{c.allowDestroyPlan, "allow-destroy-plan", &options.AllowDestroyPlan},
+			{c.assessmentsEnabled, "assessments-enabled", &options.AssessmentsEnabled},
+			{c.autoApplyRunTrigger, "auto-apply-run-trigger", &options.AutoApplyRunTrigger},
+			{c.fileTriggersEnabled, "file-triggers-enabled", &options.FileTriggersEnabled},
+			{c.globalRemoteState, "global-remote-state", &options.GlobalRemoteState},
+			{c.projectRemoteState, "project-remote-state", &options.ProjectRemoteState},
+			{c.queueAllRuns, "queue-all-runs", &options.QueueAllRuns},
+			{c.speculativeEnabled, "speculative-enabled", &options.SpeculativeEnabled},
+			{c.structuredRunOutputEnabled, "structured-run-output-enabled", &options.StructuredRunOutputEnabled},
+			{c.inheritsProjectAutoDestroy, "inherits-project-auto-destroy", &options.InheritsProjectAutoDestroy},
+			{c.hyokEnabled, "hyok-enabled", &options.HYOKEnabled},
+		}
+
+		for _, bf := range boolFlags {
+			parsed, parseErr := parseBoolFlag(bf.value, bf.flagName)
 			if parseErr != nil {
 				c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
 				return 1
 			}
-			vcsRepo.IngressSubmodules = parsed
+			if parsed != nil {
+				*bf.target = parsed
+			}
 		}
-		if c.vcsTagsRegex != "" {
-			vcsRepo.TagsRegex = tfe.String(c.vcsTagsRegex)
+
+		// Trigger prefixes/patterns
+		if c.triggerPrefixes != "" {
+			options.TriggerPrefixes = splitCommaList(c.triggerPrefixes)
 		}
-		if c.vcsGHAInstallationID != "" {
-			vcsRepo.GHAInstallationID = tfe.String(c.vcsGHAInstallationID)
+		if c.triggerPatterns != "" {
+			options.TriggerPatterns = splitCommaList(c.triggerPatterns)
 		}
-		options.VCSRepo = vcsRepo
+
+		// Tags
+		if c.tags != "" {
+			tagNames := splitCommaList(c.tags)
+			tags := make([]*tfe.Tag, len(tagNames))
+			for i, name := range tagNames {
+				tags[i] = &tfe.Tag{Name: name}
+			}
+			options.Tags = tags
+		}
+
+		// VCS repo options
+		if c.vcsIdentifier != "" || c.vcsBranch != "" || c.vcsOAuthTokenID != "" ||
+			c.vcsIngressSubmodules != "" || c.vcsTagsRegex != "" || c.vcsGHAInstallationID != "" {
+			vcsRepo := &tfe.VCSRepoOptions{}
+			if c.vcsIdentifier != "" {
+				vcsRepo.Identifier = tfe.String(c.vcsIdentifier)
+			}
+			if c.vcsBranch != "" {
+				vcsRepo.Branch = tfe.String(c.vcsBranch)
+			}
+			if c.vcsOAuthTokenID != "" {
+				vcsRepo.OAuthTokenID = tfe.String(c.vcsOAuthTokenID)
+			}
+			if c.vcsIngressSubmodules != "" {
+				parsed, parseErr := parseBoolFlag(c.vcsIngressSubmodules, "vcs-ingress-submodules")
+				if parseErr != nil {
+					c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+					return 1
+				}
+				vcsRepo.IngressSubmodules = parsed
+			}
+			if c.vcsTagsRegex != "" {
+				vcsRepo.TagsRegex = tfe.String(c.vcsTagsRegex)
+			}
+			if c.vcsGHAInstallationID != "" {
+				vcsRepo.GHAInstallationID = tfe.String(c.vcsGHAInstallationID)
+			}
+			options.VCSRepo = vcsRepo
+		}
+
+		// Auto-destroy-at
+		if c.autoDestroyAt != "" {
+			t, parseErr := time.Parse(time.RFC3339, c.autoDestroyAt)
+			if parseErr != nil {
+				c.Ui.Error(fmt.Sprintf("Error: -auto-destroy-at must be a valid RFC3339 time: %s", parseErr))
+				return 1
+			}
+			options.AutoDestroyAt = tfe.NullableTime(t)
+		}
+
+		// Auto-destroy-activity-duration
+		if c.autoDestroyActivityDuration != "" {
+			options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(c.autoDestroyActivityDuration)
+		}
 	}
 
-	// Auto-destroy-at
-	if c.autoDestroyAt != "" {
-		t, parseErr := time.Parse(time.RFC3339, c.autoDestroyAt)
-		if parseErr != nil {
-			c.Ui.Error(fmt.Sprintf("Error: -auto-destroy-at must be a valid RFC3339 time: %s", parseErr))
-			return 1
-		}
-		options.AutoDestroyAt = tfe.NullableTime(t)
-	}
-
-	// Auto-destroy-activity-duration
-	if c.autoDestroyActivityDuration != "" {
-		options.AutoDestroyActivityDuration = jsonapi.NewNullableAttrWithValue(c.autoDestroyActivityDuration)
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "workspace",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	workspace, err := c.workspaceService(client).Create(client.Context(), c.organization, options)

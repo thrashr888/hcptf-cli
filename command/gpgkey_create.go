@@ -31,32 +31,22 @@ func (c *GPGKeyCreateCommand) Run(args []string) int {
 	}
 
 	// Validate required flags
-	if c.namespace == "" {
+	if c.Meta.JSONInput == "" && c.namespace == "" {
 		c.Ui.Error("Error: -namespace flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.asciiArmor == "" && c.file == "" {
+	if c.Meta.JSONInput == "" && c.asciiArmor == "" && c.file == "" {
 		c.Ui.Error("Error: either -ascii-armor or -file flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.asciiArmor != "" && c.file != "" {
+	if c.Meta.JSONInput == "" && c.asciiArmor != "" && c.file != "" {
 		c.Ui.Error("Error: cannot specify both -ascii-armor and -file flags")
 		c.Ui.Error(c.Help())
 		return 1
-	}
-
-	// Read from file if specified
-	if c.file != "" {
-		content, err := os.ReadFile(c.file)
-		if err != nil {
-			c.Ui.Error(fmt.Sprintf("Error reading file: %s", err))
-			return 1
-		}
-		c.asciiArmor = string(content)
 	}
 
 	// Get API client
@@ -67,9 +57,52 @@ func (c *GPGKeyCreateCommand) Run(args []string) int {
 	}
 
 	// Create GPG key
-	options := tfe.GPGKeyCreateOptions{
-		Namespace:  c.namespace,
-		AsciiArmor: c.asciiArmor,
+	options := tfe.GPGKeyCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		if c.file != "" {
+			content, err := os.ReadFile(c.file)
+			if err != nil {
+				c.Ui.Error(fmt.Sprintf("Error reading file: %s", err))
+				return 1
+			}
+			c.asciiArmor = string(content)
+		}
+		options = tfe.GPGKeyCreateOptions{
+			Namespace:  c.namespace,
+			AsciiArmor: c.asciiArmor,
+		}
+	}
+
+	if options.Namespace == "" || options.AsciiArmor == "" {
+		c.Ui.Error("Error: namespace and ASCII armor are required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(options.Namespace, "-namespace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(options.AsciiArmor, "-ascii-armor") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "create",
+			"resource": "gpgkey",
+			"options": map[string]interface{}{
+				"namespace":    options.Namespace,
+				"ascii_armor":  "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	key, err := c.gpgService(client).Create(client.Context(), tfe.PrivateRegistry, options)

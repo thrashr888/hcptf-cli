@@ -46,21 +46,14 @@ func (c *RunTaskCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.url == "" {
+	if c.Meta.JSONInput == "" && c.url == "" {
 		c.Ui.Error("Error: -url flag is required")
-		c.Ui.Error(c.Help())
-		return 1
-	}
-
-	// Validate category
-	if c.category != "task" && c.category != "advisory" {
-		c.Ui.Error("Error: -category must be 'task' or 'advisory'")
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -72,20 +65,75 @@ func (c *RunTaskCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Build create options
-	options := tfe.RunTaskCreateOptions{
-		Name:     c.name,
-		URL:      c.url,
-		Category: c.category,
-		Enabled:  tfe.Bool(c.enabled),
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.hmacKey != "" {
-		options.HMACKey = tfe.String(c.hmacKey)
+	options := tfe.RunTaskCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		if c.category != "task" && c.category != "advisory" {
+			c.Ui.Error("Error: -category must be 'task' or 'advisory'")
+			c.Ui.Error(c.Help())
+			return 1
+		}
+		options = tfe.RunTaskCreateOptions{
+			Name:     c.name,
+			URL:      c.url,
+			Category: c.category,
+			Enabled:  tfe.Bool(c.enabled),
+		}
+		if c.hmacKey != "" {
+			options.HMACKey = tfe.String(c.hmacKey)
+		}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if options.Name == "" || options.URL == "" {
+		c.Ui.Error("Error: -name and -url flags are required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(options.URL, "-url") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.HMACKey != nil && !c.Meta.ValidateString(*options.HMACKey, "-hmac-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "runtask",
+			"organization": c.organization,
+			"options": map[string]interface{}{
+				"name":        options.Name,
+				"url":         options.URL,
+				"category":    options.Category,
+				"enabled":     options.Enabled,
+				"description": options.Description,
+				"hmac_key":    "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	// Create run task

@@ -32,11 +32,26 @@ func (c *NotificationDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "delete",
+			"resource": "notification",
+			"id":       c.id,
+		})
+		return 0
 	}
 
 	// Confirm deletion unless force flag is set

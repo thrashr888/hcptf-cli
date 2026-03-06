@@ -19,6 +19,12 @@ type AccountCreateCommand struct {
 	format   string
 }
 
+type accountCreatePayload struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 // Run executes the account create command
 func (c *AccountCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("account create")
@@ -31,29 +37,55 @@ func (c *AccountCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	payload := accountCreatePayload{
+		Email:    c.email,
+		Username: c.username,
+		Password: c.password,
+	}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&payload); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	}
+
 	// Validate required flags
-	if c.email == "" {
+	if payload.Email == "" {
 		c.Ui.Error("Error: -email flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.username == "" {
+	if payload.Username == "" {
 		c.Ui.Error("Error: -username flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.password == "" {
+	if payload.Password == "" {
 		c.Ui.Error("Error: -password flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
 	// Validate password strength
-	if len(c.password) < 8 {
+	if len(payload.Password) < 8 {
 		c.Ui.Error("Error: password must be at least 8 characters")
 		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "create",
+			"resource": "account",
+			"options": map[string]interface{}{
+				"email":    payload.Email,
+				"username": payload.Username,
+				"password": "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	// Note: Account creation is an unauthenticated endpoint
@@ -66,7 +98,7 @@ func (c *AccountCreateCommand) Run(args []string) int {
 	}
 
 	// Create account using direct HTTP call
-	accountID, accountEmail, accountUsername, err := createAccountDirectly(address, c.email, c.username, c.password)
+	accountID, accountEmail, accountUsername, err := createAccountDirectly(address, payload.Email, payload.Username, payload.Password)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating account: %s", err))
 		c.Ui.Error("")

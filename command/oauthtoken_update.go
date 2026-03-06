@@ -33,8 +33,13 @@ func (c *OAuthTokenUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.sshKey == "" {
+	if c.Meta.JSONInput == "" && c.sshKey == "" {
 		c.Ui.Error("Error: -ssh-key flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if !c.Meta.ValidateID(c.id, "-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -47,8 +52,39 @@ func (c *OAuthTokenUpdateCommand) Run(args []string) int {
 	}
 
 	// Build update options
-	options := tfe.OAuthTokenUpdateOptions{
-		PrivateSSHKey: tfe.String(c.sshKey),
+	options := tfe.OAuthTokenUpdateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.OAuthTokenUpdateOptions{
+			PrivateSSHKey: tfe.String(c.sshKey),
+		}
+	}
+
+	if options.PrivateSSHKey == nil || *options.PrivateSSHKey == "" {
+		c.Ui.Error("Error: -ssh-key flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.PrivateSSHKey, "-ssh-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "oauthtoken",
+			"id":       c.id,
+			"options": map[string]interface{}{
+				"private_ssh_key": "(redacted)",
+			},
+		})
+		return 0
 	}
 
 	// Update OAuth token

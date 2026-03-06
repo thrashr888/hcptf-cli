@@ -33,6 +33,11 @@ func (c *SSHKeyUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -42,9 +47,31 @@ func (c *SSHKeyUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.SSHKeyUpdateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
+		}
+	}
 
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "sshkey",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update SSH key

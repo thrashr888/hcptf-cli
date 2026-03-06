@@ -42,6 +42,8 @@ func (c *VariableUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	usingJSONInput := c.Meta.JSONInput != ""
+
 	// Validate required flags
 	if c.organization == "" {
 		c.Ui.Error("Error: -organization flag is required")
@@ -61,6 +63,27 @@ func (c *VariableUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateName(c.key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !usingJSONInput && !c.Meta.ValidateString(c.description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -76,40 +99,59 @@ func (c *VariableUpdateCommand) Run(args []string) int {
 	}
 
 	// Build update options
-	options := tfe.VariableUpdateOptions{}
-
-	if c.key != "" {
-		options.Key = tfe.String(c.key)
-	}
-
-	if c.value != "" {
-		options.Value = tfe.String(c.value)
-	}
-
-	if c.sensitive != "" {
-		if c.sensitive == "true" {
-			options.Sensitive = tfe.Bool(true)
-		} else if c.sensitive == "false" {
-			options.Sensitive = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -sensitive must be 'true' or 'false'")
+	var options tfe.VariableUpdateOptions
+	if usingJSONInput {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
+		}
+	} else {
+		options = tfe.VariableUpdateOptions{}
+
+		if c.key != "" {
+			options.Key = tfe.String(c.key)
+		}
+
+		if c.value != "" {
+			options.Value = tfe.String(c.value)
+		}
+
+		if c.sensitive != "" {
+			if c.sensitive == "true" {
+				options.Sensitive = tfe.Bool(true)
+			} else if c.sensitive == "false" {
+				options.Sensitive = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -sensitive must be 'true' or 'false'")
+				return 1
+			}
+		}
+		if c.hcl != "" {
+			if c.hcl == "true" {
+				options.HCL = tfe.Bool(true)
+			} else if c.hcl == "false" {
+				options.HCL = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -hcl must be 'true' or 'false'")
+				return 1
+			}
+		}
+
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
 		}
 	}
 
-	if c.hcl != "" {
-		if c.hcl == "true" {
-			options.HCL = tfe.Bool(true)
-		} else if c.hcl == "false" {
-			options.HCL = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -hcl must be 'true' or 'false'")
-			return 1
-		}
-	}
-
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "update",
+			"resource":     "variable",
+			"workspace_id": ws.ID,
+			"id":           c.id,
+			"options":      options,
+		})
+		return 0
 	}
 
 	// Update variable

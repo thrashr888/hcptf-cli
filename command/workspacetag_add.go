@@ -38,6 +38,11 @@ func (c *WorkspaceTagAddCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.workspaceID, "-workspace-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -65,6 +70,17 @@ func (c *WorkspaceTagAddCommand) Run(args []string) int {
 	// Add tags to workspace
 	options := tfe.WorkspaceAddTagsOptions{
 		Tags: tagItems,
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "workspace-tag",
+			"workspace_id": c.workspaceID,
+			"options":      options,
+		})
+		return 0
 	}
 
 	err = client.Workspaces.AddTags(client.Context(), c.workspaceID, options)

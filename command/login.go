@@ -2,6 +2,8 @@ package command
 
 import (
 	"fmt"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/hashicorp/hcptf-cli/internal/config"
@@ -41,22 +43,51 @@ func (c *LoginCommand) Run(args []string) int {
 		return 0
 	}
 
-	c.Ui.Output(fmt.Sprintf("Authenticating to %s", c.hostname))
+	credsPath := config.GetTerraformCredentialsPath()
+
+	c.Ui.Output(fmt.Sprintf("hcptf will request an API token for %s using your browser.", c.hostname))
 	c.Ui.Output("")
-	c.Ui.Output("This command will store an API token in ~/.terraform.d/credentials.tfrc.json")
-	c.Ui.Output("The token will be shared with the Terraform CLI.")
+	c.Ui.Output("If login is successful, hcptf will store the token in plain text in")
+	c.Ui.Output("the following file for use by subsequent commands:")
+	c.Ui.Output(fmt.Sprintf("    %s", credsPath))
 	c.Ui.Output("")
 
-	// Get token from user
-	c.Ui.Output("Generate a token at:")
-	if c.hostname == "app.terraform.io" {
-		c.Ui.Output("  https://app.terraform.io/app/settings/tokens")
-	} else {
-		c.Ui.Output(fmt.Sprintf("  https://%s/app/settings/tokens", c.hostname))
+	confirm, err := c.Ui.Ask("Do you want to proceed?\n  Only 'yes' will be accepted to confirm.\n\n  Enter a value:")
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error reading input: %s", err))
+		return 1
 	}
+	if strings.TrimSpace(confirm) != "yes" {
+		c.Ui.Output("")
+		c.Ui.Output("Login cancelled.")
+		return 0
+	}
+
+	c.Ui.Output("")
+	c.Ui.Output(strings.Repeat("-", 81))
 	c.Ui.Output("")
 
-	token, err := c.Ui.Ask("Enter your API token:")
+	tokensURL := fmt.Sprintf("https://%s/app/settings/tokens?source=terraform-login", c.hostname)
+
+	c.Ui.Output(fmt.Sprintf("hcptf must now open a web browser to the tokens page for %s.", c.hostname))
+	c.Ui.Output("")
+	c.Ui.Output("If a browser does not open this automatically, open the following URL to proceed:")
+	c.Ui.Output(fmt.Sprintf("    %s", tokensURL))
+
+	// Attempt to open browser (best-effort)
+	openBrowser(tokensURL)
+
+	c.Ui.Output("")
+	c.Ui.Output(strings.Repeat("-", 81))
+	c.Ui.Output("")
+	c.Ui.Output("Generate a token using your browser, and copy-paste it into this prompt.")
+	c.Ui.Output("")
+	c.Ui.Output("hcptf will store the token in plain text in the following file")
+	c.Ui.Output("for use by subsequent commands:")
+	c.Ui.Output(fmt.Sprintf("    %s", credsPath))
+	c.Ui.Output("")
+
+	token, err := c.Ui.Ask(fmt.Sprintf("Token for %s:\n  Enter a value:", c.hostname))
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error reading token: %s", err))
 		return 1
@@ -68,11 +99,9 @@ func (c *LoginCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Validate token by making a test API call
-	c.Ui.Output("")
-	c.Ui.Output("Validating token...")
-
-	if err := config.ValidateToken(c.hostname, token); err != nil {
+	// Validate token and retrieve the username
+	username, err := config.ValidateTokenAndGetUser(c.hostname, token)
+	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error: token validation failed: %s", err))
 		c.Ui.Error("")
 		c.Ui.Error("Please verify:")
@@ -89,15 +118,49 @@ func (c *LoginCommand) Run(args []string) int {
 	}
 
 	c.Ui.Output("")
-	c.Ui.Output("Success! Credentials saved.")
+	c.Ui.Output(fmt.Sprintf("Retrieved token for user %s", username))
 	c.Ui.Output("")
-	c.Ui.Output(fmt.Sprintf("Token stored in %s", config.GetTerraformCredentialsPath()))
+	c.Ui.Output(strings.Repeat("-", 81))
 	c.Ui.Output("")
-	c.Ui.Output("You can now use hcptf commands without setting TFE_TOKEN or HCPTF_TOKEN.")
-	c.Ui.Output("The Terraform CLI will also use these credentials.")
+	c.Ui.Output(hcpTerraformBanner)
+	c.Ui.Output("")
 
 	return 0
 }
+
+// openBrowser attempts to open the given URL in the default browser.
+// It is best-effort and silently ignores errors.
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	default:
+		return
+	}
+	_ = cmd.Start()
+}
+
+const hcpTerraformBanner = `                                          -
+                                          -----                           -
+                                          ---------                      --
+                                          ---------  -                -----
+                                           ---------  ------        -------
+                                             -------  ---------  ----------
+                                                ----  ---------- ----------
+                                                  --  ---------- ----------
+   Welcome to HCP Terraform!                       -  ---------- -------
+                                                      ---  ----- ---
+   Documentation: terraform.io/docs/cloud             --------   -
+                                                      ----------
+                                                      ----------
+                                                       ---------
+                                                           -----
+                                                               -`
 
 // Help returns help text for the login command
 func (c *LoginCommand) Help() string {
@@ -106,8 +169,8 @@ Usage: hcptf login [options]
 
   Authenticate to HCP Terraform and save credentials.
 
-  This command will prompt you for an API token and store it in
-  ~/.terraform.d/credentials.tfrc.json, making it available to both
+  This command will open your browser to generate an API token, then store
+  it in ~/.terraform.d/credentials.tfrc.json, making it available to both
   hcptf and the Terraform CLI.
 
 Options:

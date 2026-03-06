@@ -50,6 +50,19 @@ func (c *VariableDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -64,6 +77,18 @@ func (c *VariableDeleteCommand) Run(args []string) int {
 		return 1
 	}
 
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "delete",
+			"resource":     "variable",
+			"organization": c.organization,
+			"workspace":    c.workspace,
+			"id":           c.id,
+		})
+		return 0
+	}
+
 	// Confirm deletion unless force flag is set
 	if !c.force {
 		confirmation, err := c.Ui.Ask(fmt.Sprintf("Are you sure you want to delete variable '%s'? (yes/no): ", c.id))
@@ -76,6 +101,18 @@ func (c *VariableDeleteCommand) Run(args []string) int {
 			c.Ui.Output("Deletion cancelled")
 			return 0
 		}
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "delete",
+			"resource": "variable",
+			"name":     c.id,
+			"workspace": c.workspace,
+			"organization": c.organization,
+		})
+		return 0
 	}
 
 	// Delete variable

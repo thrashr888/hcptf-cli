@@ -43,6 +43,11 @@ func (c *HYOKUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -52,33 +57,55 @@ func (c *HYOKUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.HYOKConfigurationsUpdateOptions{}
-
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
-	}
-
-	if c.kekID != "" {
-		options.KEKID = tfe.String(c.kekID)
-	}
-
-	if c.primary != "" {
-		if c.primary == "true" {
-			options.Primary = tfe.Bool(true)
-		} else if c.primary == "false" {
-			options.Primary = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -primary must be 'true' or 'false'")
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
+	} else {
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
+		}
+
+		if c.kekID != "" {
+			options.KEKID = tfe.String(c.kekID)
+		}
+
+		if c.primary != "" {
+			if c.primary == "true" {
+				options.Primary = tfe.Bool(true)
+			} else if c.primary == "false" {
+				options.Primary = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -primary must be 'true' or 'false'")
+				return 1
+			}
+		}
+
+		// Build KMS options if any were provided
+		if c.keyRegion != "" || c.keyLocation != "" || c.keyRingID != "" {
+			options.KMSOptions = &tfe.KMSOptions{
+				KeyRegion:   c.keyRegion,
+				KeyLocation: c.keyLocation,
+				KeyRingID:   c.keyRingID,
+			}
+		}
 	}
 
-	// Build KMS options if any were provided
-	if c.keyRegion != "" || c.keyLocation != "" || c.keyRingID != "" {
-		options.KMSOptions = &tfe.KMSOptions{
-			KeyRegion:   c.keyRegion,
-			KeyLocation: c.keyLocation,
-			KeyRingID:   c.keyRingID,
-		}
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "hyok",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update HYOK configuration

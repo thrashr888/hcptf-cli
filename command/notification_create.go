@@ -54,45 +54,45 @@ func (c *NotificationCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.destinationType == "" {
+	if c.Meta.JSONInput == "" && c.destinationType == "" {
 		c.Ui.Error("Error: -destination-type flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	// Validate destination type
-	var destType tfe.NotificationDestinationType
-	switch c.destinationType {
-	case "email":
-		destType = tfe.NotificationDestinationTypeEmail
-	case "slack":
-		destType = tfe.NotificationDestinationTypeSlack
-	case "generic":
-		destType = tfe.NotificationDestinationTypeGeneric
-	case "microsoft-teams":
-		destType = tfe.NotificationDestinationTypeMicrosoftTeams
-	default:
-		c.Ui.Error(fmt.Sprintf("Error: invalid destination-type '%s'. Must be one of: email, slack, generic, microsoft-teams", c.destinationType))
-		return 1
-	}
-
-	// Validate URL for non-email types
-	if destType != tfe.NotificationDestinationTypeEmail && c.url == "" {
-		c.Ui.Error("Error: -url flag is required for slack, generic, and microsoft-teams destination types")
-		c.Ui.Error(c.Help())
-		return 1
+	if c.Meta.JSONInput == "" {
+		switch c.destinationType {
+		case "email", "slack", "generic", "microsoft-teams":
+		default:
+			c.Ui.Error(fmt.Sprintf("Error: invalid destination-type '%s'. Must be one of: email, slack, generic, microsoft-teams", c.destinationType))
+			return 1
+		}
+		if c.destinationType != "email" && c.url == "" {
+			c.Ui.Error("Error: -url flag is required for slack, generic, and microsoft-teams destination types")
+			c.Ui.Error(c.Help())
+			return 1
+		}
 	}
 
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing client: %s", err))
+		return 1
+	}
+
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
 		return 1
 	}
 
@@ -103,42 +103,92 @@ func (c *NotificationCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Build create options
-	options := tfe.NotificationConfigurationCreateOptions{
-		Name:            tfe.String(c.name),
-		DestinationType: &destType,
-		Enabled:         tfe.Bool(c.enabled),
-		SubscribableChoice: &tfe.NotificationConfigurationSubscribableChoice{
-			Workspace: workspace,
-		},
-	}
-
-	if c.url != "" {
-		options.URL = tfe.String(c.url)
-	}
-
-	if c.token != "" {
-		options.Token = tfe.String(c.token)
-	}
-
-	// Parse triggers
-	if c.triggers != "" {
-		triggerList := strings.Split(c.triggers, ",")
-		var triggers []tfe.NotificationTriggerType
-		for _, t := range triggerList {
-			triggers = append(triggers, tfe.NotificationTriggerType(strings.TrimSpace(t)))
+	options := tfe.NotificationConfigurationCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
 		}
-		options.Triggers = triggers
+		} else {
+			var destType tfe.NotificationDestinationType
+			switch c.destinationType {
+			case "email":
+				destType = tfe.NotificationDestinationTypeEmail
+			case "slack":
+				destType = tfe.NotificationDestinationTypeSlack
+			case "generic":
+				destType = tfe.NotificationDestinationTypeGeneric
+			default:
+				destType = tfe.NotificationDestinationTypeMicrosoftTeams
+			}
+		options = tfe.NotificationConfigurationCreateOptions{
+			Name:            tfe.String(c.name),
+			DestinationType: &destType,
+			Enabled:         tfe.Bool(c.enabled),
+		}
+
+		if c.url != "" {
+			options.URL = tfe.String(c.url)
+		}
+		if c.token != "" {
+			options.Token = tfe.String(c.token)
+		}
+		if c.triggers != "" {
+			triggerList := strings.Split(c.triggers, ",")
+			var triggers []tfe.NotificationTriggerType
+			for _, t := range triggerList {
+				triggers = append(triggers, tfe.NotificationTriggerType(strings.TrimSpace(t)))
+			}
+			options.Triggers = triggers
+		}
+		if c.emailAddresses != "" && destType == tfe.NotificationDestinationTypeEmail {
+			emailList := strings.Split(c.emailAddresses, ",")
+			var emails []string
+			for _, e := range emailList {
+				emails = append(emails, strings.TrimSpace(e))
+			}
+			options.EmailAddresses = emails
+		}
+	}
+	options.SubscribableChoice = &tfe.NotificationConfigurationSubscribableChoice{Workspace: workspace}
+
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.DestinationType == nil {
+		c.Ui.Error("Error: -destination-type flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if *options.DestinationType != tfe.NotificationDestinationTypeEmail && (options.URL == nil || *options.URL == "") {
+		c.Ui.Error("Error: -url flag is required for slack, generic, and microsoft-teams destination types")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.URL != nil && !c.Meta.ValidateString(*options.URL, "-url") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Token != nil && !c.Meta.ValidateString(*options.Token, "-token") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	// Parse email addresses (TFE only)
-	if c.emailAddresses != "" && destType == tfe.NotificationDestinationTypeEmail {
-		emailList := strings.Split(c.emailAddresses, ",")
-		var emails []string
-		for _, e := range emailList {
-			emails = append(emails, strings.TrimSpace(e))
-		}
-		options.EmailAddresses = emails
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "notification",
+			"workspace_id": workspace.ID,
+			"options":      options,
+		})
+		return 0
 	}
 
 	// Create notification configuration
@@ -164,7 +214,7 @@ func (c *NotificationCreateCommand) Run(args []string) int {
 		"CreatedAt":       notification.CreatedAt,
 	}
 
-	if destType == tfe.NotificationDestinationTypeEmail && len(notification.EmailAddresses) > 0 {
+	if notification.DestinationType == tfe.NotificationDestinationTypeEmail && len(notification.EmailAddresses) > 0 {
 		data["EmailAddresses"] = notification.EmailAddresses
 	}
 

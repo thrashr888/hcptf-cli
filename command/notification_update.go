@@ -43,6 +43,11 @@ func (c *NotificationUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -52,48 +57,71 @@ func (c *NotificationUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.NotificationConfigurationUpdateOptions{}
-
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
-	}
-
-	if c.enabled != "" {
-		if c.enabled == "true" {
-			options.Enabled = tfe.Bool(true)
-		} else if c.enabled == "false" {
-			options.Enabled = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -enabled must be 'true' or 'false'")
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-	}
-
-	if c.url != "" {
-		options.URL = tfe.String(c.url)
-	}
-
-	if c.token != "" {
-		options.Token = tfe.String(c.token)
-	}
-
-	// Parse triggers
-	if c.triggers != "" {
-		triggerList := strings.Split(c.triggers, ",")
-		var triggers []tfe.NotificationTriggerType
-		for _, t := range triggerList {
-			triggers = append(triggers, tfe.NotificationTriggerType(strings.TrimSpace(t)))
+	} else {
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
 		}
-		options.Triggers = triggers
+		if c.enabled != "" {
+			if c.enabled == "true" {
+				options.Enabled = tfe.Bool(true)
+			} else if c.enabled == "false" {
+				options.Enabled = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -enabled must be 'true' or 'false'")
+				return 1
+			}
+		}
+		if c.url != "" {
+			options.URL = tfe.String(c.url)
+		}
+		if c.token != "" {
+			options.Token = tfe.String(c.token)
+		}
+		if c.triggers != "" {
+			triggerList := strings.Split(c.triggers, ",")
+			var triggers []tfe.NotificationTriggerType
+			for _, t := range triggerList {
+				triggers = append(triggers, tfe.NotificationTriggerType(strings.TrimSpace(t)))
+			}
+			options.Triggers = triggers
+		}
+		if c.emailAddresses != "" {
+			emailList := strings.Split(c.emailAddresses, ",")
+			var emails []string
+			for _, e := range emailList {
+				emails = append(emails, strings.TrimSpace(e))
+			}
+			options.EmailAddresses = emails
+		}
 	}
 
-	// Parse email addresses (TFE only)
-	if c.emailAddresses != "" {
-		emailList := strings.Split(c.emailAddresses, ",")
-		var emails []string
-		for _, e := range emailList {
-			emails = append(emails, strings.TrimSpace(e))
-		}
-		options.EmailAddresses = emails
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.URL != nil && !c.Meta.ValidateString(*options.URL, "-url") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Token != nil && !c.Meta.ValidateString(*options.Token, "-token") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "notification",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update notification configuration

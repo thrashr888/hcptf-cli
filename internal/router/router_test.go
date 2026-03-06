@@ -11,6 +11,7 @@ import (
 )
 
 var testCommandPaths = []string{
+	"schema",
 	"version",
 	"login",
 	"logout",

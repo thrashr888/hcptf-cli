@@ -42,8 +42,21 @@ func (c *GPGKeyUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.newNamespace == "" {
+	if c.Meta.JSONInput == "" && c.newNamespace == "" {
 		c.Ui.Error("Error: -new-namespace flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if !c.Meta.ValidateName(c.namespace, "-namespace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.newNamespace, "-new-namespace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(c.keyID, "-key-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -66,6 +79,35 @@ func (c *GPGKeyUpdateCommand) Run(args []string) int {
 		Namespace: c.newNamespace,
 	}
 
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	}
+	if options.Namespace == "" {
+		options.Namespace = c.newNamespace
+	}
+	if options.Namespace == "" {
+		c.Ui.Error("Error: -new-namespace flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "gpgkey",
+			"id": map[string]interface{}{
+				"namespace": c.namespace,
+				"key_id":    c.keyID,
+			},
+			"options": options,
+		})
+		return 0
+	}
+
 	key, err := c.gpgService(client).Update(client.Context(), keyID, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error updating GPG key: %s", err))
@@ -75,7 +117,7 @@ func (c *GPGKeyUpdateCommand) Run(args []string) int {
 	// Format output
 	formatter := c.Meta.NewFormatter(c.format)
 
-	c.Ui.Output(fmt.Sprintf("GPG key namespace updated from '%s' to '%s'", c.namespace, c.newNamespace))
+	c.Ui.Output(fmt.Sprintf("GPG key namespace updated from '%s' to '%s'", c.namespace, options.Namespace))
 
 	// Show key details
 	data := map[string]interface{}{

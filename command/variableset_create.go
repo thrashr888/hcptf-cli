@@ -40,7 +40,7 @@ func (c *VariableSetCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.name == "" {
+	if c.Meta.JSONInput == "" && c.name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -53,14 +53,51 @@ func (c *VariableSetCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create variable set
-	options := tfe.VariableSetCreateOptions{
-		Name:   tfe.String(c.name),
-		Global: tfe.Bool(c.global),
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	// Create variable set
+	options := tfe.VariableSetCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.VariableSetCreateOptions{
+			Name:   tfe.String(c.name),
+			Global: tfe.Bool(c.global),
+		}
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
+		}
+	}
+
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "variableset",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	variableSet, err := c.variableSetService(client).Create(client.Context(), c.organization, &options)

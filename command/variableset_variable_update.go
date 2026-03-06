@@ -49,6 +49,15 @@ func (c *VariableSetVariableUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.variableSetID, "-variableset-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateID(c.variableID, "-variable-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -58,41 +67,68 @@ func (c *VariableSetVariableUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.VariableSetVariableUpdateOptions{}
-
-	if c.key != "" {
-		options.Key = tfe.String(c.key)
-	}
-
-	if c.value != "" {
-		options.Value = tfe.String(c.value)
-	}
-
-	if c.sensitive != "" {
-		if c.sensitive == "true" {
-			options.Sensitive = tfe.Bool(true)
-		} else if c.sensitive == "false" {
-			options.Sensitive = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -sensitive must be 'true' or 'false'")
-			c.Ui.Error(c.Help())
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
+		}
+	} else {
+		if c.key != "" {
+			options.Key = tfe.String(c.key)
+		}
+
+		if c.value != "" {
+			options.Value = tfe.String(c.value)
+		}
+
+		if c.sensitive != "" {
+			if c.sensitive == "true" {
+				options.Sensitive = tfe.Bool(true)
+			} else if c.sensitive == "false" {
+				options.Sensitive = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -sensitive must be 'true' or 'false'")
+				c.Ui.Error(c.Help())
+				return 1
+			}
+		}
+
+		if c.hcl != "" {
+			if c.hcl == "true" {
+				options.HCL = tfe.Bool(true)
+			} else if c.hcl == "false" {
+				options.HCL = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -hcl must be 'true' or 'false'")
+				c.Ui.Error(c.Help())
+				return 1
+			}
+		}
+
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
 		}
 	}
 
-	if c.hcl != "" {
-		if c.hcl == "true" {
-			options.HCL = tfe.Bool(true)
-		} else if c.hcl == "false" {
-			options.HCL = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -hcl must be 'true' or 'false'")
-			c.Ui.Error(c.Help())
-			return 1
-		}
+	if options.Key != nil && !c.Meta.ValidateName(*options.Key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":         "update",
+			"resource":       "variableset-variable",
+			"variableset_id": c.variableSetID,
+			"variable_id":    c.variableID,
+			"options":        options,
+		})
+		return 0
 	}
 
 	// Update variable

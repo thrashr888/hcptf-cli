@@ -26,14 +26,27 @@ func (c *OrganizationCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	var options tfe.OrganizationCreateOptions
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.OrganizationCreateOptions{
+			Name:  tfe.String(c.name),
+			Email: tfe.String(c.email),
+		}
+	}
+
 	// Validate required flags
-	if c.name == "" {
+	if options.Name == nil || *options.Name == "" {
 		c.Ui.Error("Error: -name flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.email == "" {
+	if options.Email == nil || *options.Email == "" {
 		c.Ui.Error("Error: -email flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -46,10 +59,23 @@ func (c *OrganizationCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create organization
-	options := tfe.OrganizationCreateOptions{
-		Name:  tfe.String(c.name),
-		Email: tfe.String(c.email),
+	if !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.Email, "-email") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "create",
+			"resource": "organization",
+			"options":  options,
+		})
+		return 0
 	}
 
 	org, err := client.Organizations.Create(client.Context(), options)

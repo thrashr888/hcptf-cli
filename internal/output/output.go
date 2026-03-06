@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 // Format represents the output format
@@ -25,9 +26,11 @@ const (
 
 // Formatter handles output formatting
 type Formatter struct {
-	format Format
-	out    io.Writer
-	err    io.Writer
+	format     Format
+	out        io.Writer
+	err        io.Writer
+	fields     []string
+	fieldIndex map[string]int
 }
 
 // NewFormatter creates a new output formatter
@@ -51,22 +54,81 @@ func NewFormatterWithWriters(format string, out io.Writer, err io.Writer) *Forma
 	}
 
 	return &Formatter{
-		format: f,
-		out:    out,
-		err:    err,
+		format:     f,
+		out:        out,
+		err:        err,
+		fieldIndex: map[string]int{},
 	}
+}
+
+// SetFields sets output field filtering by key/header name.
+func (f *Formatter) SetFields(fields []string) {
+	f.fields = fields
+	f.fieldIndex = make(map[string]int, len(fields))
+	for i, field := range fields {
+		f.fieldIndex[field] = i
+	}
+}
+
+func (f *Formatter) selectedHeaders(headers []string) ([]int, []string) {
+	if len(f.fields) == 0 {
+		indexes := make([]int, len(headers))
+		for i := range headers {
+			indexes[i] = i
+		}
+		return indexes, headers
+	}
+
+	indexes := make([]int, 0, len(headers))
+	selected := make([]string, 0, len(headers))
+	for i, h := range headers {
+		if _, ok := f.fieldIndex[h]; ok {
+			indexes = append(indexes, i)
+			selected = append(selected, h)
+		}
+	}
+	return indexes, selected
+}
+
+// filterRow keeps only columns in selected indexes.
+func (f *Formatter) filterRow(row []string, indexes []int) []string {
+	result := make([]string, 0, len(indexes))
+	for _, idx := range indexes {
+		if idx < len(row) {
+			result = append(result, row[idx])
+		} else {
+			result = append(result, "")
+		}
+	}
+	return result
+}
+
+// filterMap keeps only requested keys.
+func (f *Formatter) filterMap(data map[string]interface{}) map[string]interface{} {
+	if len(f.fields) == 0 {
+		return data
+	}
+
+	filtered := make(map[string]interface{}, len(data))
+	for _, field := range f.fields {
+		if val, ok := data[field]; ok {
+			filtered[field] = val
+		}
+	}
+	return filtered
 }
 
 // Table outputs data in table format
 func (f *Formatter) Table(headers []string, rows [][]string) {
 	if f.format == FormatJSON {
 		// Convert table to JSON
+		filteredHeadersIdx, filteredHeaders := f.selectedHeaders(headers)
 		var data []map[string]string
 		for _, row := range rows {
 			item := make(map[string]string)
-			for i, header := range headers {
+			for j, i := range filteredHeadersIdx {
 				if i < len(row) {
-					item[header] = row[i]
+					item[filteredHeaders[j]] = row[i]
 				}
 			}
 			data = append(data, item)
@@ -75,11 +137,15 @@ func (f *Formatter) Table(headers []string, rows [][]string) {
 		return
 	}
 
-	// Table format with tablewriter
-	table := tablewriter.NewWriter(f.out)
-	table.Header(headers)
+	indexes, filteredHeaders := f.selectedHeaders(headers)
+	if len(filteredHeaders) == 0 {
+		return
+	}
+
+	table := tablewriter.NewTable(f.out, tablewriter.WithHeaderAutoFormat(tw.Off))
+	table.Header(filteredHeaders)
 	for _, row := range rows {
-		table.Append(row)
+		table.Append(f.filterRow(row, indexes))
 	}
 	table.Render()
 }
@@ -88,12 +154,13 @@ func (f *Formatter) Table(headers []string, rows [][]string) {
 // but uses full (untruncated) values for JSON output.
 func (f *Formatter) TableWithFullRows(headers []string, displayRows [][]string, fullRows [][]string) {
 	if f.format == FormatJSON {
+		filteredHeadersIdx, filteredHeaders := f.selectedHeaders(headers)
 		var data []map[string]string
 		for _, row := range fullRows {
 			item := make(map[string]string)
-			for i, header := range headers {
+			for j, i := range filteredHeadersIdx {
 				if i < len(row) {
-					item[header] = row[i]
+					item[filteredHeaders[j]] = row[i]
 				}
 			}
 			data = append(data, item)
@@ -127,24 +194,36 @@ func (f *Formatter) JSON(data interface{}) {
 // KeyValue outputs key-value pairs
 func (f *Formatter) KeyValue(data map[string]interface{}) {
 	if f.format == FormatJSON {
-		f.JSON(data)
+		f.JSON(f.filterMap(data))
 		return
 	}
 
-	// Table format - print as aligned key-value pairs
+	filtered := f.filterMap(data)
+	var keys []string
+	if len(f.fields) > 0 {
+		for _, field := range f.fields {
+			if _, ok := filtered[field]; ok {
+				keys = append(keys, field)
+			}
+		}
+	} else {
+		keys = make([]string, 0, len(filtered))
+		for k := range filtered {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+	}
+
 	var maxKeyLen int
-	keys := make([]string, 0, len(data))
-	for k := range data {
-		keys = append(keys, k)
+	for _, k := range keys {
 		if len(k) > maxKeyLen {
 			maxKeyLen = len(k)
 		}
 	}
-	sort.Strings(keys)
 
 	for _, k := range keys {
 		padding := strings.Repeat(" ", maxKeyLen-len(k))
-		fmt.Fprintf(f.out, "%s:%s %s\n", k, padding, formatValue(data[k]))
+		fmt.Fprintf(f.out, "%s:%s %s\n", k, padding, formatValue(filtered[k]))
 	}
 }
 

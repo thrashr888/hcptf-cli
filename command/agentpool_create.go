@@ -44,6 +44,15 @@ func (c *AgentPoolCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if c.Meta.JSONInput == "" && !c.Meta.ValidateName(c.name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -52,9 +61,34 @@ func (c *AgentPoolCreateCommand) Run(args []string) int {
 	}
 
 	// Create agent pool
-	options := tfe.AgentPoolCreateOptions{
-		Name:               tfe.String(c.name),
-		OrganizationScoped: tfe.Bool(c.organizationScoped),
+	options := tfe.AgentPoolCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.AgentPoolCreateOptions{
+			Name:               tfe.String(c.name),
+			OrganizationScoped: tfe.Bool(c.organizationScoped),
+		}
+	}
+
+	if options.Name == nil || *options.Name == "" {
+		c.Ui.Error("Error: -name flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "agentpool",
+			"organization": c.organization,
+			"options":      options,
+		})
+		return 0
 	}
 
 	agentPool, err := c.agentPoolService(client).Create(client.Context(), c.organization, options)

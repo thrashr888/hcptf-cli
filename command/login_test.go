@@ -158,6 +158,29 @@ func TestLoginShowTokenMissing(t *testing.T) {
 	}
 }
 
+func TestLoginConfirmationRejected(t *testing.T) {
+	ui := cli.NewMockUi()
+	ui.InputReader = strings.NewReader("no\n")
+	cmd := &LoginCommand{Meta: newTestMeta(ui)}
+
+	got := cmd.Run([]string{})
+	if got != 0 {
+		t.Fatalf("expected exit 0 on cancellation, got %d", got)
+	}
+	if !strings.Contains(ui.OutputWriter.String(), "Login cancelled") {
+		t.Fatalf("expected cancellation message, got %q", ui.OutputWriter.String())
+	}
+}
+
+func TestLoginBannerContent(t *testing.T) {
+	if !strings.Contains(hcpTerraformBanner, "Welcome to HCP Terraform!") {
+		t.Error("banner should contain welcome message")
+	}
+	if !strings.Contains(hcpTerraformBanner, "terraform.io/docs/cloud") {
+		t.Error("banner should contain documentation link")
+	}
+}
+
 func ensureDir(path string) error {
 	return os.MkdirAll(path, 0o700)
 }

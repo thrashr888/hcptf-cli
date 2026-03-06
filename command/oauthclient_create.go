@@ -52,25 +52,25 @@ func (c *OAuthClientCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.serviceProvider == "" {
+	if c.Meta.JSONInput == "" && c.serviceProvider == "" {
 		c.Ui.Error("Error: -service-provider flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.httpURL == "" {
+	if c.Meta.JSONInput == "" && c.httpURL == "" {
 		c.Ui.Error("Error: -http-url flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.apiURL == "" {
+	if c.Meta.JSONInput == "" && c.apiURL == "" {
 		c.Ui.Error("Error: -api-url flag is required")
 		c.Ui.Error(c.Help())
 		return 1
 	}
 
-	if c.oauthTokenString == "" {
+	if c.Meta.JSONInput == "" && c.oauthTokenString == "" {
 		c.Ui.Error("Error: -oauth-token-string flag is required")
 		c.Ui.Error(c.Help())
 		return 1
@@ -84,43 +84,87 @@ func (c *OAuthClientCreateCommand) Run(args []string) int {
 	}
 
 	// Build create options
-	sp := tfe.ServiceProviderType(c.serviceProvider)
-	options := tfe.OAuthClientCreateOptions{
-		ServiceProvider: &sp,
-		HTTPURL:         tfe.String(c.httpURL),
-		APIURL:          tfe.String(c.apiURL),
-		OAuthToken:      tfe.String(c.oauthTokenString),
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
-	}
-
-	if c.key != "" {
-		options.Key = tfe.String(c.key)
-	}
-
-	if c.secret != "" {
-		options.Secret = tfe.String(c.secret)
-	}
-
-	if c.privateKey != "" {
-		options.PrivateKey = tfe.String(c.privateKey)
-	}
-
-	if c.rsaPublicKey != "" {
-		options.RSAPublicKey = tfe.String(c.rsaPublicKey)
-	}
-
-	if c.organizationScoped != "" {
-		if c.organizationScoped == "true" {
-			options.OrganizationScoped = tfe.Bool(true)
-		} else if c.organizationScoped == "false" {
-			options.OrganizationScoped = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -organization-scoped must be 'true' or 'false'")
+	options := tfe.OAuthClientCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
+	} else {
+		sp := tfe.ServiceProviderType(c.serviceProvider)
+		options = tfe.OAuthClientCreateOptions{
+			ServiceProvider: &sp,
+			HTTPURL:         tfe.String(c.httpURL),
+			APIURL:          tfe.String(c.apiURL),
+			OAuthToken:      tfe.String(c.oauthTokenString),
+		}
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
+		}
+		if c.key != "" {
+			options.Key = tfe.String(c.key)
+		}
+		if c.secret != "" {
+			options.Secret = tfe.String(c.secret)
+		}
+		if c.privateKey != "" {
+			options.PrivateKey = tfe.String(c.privateKey)
+		}
+		if c.rsaPublicKey != "" {
+			options.RSAPublicKey = tfe.String(c.rsaPublicKey)
+		}
+		if c.organizationScoped != "" {
+			if c.organizationScoped == "true" {
+				options.OrganizationScoped = tfe.Bool(true)
+			} else if c.organizationScoped == "false" {
+				options.OrganizationScoped = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -organization-scoped must be 'true' or 'false'")
+				return 1
+			}
+		}
+	}
+
+	if options.ServiceProvider == nil || options.HTTPURL == nil || options.APIURL == nil || options.OAuthToken == nil ||
+		*options.HTTPURL == "" || *options.APIURL == "" || *options.OAuthToken == "" {
+		c.Ui.Error("Error: required OAuth client options are missing")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.HTTPURL, "-http-url") || !c.Meta.ValidateString(*options.APIURL, "-api-url") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":       "create",
+			"resource":     "oauthclient",
+			"organization": c.organization,
+			"options": map[string]interface{}{
+				"service_provider":    options.ServiceProvider,
+				"http_url":            options.HTTPURL,
+				"api_url":             options.APIURL,
+				"name":                options.Name,
+				"organization_scoped": options.OrganizationScoped,
+				"oauth_token":         "(redacted)",
+				"key":                 "(redacted)",
+				"secret":              "(redacted)",
+				"private_key":         "(redacted)",
+				"rsa_public_key":      options.RSAPublicKey,
+			},
+		})
+		return 0
 	}
 
 	// Create OAuth client

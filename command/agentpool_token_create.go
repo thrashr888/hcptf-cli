@@ -33,8 +33,13 @@ func (c *AgentPoolTokenCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	if c.description == "" {
+	if c.Meta.JSONInput == "" && c.description == "" {
 		c.Ui.Error("Error: -description flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if !c.Meta.ValidateID(c.agentPoolID, "-agent-pool-id") {
 		c.Ui.Error(c.Help())
 		return 1
 	}
@@ -47,8 +52,37 @@ func (c *AgentPoolTokenCreateCommand) Run(args []string) int {
 	}
 
 	// Create agent token
-	options := tfe.AgentTokenCreateOptions{
-		Description: tfe.String(c.description),
+	options := tfe.AgentTokenCreateOptions{}
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		options = tfe.AgentTokenCreateOptions{
+			Description: tfe.String(c.description),
+		}
+	}
+
+	if options.Description == nil || *options.Description == "" {
+		c.Ui.Error("Error: -description flag is required")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":        "create",
+			"resource":      "agentpool-token",
+			"agent_pool_id": c.agentPoolID,
+			"options":       options,
+		})
+		return 0
 	}
 
 	agentToken, err := client.AgentTokens.Create(client.Context(), c.agentPoolID, options)

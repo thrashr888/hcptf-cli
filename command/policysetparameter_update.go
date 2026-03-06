@@ -53,8 +53,17 @@ func (c *PolicySetParameterUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.policySetID, "-policy-set-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateID(c.parameterID, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// At least one field must be provided for update
-	if c.key == "" && c.value == "" && c.sensitive == nil {
+	if c.Meta.JSONInput == "" && c.key == "" && c.value == "" && c.sensitive == nil {
 		c.Ui.Error("Error: At least one of -key, -value, or -sensitive must be provided")
 		c.Ui.Error(c.Help())
 		return 1
@@ -69,17 +78,42 @@ func (c *PolicySetParameterUpdateCommand) Run(args []string) int {
 
 	// Update policy set parameter
 	options := tfe.PolicySetParameterUpdateOptions{}
-
-	if c.key != "" {
-		options.Key = tfe.String(c.key)
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
+			return 1
+		}
+	} else {
+		if c.key != "" {
+			options.Key = tfe.String(c.key)
+		}
+		if c.value != "" {
+			options.Value = tfe.String(c.value)
+		}
+		if c.sensitive != nil {
+			options.Sensitive = tfe.Bool(*c.sensitive)
+		}
 	}
 
-	if c.value != "" {
-		options.Value = tfe.String(c.value)
+	if options.Key != nil && !c.Meta.ValidateName(*options.Key, "-key") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if options.Value != nil && !c.Meta.ValidateString(*options.Value, "-value") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
 
-	if c.sensitive != nil {
-		options.Sensitive = tfe.Bool(*c.sensitive)
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":        "update",
+			"resource":      "policyset-parameter",
+			"policy_set_id": c.policySetID,
+			"id":            c.parameterID,
+			"options":       options,
+		})
+		return 0
 	}
 
 	parameter, err := client.PolicySetParameters.Update(client.Context(), c.policySetID, c.parameterID, options)

@@ -8,6 +8,12 @@ import (
 // Commands returns the mapping of CLI commands
 func Commands(meta *Meta) map[string]cli.CommandFactory {
 	commands := map[string]cli.CommandFactory{
+		"schema": func() (cli.Command, error) {
+			return &SchemaCommand{
+				Meta: *meta,
+			}, nil
+		},
+
 		"version": func() (cli.Command, error) {
 			return &VersionCommand{
 				Meta: *meta,

@@ -45,6 +45,11 @@ func (c *PolicySetUpdateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateID(c.id, "-id") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -54,46 +59,72 @@ func (c *PolicySetUpdateCommand) Run(args []string) int {
 
 	// Build update options
 	options := tfe.PolicySetUpdateOptions{}
-
-	if c.name != "" {
-		options.Name = tfe.String(c.name)
-	}
-
-	if c.description != "" {
-		options.Description = tfe.String(c.description)
-	}
-
-	if c.global != "" {
-		if c.global == "true" {
-			options.Global = tfe.Bool(true)
-		} else if c.global == "false" {
-			options.Global = tfe.Bool(false)
-		} else {
-			c.Ui.Error("Error: -global must be 'true' or 'false'")
+	if c.Meta.JSONInput != "" {
+		if err := c.Meta.ParseJSONInput(&options); err != nil {
+			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-	}
-	if c.overridable != "" {
-		overridable, parseErr := parseBoolFlag(c.overridable, "overridable")
-		if parseErr != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
-			return 1
+	} else {
+		if c.name != "" {
+			options.Name = tfe.String(c.name)
 		}
-		options.Overridable = overridable
-	}
-	if c.agentEnabled != "" {
-		agentEnabled, parseErr := parseBoolFlag(c.agentEnabled, "agent-enabled")
-		if parseErr != nil {
-			c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
-			return 1
+
+		if c.description != "" {
+			options.Description = tfe.String(c.description)
 		}
-		options.AgentEnabled = agentEnabled
+
+		if c.global != "" {
+			if c.global == "true" {
+				options.Global = tfe.Bool(true)
+			} else if c.global == "false" {
+				options.Global = tfe.Bool(false)
+			} else {
+				c.Ui.Error("Error: -global must be 'true' or 'false'")
+				return 1
+			}
+		}
+		if c.overridable != "" {
+			overridable, parseErr := parseBoolFlag(c.overridable, "overridable")
+			if parseErr != nil {
+				c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+				return 1
+			}
+			options.Overridable = overridable
+		}
+		if c.agentEnabled != "" {
+			agentEnabled, parseErr := parseBoolFlag(c.agentEnabled, "agent-enabled")
+			if parseErr != nil {
+				c.Ui.Error(fmt.Sprintf("Error: %s", parseErr))
+				return 1
+			}
+			options.AgentEnabled = agentEnabled
+		}
+		if c.toolVersion != "" {
+			options.PolicyToolVersion = tfe.String(c.toolVersion)
+		}
+		if c.policiesPath != "" {
+			options.PoliciesPath = tfe.String(c.policiesPath)
+		}
 	}
-	if c.toolVersion != "" {
-		options.PolicyToolVersion = tfe.String(c.toolVersion)
+
+	if options.Name != nil && !c.Meta.ValidateName(*options.Name, "-name") {
+		c.Ui.Error(c.Help())
+		return 1
 	}
-	if c.policiesPath != "" {
-		options.PoliciesPath = tfe.String(c.policiesPath)
+	if options.Description != nil && !c.Meta.ValidateString(*options.Description, "-description") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":   "update",
+			"resource": "policyset",
+			"id":       c.id,
+			"options":  options,
+		})
+		return 0
 	}
 
 	// Update policy set

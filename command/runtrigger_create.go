@@ -51,6 +51,19 @@ func (c *RunTriggerCreateCommand) Run(args []string) int {
 		return 1
 	}
 
+	if !c.Meta.ValidateName(c.organization, "-organization") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.workspace, "-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+	if !c.Meta.ValidateName(c.sourceWorkspace, "-source-workspace") {
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	// Get API client
 	client, err := c.Meta.Client()
 	if err != nil {
@@ -72,12 +85,27 @@ func (c *RunTriggerCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	// Create run trigger
-	runTrigger, err := c.runTriggerService(client).Create(client.Context(), targetWs.ID, tfe.RunTriggerCreateOptions{
+	options := tfe.RunTriggerCreateOptions{
 		Sourceable: &tfe.Workspace{
 			ID: sourceWs.ID,
 		},
-	})
+	}
+
+	if c.Meta.DryRun {
+		formatter := c.Meta.NewFormatter("json")
+		formatter.JSON(map[string]interface{}{
+			"action":              "create",
+			"resource":            "runtrigger",
+			"workspace_id":        targetWs.ID,
+			"source_workspace":    c.sourceWorkspace,
+			"source_workspace_id": sourceWs.ID,
+			"options":             options,
+		})
+		return 0
+	}
+
+	// Create run trigger
+	runTrigger, err := c.runTriggerService(client).Create(client.Context(), targetWs.ID, options)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating run trigger: %s", err))
 		return 1
