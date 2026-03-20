@@ -35,7 +35,7 @@ jobs:
     needs: goreleaser
     runs-on: ubuntu-latest
     steps:
-      - name: Download SHA256SUMS and compute sums
+      - name: Download SHA256SUMS
         id: sha
         env:
           TAG_NAME: ${{ github.ref_name }}
@@ -46,63 +46,50 @@ jobs:
           echo "darwin_amd64=$(grep darwin_amd64 SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "linux_arm64=$(grep linux_arm64 SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "linux_amd64=$(grep linux_amd64 SHA256SUMS | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Update Homebrew formula
+        uses: thrashr888/homebrew-tap@main
+        with:
+          formula: hcptf
+          tag: ${{ github.ref_name }}
+          tap-token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          darwin-arm64-sha256: ${{ steps.sha.outputs.darwin_arm64 }}
+          darwin-amd64-sha256: ${{ steps.sha.outputs.darwin_amd64 }}
+          linux-arm64-sha256: ${{ steps.sha.outputs.linux_arm64 }}
+          linux-amd64-sha256: ${{ steps.sha.outputs.linux_amd64 }}
+          template: |
+            class Hcptf < Formula
+              desc "CLI for HCP Terraform with full API coverage"
+              homepage "https://github.com/thrashr888/hcptf-cli"
+              version "${VERSION}"
+              license "MIT"
 
-      - name: Generate and push Homebrew formula
-        env:
-          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          TAG_NAME: ${{ github.ref_name }}
-          SHA_DARWIN_ARM64: ${{ steps.sha.outputs.darwin_arm64 }}
-          SHA_DARWIN_AMD64: ${{ steps.sha.outputs.darwin_amd64 }}
-          SHA_LINUX_ARM64: ${{ steps.sha.outputs.linux_arm64 }}
-          SHA_LINUX_AMD64: ${{ steps.sha.outputs.linux_amd64 }}
-        run: |
-          VERSION="${TAG_NAME#v}"
-
-          cat > hcptf.rb << FORMULA
-          class Hcptf < Formula
-            desc "CLI for HCP Terraform with full API coverage"
-            homepage "https://github.com/thrashr888/hcptf-cli"
-            version "${VERSION}"
-            license "MIT"
-
-            on_macos do
-              on_arm do
-                url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG_NAME}/hcptf-cli_${VERSION}_darwin_arm64.tar.gz"
-                sha256 "${SHA_DARWIN_ARM64}"
+              on_macos do
+                on_arm do
+                  url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG}/hcptf-cli_${VERSION}_darwin_arm64.tar.gz"
+                  sha256 "${SHA_DARWIN_ARM64}"
+                end
+                on_intel do
+                  url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG}/hcptf-cli_${VERSION}_darwin_amd64.tar.gz"
+                  sha256 "${SHA_DARWIN_AMD64}"
+                end
               end
-              on_intel do
-                url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG_NAME}/hcptf-cli_${VERSION}_darwin_amd64.tar.gz"
-                sha256 "${SHA_DARWIN_AMD64}"
+
+              on_linux do
+                on_arm do
+                  url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG}/hcptf-cli_${VERSION}_linux_arm64.tar.gz"
+                  sha256 "${SHA_LINUX_ARM64}"
+                end
+                on_intel do
+                  url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG}/hcptf-cli_${VERSION}_linux_amd64.tar.gz"
+                  sha256 "${SHA_LINUX_AMD64}"
+                end
+              end
+
+              def install
+                bin.install "hcptf"
+              end
+
+              test do
+                assert_match "hcptf", shell_output("#{bin}/hcptf --help")
               end
             end
-
-            on_linux do
-              on_arm do
-                url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG_NAME}/hcptf-cli_${VERSION}_linux_arm64.tar.gz"
-                sha256 "${SHA_LINUX_ARM64}"
-              end
-              on_intel do
-                url "https://github.com/thrashr888/hcptf-cli/releases/download/${TAG_NAME}/hcptf-cli_${VERSION}_linux_amd64.tar.gz"
-                sha256 "${SHA_LINUX_AMD64}"
-              end
-            end
-
-            def install
-              bin.install "hcptf"
-            end
-
-            test do
-              assert_match "hcptf", shell_output("#{bin}/hcptf --help")
-            end
-          end
-          FORMULA
-
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/thrashr888/homebrew-tap.git" /tmp/homebrew-tap
-          mkdir -p /tmp/homebrew-tap/Formula
-          cp hcptf.rb /tmp/homebrew-tap/Formula/hcptf.rb
-          cd /tmp/homebrew-tap
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/hcptf.rb
-          git commit -m "Update hcptf to ${TAG_NAME}"
-          git push
