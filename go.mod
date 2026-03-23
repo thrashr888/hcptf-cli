@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/hashicorp/jsonapi v1.5.0
 	github.com/mitchellh/cli v1.1.5
-	github.com/olekukonko/tablewriter v1.1.3
+	github.com/olekukonko/tablewriter v1.1.4
 )
 
 require (
