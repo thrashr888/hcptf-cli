@@ -73,7 +73,7 @@ func (c *AssessmentResultListCommand) Run(args []string) int {
 		return 1
 	}
 
-	apiURL := fmt.Sprintf("%s/api/v2/workspaces/%s/assessment-results", client.GetAddress(), workspace.ID)
+	apiURL := fmt.Sprintf("%s/api/v2/workspaces/%s/current-assessment-result", client.GetAddress(), workspace.ID)
 	req, err := http.NewRequestWithContext(client.Context(), http.MethodGet, apiURL, nil)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating request: %s", err))
