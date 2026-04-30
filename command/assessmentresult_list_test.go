@@ -145,7 +145,7 @@ func TestAssessmentResultListRunNoResults(t *testing.T) {
 			_, _ = w.Write([]byte(`{"ok":true}`))
 		case "/api/v2/organizations/my-org/workspaces/my-workspace":
 			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
-		case "/api/v2/workspaces/ws-123/assessment-results":
+		case "/api/v2/workspaces/ws-123/current-assessment-result":
 			_, _ = w.Write([]byte(`{"data":[]}`))
 		default:
 			t.Fatalf("unexpected path: %s", r.URL.Path)
@@ -173,7 +173,7 @@ func TestAssessmentResultListRunHasResults(t *testing.T) {
 			_, _ = w.Write([]byte(`{"ok":true}`))
 		case "/api/v2/organizations/my-org/workspaces/my-workspace":
 			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
-		case "/api/v2/workspaces/ws-123/assessment-results":
+		case "/api/v2/workspaces/ws-123/current-assessment-result":
 			_, _ = w.Write([]byte(`{"data":[{"id":"ar-1","type":"assessment-results","attributes":{"drifted":true,"succeeded":false,"created-at":"2024-01-01T00:00:00Z","error-msg":"Drift detected"},{"id":"ar-2","type":"assessment-results","attributes":{"drifted":false,"succeeded":true,"created-at":"2024-02-01T00:00:00Z"}}]}`))
 		default:
 			t.Fatalf("unexpected path: %s", r.URL.Path)
@@ -203,7 +203,7 @@ func TestAssessmentResultListRunJSONOutput(t *testing.T) {
 			_, _ = w.Write([]byte(`{"ok":true}`))
 		case "/api/v2/organizations/my-org/workspaces/my-workspace":
 			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
-		case "/api/v2/workspaces/ws-123/assessment-results":
+		case "/api/v2/workspaces/ws-123/current-assessment-result":
 			_, _ = w.Write([]byte(`{"data":[{"id":"ar-1","type":"assessment-results","attributes":{"drifted":false,"succeeded":true,"created-at":"2024-01-01T00:00:00Z"}}]}`))
 		default:
 			t.Fatalf("unexpected path: %s", r.URL.Path)
@@ -237,7 +237,7 @@ func TestAssessmentResultListRunAPIError(t *testing.T) {
 			_, _ = w.Write([]byte(`{"ok":true}`))
 		case "/api/v2/organizations/my-org/workspaces/my-workspace":
 			_, _ = w.Write([]byte(`{"data":{"id":"ws-123","type":"workspaces","attributes":{"name":"my-workspace"}}}`))
-		case "/api/v2/workspaces/ws-123/assessment-results":
+		case "/api/v2/workspaces/ws-123/current-assessment-result":
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(`{"message":"backend error"}`))
 		default:
