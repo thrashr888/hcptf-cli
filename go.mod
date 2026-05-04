@@ -3,7 +3,7 @@ module github.com/hashicorp/hcptf-cli
 go 1.25.0
 
 require (
-	github.com/hashicorp/go-tfe v1.103.0
+	github.com/hashicorp/go-tfe v1.104.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/hashicorp/jsonapi v1.5.0
 	github.com/mitchellh/cli v1.1.5
