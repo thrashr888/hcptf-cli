@@ -48,6 +48,10 @@ type TerraformCredential struct {
 
 // Load loads the configuration from the default location or environment
 func Load() (*Config, error) {
+	if err := LoadDotEnv(); err != nil {
+		return nil, err
+	}
+
 	configPath := GetConfigPath()
 
 	var config Config

@@ -18,6 +18,51 @@ func writeFile(t *testing.T, path, content string) {
 	}
 }
 
+func chdir(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to change working directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("failed to restore working directory: %v", err)
+		}
+	})
+}
+
+func unsetEnv(t *testing.T, keys ...string) {
+	t.Helper()
+	previous := make(map[string]string, len(keys))
+	present := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		value, ok := os.LookupEnv(key)
+		if ok {
+			previous[key] = value
+			present[key] = true
+		}
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("failed to unset %s: %v", key, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, key := range keys {
+			var err error
+			if present[key] {
+				err = os.Setenv(key, previous[key])
+			} else {
+				err = os.Unsetenv(key)
+			}
+			if err != nil {
+				t.Fatalf("failed to restore %s: %v", key, err)
+			}
+		}
+	})
+}
+
 func TestLoadMergesConfigAndTerraformCredentials(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -79,6 +124,104 @@ func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
 
 	if len(cfg.Credentials) != 0 {
 		t.Fatalf("expected no credentials, got %d", len(cfg.Credentials))
+	}
+}
+
+func TestLoadDotEnvLoadsDefaultFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN", "HCPTF_TOKEN", "TFE_ADDRESS", "HCPTF_ADDRESS")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), `
+# Terraform Enterprise connection
+TFE_TOKEN=dotenv-token
+TFE_ADDRESS=https://tfe.example.com
+`)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "dotenv-token" {
+		t.Fatalf("expected TFE_TOKEN from .env, got %q", got)
+	}
+	if got := os.Getenv("TFE_ADDRESS"); got != "https://tfe.example.com" {
+		t.Fatalf("expected TFE_ADDRESS from .env, got %q", got)
+	}
+}
+
+func TestLoadDotEnvDoesNotOverrideExistingEnvironment(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_TOKEN=dotenv-token\n")
+	t.Setenv("TFE_TOKEN", "exported-token")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "exported-token" {
+		t.Fatalf("expected exported TFE_TOKEN to win, got %q", got)
+	}
+}
+
+func TestLoadDotEnvExplicitFileTakesPrecedenceOverDefaultFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_TOKEN=default-token\n")
+	explicitPath := filepath.Join(dir, "prod.env")
+	writeFile(t, explicitPath, "TFE_TOKEN=explicit-token\n")
+	t.Setenv(EnvFileVariable, explicitPath)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "explicit-token" {
+		t.Fatalf("expected explicit env file token to win, got %q", got)
+	}
+}
+
+func TestLoadDotEnvMissingDefaultFileIsIgnored(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+}
+
+func TestLoadDotEnvMissingExplicitFileReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	t.Setenv(EnvFileVariable, filepath.Join(dir, "missing.env"))
+
+	err := LoadDotEnv()
+	if err == nil {
+		t.Fatal("expected missing explicit env file to return error")
+	}
+	if !strings.Contains(err.Error(), "failed to load env file") {
+		t.Fatalf("expected env file error, got %v", err)
+	}
+}
+
+func TestLoadDotEnvMalformedFileReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	envPath := filepath.Join(dir, "bad.env")
+	writeFile(t, envPath, "not valid dotenv\n")
+	t.Setenv(EnvFileVariable, envPath)
+
+	err := LoadDotEnv()
+	if err == nil {
+		t.Fatal("expected malformed env file to return error")
+	}
+	if !strings.Contains(err.Error(), "failed to load env file") {
+		t.Fatalf("expected env file error, got %v", err)
 	}
 }
 

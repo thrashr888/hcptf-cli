@@ -16,10 +16,12 @@ The CLI checks for credentials in this order (first match wins):
 
 | Priority | Method | Best for |
 |----------|--------|----------|
-| 1 | `TFE_TOKEN` env var | CI/CD pipelines |
-| 2 | `HCPTF_TOKEN` env var | Separate hcptf credentials |
-| 3 | `~/.hcptfrc` config file | Multiple instances, custom defaults |
-| 4 | `~/.terraform.d/credentials.tfrc.json` | Shared with Terraform CLI |
+| 1 | Exported `TFE_TOKEN` env var | CI/CD pipelines |
+| 2 | Exported `HCPTF_TOKEN` env var | Separate hcptf credentials |
+| 3 | Explicit env file via `--env-file` or `HCPTF_ENV_FILE` | Local workflow switching |
+| 4 | Project-local `.env` file | Local development defaults |
+| 5 | `~/.hcptfrc` config file | Multiple instances, custom defaults |
+| 6 | `~/.terraform.d/credentials.tfrc.json` | Shared with Terraform CLI |
 
 ### Environment Variables
 
@@ -30,6 +32,42 @@ export TFE_TOKEN="your-token"
 # hcptf-specific - use when you want a different token than terraform
 export HCPTF_TOKEN="your-token"
 ```
+
+### Env Files
+
+`hcptf` can load Terraform Enterprise connection settings from a dotenv file.
+Exported environment variables still win over values in any env file.
+
+Project-local `.env`:
+
+```dotenv
+TFE_ADDRESS=https://app.terraform.io
+TFE_TOKEN=your-token
+```
+
+Workflow-specific file:
+
+```dotenv
+HCPTF_ADDRESS=https://tfe.example.com
+HCPTF_TOKEN=your-enterprise-token
+```
+
+Use the default `.env` automatically:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+hcptf whoami
+```
+
+Select an explicit file:
+
+```bash
+hcptf --env-file .env.tfe-prod whoami
+HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list -org=my-org
+```
+
+Never commit real env files. Use CI secret stores for pipeline credentials.
 
 ### Configuration File
 

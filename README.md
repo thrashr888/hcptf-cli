@@ -47,10 +47,12 @@ If you've already run `terraform login`, no setup is needed - `hcptf` reads thos
 
 Other authentication methods (checked in order):
 
-1. `TFE_TOKEN` environment variable
-2. `HCPTF_TOKEN` environment variable
-3. `~/.hcptfrc` configuration file (HCL format)
-4. `~/.terraform.d/credentials.tfrc.json`
+1. Exported `TFE_TOKEN` environment variable
+2. Exported `HCPTF_TOKEN` environment variable
+3. Explicit env file via `--env-file` or `HCPTF_ENV_FILE`
+4. Project-local `.env` file
+5. `~/.hcptfrc` configuration file (HCL format)
+6. `~/.terraform.d/credentials.tfrc.json`
 
 See [docs/AUTH_GUIDE.md](docs/AUTH_GUIDE.md) for details on CI/CD setup, multiple TFE instances, and troubleshooting.
 
@@ -75,6 +77,22 @@ export TFE_ADDRESS="https://tfe.example.com"    # Legacy support
 ```
 
 Note: `HCPTF_ADDRESS` takes precedence over `TFE_ADDRESS` for compatibility.
+
+For local workflows, copy `.env.example` to `.env` and keep the real file out of
+version control:
+
+```bash
+cp .env.example .env
+chmod 600 .env
+hcptf whoami
+```
+
+Select a workflow-specific file explicitly when needed:
+
+```bash
+hcptf --env-file .env.tfe-prod whoami
+HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list -org=my-org
+```
 
 ## Usage
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -61,6 +62,68 @@ func TestGetVersion_CurrentValues(t *testing.T) {
 
 	if Version == "" {
 		t.Error("Version global variable is empty")
+	}
+}
+
+func TestExtractEnvFileFlag(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       []string
+		expected    []string
+		expectedEnv string
+		expectErr   bool
+	}{
+		{
+			name:        "long flag with separate value",
+			input:       []string{"--env-file", ".env.prod", "whoami"},
+			expected:    []string{"whoami"},
+			expectedEnv: ".env.prod",
+		},
+		{
+			name:        "long flag with equals value",
+			input:       []string{"whoami", "--env-file=.env.prod"},
+			expected:    []string{"whoami"},
+			expectedEnv: ".env.prod",
+		},
+		{
+			name:        "single dash flag with separate value",
+			input:       []string{"-env-file", ".env.prod", "workspace", "list"},
+			expected:    []string{"workspace", "list"},
+			expectedEnv: ".env.prod",
+		},
+		{
+			name:      "missing value errors",
+			input:     []string{"--env-file"},
+			expectErr: true,
+		},
+		{
+			name:      "empty equals value errors",
+			input:     []string{"--env-file="},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Setenv("HCPTF_ENV_FILE", "")
+
+			got, err := extractEnvFileFlag(tt.input)
+			if tt.expectErr {
+				if err == nil {
+					t.Fatal("expected error but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.expected) {
+				t.Fatalf("extractEnvFileFlag(%v) = %v, want %v", tt.input, got, tt.expected)
+			}
+			if gotEnv := os.Getenv("HCPTF_ENV_FILE"); gotEnv != tt.expectedEnv {
+				t.Fatalf("expected HCPTF_ENV_FILE %q, got %q", tt.expectedEnv, gotEnv)
+			}
+		})
 	}
 }
 
