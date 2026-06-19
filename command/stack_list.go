@@ -18,8 +18,8 @@ type StackListCommand struct {
 // Run executes the stack list command
 func (c *StackListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("stack list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.project, "project", "", "Filter by project ID")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

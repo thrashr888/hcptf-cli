@@ -22,8 +22,8 @@ type RegistryModuleDeleteVersionCommand struct {
 // Run executes the registry module delete-version command
 func (c *RegistryModuleDeleteVersionCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("registrymodule delete-version")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Module name (required)")
 	flags.StringVar(&c.provider, "provider", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")

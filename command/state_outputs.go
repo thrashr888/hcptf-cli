@@ -16,8 +16,8 @@ type StateOutputsCommand struct {
 // Run executes the state outputs command
 func (c *StateOutputsCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("state outputs")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

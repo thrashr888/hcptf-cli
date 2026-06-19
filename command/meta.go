@@ -10,8 +10,8 @@ import (
 
 	"github.com/hashicorp/hcptf-cli/internal/client"
 	"github.com/hashicorp/hcptf-cli/internal/config"
-	"github.com/hashicorp/hcptf-cli/internal/validate"
 	"github.com/hashicorp/hcptf-cli/internal/output"
+	"github.com/hashicorp/hcptf-cli/internal/validate"
 	"github.com/mitchellh/cli"
 )
 
@@ -103,6 +103,15 @@ func (m *Meta) Config() (*config.Config, error) {
 
 	m.config, m.configErr = config.Load()
 	return m.config, m.configErr
+}
+
+// DefaultOrganization returns the configured organization, if one exists.
+func (m *Meta) DefaultOrganization() string {
+	cfg, err := m.Config()
+	if err != nil {
+		return ""
+	}
+	return cfg.DefaultOrganization
 }
 
 // FlagSet returns a FlagSet with common flags

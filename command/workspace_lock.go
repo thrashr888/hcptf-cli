@@ -27,8 +27,8 @@ type WorkspaceLockCommand struct {
 // Run executes the workspace lock command.
 func (c *WorkspaceLockCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspace lock")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.reason, "reason", "", "Reason for locking the workspace")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	tfe "github.com/hashicorp/go-tfe"
+	"github.com/hashicorp/hcptf-cli/internal/config"
 	"github.com/mitchellh/cli"
 )
 
@@ -64,6 +65,24 @@ func TestWorkspaceListCommandHandlesAPIError(t *testing.T) {
 
 	if out := ui.ErrorWriter.String(); !strings.Contains(out, "boom") {
 		t.Fatalf("expected error output, got %q", out)
+	}
+}
+
+func TestWorkspaceListCommandUsesDefaultOrganization(t *testing.T) {
+	ui := cli.NewMockUi()
+	svc := &mockWorkspaceService{
+		response: &tfe.WorkspaceList{Items: []*tfe.Workspace{}},
+	}
+	cmd := newWorkspaceListCommand(ui, svc)
+	cmd.Meta.config = &config.Config{DefaultOrganization: "default-org"}
+
+	code := cmd.Run(nil)
+	if code != 0 {
+		t.Fatalf("expected exit 0, got %d", code)
+	}
+
+	if svc.lastOrg != "default-org" {
+		t.Fatalf("expected organization default-org, got %s", svc.lastOrg)
 	}
 }
 

@@ -18,8 +18,8 @@ type AWSoidcCreateCommand struct {
 // Run executes the awsoidc create command
 func (c *AWSoidcCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("awsoidc create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.roleArn, "role-arn", "", "AWS IAM role ARN (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

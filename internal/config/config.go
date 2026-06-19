@@ -90,6 +90,10 @@ func Load() (*Config, error) {
 		}
 	}
 
+	if org := GetDefaultOrganizationEnv(); org != "" {
+		config.DefaultOrganization = org
+	}
+
 	// Also try to load credentials from Terraform CLI credentials file
 	tfCredsPath := GetTerraformCredentialsPath()
 	if _, err := os.Stat(tfCredsPath); err == nil {
@@ -155,6 +159,17 @@ func GetAddress() string {
 		return addr
 	}
 	return "https://app.terraform.io"
+}
+
+// GetDefaultOrganizationEnv returns the organization configured by environment.
+func GetDefaultOrganizationEnv() string {
+	if org := os.Getenv("TFE_ORG"); org != "" {
+		return org
+	}
+	if org := os.Getenv("HCPTF_ORG"); org != "" {
+		return org
+	}
+	return ""
 }
 
 // GetConfigPath returns the path to the configuration file

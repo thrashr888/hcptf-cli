@@ -29,8 +29,8 @@ type policyCreateJSONInput struct {
 // Run executes the policy create command
 func (c *PolicyCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policy create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Policy name (required)")
 	flags.StringVar(&c.description, "description", "", "Policy description")
 	flags.StringVar(&c.enforce, "enforce", "advisory", "Enforcement level: advisory, soft-mandatory, or hard-mandatory")

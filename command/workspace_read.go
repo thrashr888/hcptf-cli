@@ -26,8 +26,8 @@ type workspaceReaderWithOptions interface {
 // Run executes the workspace read command
 func (c *WorkspaceReadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspace read")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.include, "include", "", "Comma-separated related resources to include (e.g. project,current_run)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

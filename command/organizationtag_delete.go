@@ -18,8 +18,8 @@ type OrganizationTagDeleteCommand struct {
 // Run executes the organizationtag delete command
 func (c *OrganizationTagDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("organizationtag delete")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.id, "id", "", "Tag ID (required)")
 	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
 

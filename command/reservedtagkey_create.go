@@ -21,8 +21,8 @@ type ReservedTagKeyCreateCommand struct {
 // Run executes the reservedtagkey create command
 func (c *ReservedTagKeyCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("reservedtagkey create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.key, "key", "", "Tag key to reserve (required)")
 	flags.BoolVar(&c.disableOverrides, "disable-overrides", false, "Disable overriding inherited tags at workspace level")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

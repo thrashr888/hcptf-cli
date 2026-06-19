@@ -23,8 +23,8 @@ type RegistryProviderPlatformCreateCommand struct {
 // Run executes the registry provider platform create command
 func (c *RegistryProviderPlatformCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("registryproviderplatform create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")
 	flags.StringVar(&c.version, "version", "", "Version string (required)")

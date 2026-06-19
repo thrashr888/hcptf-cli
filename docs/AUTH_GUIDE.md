@@ -43,6 +43,7 @@ Project-local `.env`:
 ```dotenv
 TFE_ADDRESS=https://app.terraform.io
 TFE_TOKEN=your-token
+TFE_ORG=my-org
 ```
 
 Workflow-specific file:
@@ -50,6 +51,7 @@ Workflow-specific file:
 ```dotenv
 HCPTF_ADDRESS=https://tfe.example.com
 HCPTF_TOKEN=your-enterprise-token
+HCPTF_ORG=my-org
 ```
 
 Use the default `.env` automatically:
@@ -64,7 +66,7 @@ Select an explicit file:
 
 ```bash
 hcptf --env-file .env.tfe-prod whoami
-HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list -org=my-org
+HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list
 ```
 
 Never commit real env files. Use CI secret stores for pipeline credentials.

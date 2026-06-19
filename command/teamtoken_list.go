@@ -15,8 +15,8 @@ type TeamTokenListCommand struct {
 // Run executes the team token list command
 func (c *TeamTokenListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("teamtoken list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {

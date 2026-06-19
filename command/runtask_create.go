@@ -25,8 +25,8 @@ type RunTaskCreateCommand struct {
 // Run executes the run task create command
 func (c *RunTaskCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("runtask create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Run task name (required)")
 	flags.StringVar(&c.url, "url", "", "Run task URL (required)")
 	flags.StringVar(&c.hmacKey, "hmac-key", "", "HMAC key for request authentication (optional)")

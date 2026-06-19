@@ -22,8 +22,8 @@ type VariableSetCreateCommand struct {
 // Run executes the variable set create command
 func (c *VariableSetCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variableset create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Variable set name (required)")
 	flags.StringVar(&c.description, "description", "", "Variable set description")
 	flags.BoolVar(&c.global, "global", false, "Apply to all workspaces in the organization")

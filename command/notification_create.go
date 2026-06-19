@@ -25,8 +25,8 @@ type NotificationCreateCommand struct {
 // Run executes the notification create command
 func (c *NotificationCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("notification create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.name, "name", "", "Notification configuration name (required)")
 	flags.StringVar(&c.destinationType, "destination-type", "", "Destination type: email, slack, generic, microsoft-teams (required)")
@@ -109,18 +109,18 @@ func (c *NotificationCreateCommand) Run(args []string) int {
 			c.Ui.Error(fmt.Sprintf("Error parsing JSON input: %s", err))
 			return 1
 		}
-		} else {
-			var destType tfe.NotificationDestinationType
-			switch c.destinationType {
-			case "email":
-				destType = tfe.NotificationDestinationTypeEmail
-			case "slack":
-				destType = tfe.NotificationDestinationTypeSlack
-			case "generic":
-				destType = tfe.NotificationDestinationTypeGeneric
-			default:
-				destType = tfe.NotificationDestinationTypeMicrosoftTeams
-			}
+	} else {
+		var destType tfe.NotificationDestinationType
+		switch c.destinationType {
+		case "email":
+			destType = tfe.NotificationDestinationTypeEmail
+		case "slack":
+			destType = tfe.NotificationDestinationTypeSlack
+		case "generic":
+			destType = tfe.NotificationDestinationTypeGeneric
+		default:
+			destType = tfe.NotificationDestinationTypeMicrosoftTeams
+		}
 		options = tfe.NotificationConfigurationCreateOptions{
 			Name:            tfe.String(c.name),
 			DestinationType: &destType,

@@ -21,8 +21,8 @@ type VariableDeleteCommand struct {
 // Run executes the variable delete command
 func (c *VariableDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("variable delete")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.id, "id", "", "Variable ID (required)")
 	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
@@ -106,10 +106,10 @@ func (c *VariableDeleteCommand) Run(args []string) int {
 	if c.Meta.DryRun {
 		formatter := c.Meta.NewFormatter("json")
 		formatter.JSON(map[string]interface{}{
-			"action":   "delete",
-			"resource": "variable",
-			"name":     c.id,
-			"workspace": c.workspace,
+			"action":       "delete",
+			"resource":     "variable",
+			"name":         c.id,
+			"workspace":    c.workspace,
 			"organization": c.organization,
 		})
 		return 0

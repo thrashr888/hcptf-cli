@@ -20,8 +20,8 @@ type WorkspaceResourceListCommand struct {
 func (c *WorkspaceResourceListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspaceresource list")
 	flags.StringVar(&c.workspaceID, "workspace-id", "", "Workspace ID")
-	flags.StringVar(&c.organization, "organization", "", "Organization name")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

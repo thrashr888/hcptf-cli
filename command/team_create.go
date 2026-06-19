@@ -19,8 +19,8 @@ type TeamCreateCommand struct {
 // Run executes the team create command
 func (c *TeamCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("team create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Team name (required)")
 	flags.StringVar(&c.visibility, "visibility", "secret", "Team visibility: secret or organization (default: secret)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

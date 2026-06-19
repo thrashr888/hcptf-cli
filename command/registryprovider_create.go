@@ -21,8 +21,8 @@ type RegistryProviderCreateCommand struct {
 // Run executes the registry provider create command
 func (c *RegistryProviderCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("registryprovider create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")
 	flags.StringVar(&c.registryName, "registry-name", "private", "Registry name: public or private (default: private)")

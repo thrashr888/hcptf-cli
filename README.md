@@ -78,6 +78,12 @@ export TFE_ADDRESS="https://tfe.example.com"    # Legacy support
 
 Note: `HCPTF_ADDRESS` takes precedence over `TFE_ADDRESS` for compatibility.
 
+Set a default organization for commands that accept `-organization`/`-org`:
+
+```bash
+export TFE_ORG="my-org"
+```
+
 For local workflows, copy `.env.example` to `.env` and keep the real file out of
 version control:
 
@@ -91,7 +97,7 @@ Select a workflow-specific file explicitly when needed:
 
 ```bash
 hcptf --env-file .env.tfe-prod whoami
-HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list -org=my-org
+HCPTF_ENV_FILE=.env.tfe-dev hcptf workspace list
 ```
 
 ## Usage

@@ -21,8 +21,8 @@ type RunTaskAttachCommand struct {
 // Run executes the run task attach command
 func (c *RunTaskAttachCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("runtask attach")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.runTaskID, "runtask-id", "", "Run task ID (required)")
 	flags.StringVar(&c.enforcementLevel, "enforcement-level", "advisory", "Enforcement level: advisory or mandatory (default: advisory)")

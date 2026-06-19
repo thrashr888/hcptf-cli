@@ -64,7 +64,9 @@ func unsetEnv(t *testing.T, keys ...string) {
 }
 
 func TestLoadMergesConfigAndTerraformCredentials(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
 	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	configContent := `
@@ -110,7 +112,9 @@ output_format = "json"
 }
 
 func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
 	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	cfg, err := Load()
@@ -124,6 +128,45 @@ func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
 
 	if len(cfg.Credentials) != 0 {
 		t.Fatalf("expected no credentials, got %d", len(cfg.Credentials))
+	}
+}
+
+func TestLoadUsesDefaultOrganizationFromDotEnv(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
+	home := t.TempDir()
+	dir := t.TempDir()
+	chdir(t, dir)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_ORG=dotenv-org\n")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.DefaultOrganization != "dotenv-org" {
+		t.Fatalf("expected default organization dotenv-org, got %s", cfg.DefaultOrganization)
+	}
+}
+
+func TestLoadEnvironmentOrganizationOverridesConfig(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
+	home := t.TempDir()
+	chdir(t, t.TempDir())
+	t.Setenv("HOME", home)
+	t.Setenv("TFE_ORG", "env-org")
+
+	writeFile(t, filepath.Join(home, ".hcptfrc"), `
+default_organization = "config-org"
+`)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.DefaultOrganization != "env-org" {
+		t.Fatalf("expected default organization env-org, got %s", cfg.DefaultOrganization)
 	}
 }
 
@@ -226,7 +269,9 @@ func TestLoadDotEnvMalformedFileReturnsError(t *testing.T) {
 }
 
 func TestLoadInvalidTerraformCredentialsReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable)
 	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	writeFile(t, filepath.Join(home, ".terraform.d", "credentials.tfrc.json"), `{"credentials": invalid-json}`)

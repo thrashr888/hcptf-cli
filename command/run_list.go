@@ -29,8 +29,8 @@ type RunListCommand struct {
 // Run executes the run list command
 func (c *RunListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("run list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (alias)")
 	flags.StringVar(&c.user, "user", "", "Filter runs by VCS username")

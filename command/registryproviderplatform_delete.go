@@ -29,8 +29,8 @@ type RegistryProviderPlatformDeleteCommand struct {
 // Run executes the registry provider platform delete command
 func (c *RegistryProviderPlatformDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("registryproviderplatform delete")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Provider name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Namespace (defaults to organization)")
 	flags.StringVar(&c.version, "version", "", "Version string (required)")

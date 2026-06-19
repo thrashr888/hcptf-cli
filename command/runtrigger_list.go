@@ -22,8 +22,8 @@ type RunTriggerListCommand struct {
 // Run executes the run trigger list command
 func (c *RunTriggerListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("runtrigger list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.triggerType, "type", "inbound", "Run trigger type: inbound or outbound (default: inbound)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

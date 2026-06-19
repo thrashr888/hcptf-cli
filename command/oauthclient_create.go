@@ -27,8 +27,8 @@ type OAuthClientCreateCommand struct {
 // Run executes the oauthclient create command
 func (c *OAuthClientCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("oauthclient create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.serviceProvider, "service-provider", "", "VCS provider: github, github_enterprise, gitlab_hosted, gitlab_community_edition, gitlab_enterprise_edition, ado_server (required)")
 	flags.StringVar(&c.name, "name", "", "Display name for the OAuth client")
 	flags.StringVar(&c.httpURL, "http-url", "", "VCS provider HTTP URL (required)")

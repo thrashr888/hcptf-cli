@@ -29,8 +29,8 @@ type ExplorerQueryCommand struct {
 // Run executes the explorer query command
 func (c *ExplorerQueryCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("explorer query")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.queryType, "type", "", "Query type: workspaces, tf_versions, providers, modules (required)")
 	flags.StringVar(&c.sort, "sort", "", "Sort field (prefix with - for descending)")
 	flags.StringVar(&c.filter, "filter", "", "Filter conditions")

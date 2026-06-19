@@ -18,8 +18,8 @@ type TeamRemoveMemberCommand struct {
 // Run executes the team remove-member command
 func (c *TeamRemoveMemberCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("team remove-member")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.teamName, "team", "", "Team name (required)")
 	flags.StringVar(&c.username, "username", "", "Username to remove (required)")
 

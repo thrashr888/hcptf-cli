@@ -19,8 +19,8 @@ type OrganizationTokenCreateCommand struct {
 // Run executes the organization token create command
 func (c *OrganizationTokenCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("organizationtoken create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.expiredAt, "expired-at", "", "Expiration date in ISO 8601 format (e.g., 2024-12-31T23:59:59Z)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

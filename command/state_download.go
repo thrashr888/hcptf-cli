@@ -26,7 +26,7 @@ type StateDownloadCommand struct {
 // Run executes the state download command
 func (c *StateDownloadCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("state download")
-	flags.StringVar(&c.organization, "org", "", "Organization name")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name")
 	flags.StringVar(&c.stateVersionID, "id", "", "State version ID (optional, defaults to current)")
 	flags.StringVar(&c.outputFile, "output", "", "Output file path (required)")

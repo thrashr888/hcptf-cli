@@ -36,8 +36,8 @@ type AssessmentResultListResponse struct {
 // Run executes the assessmentresult list command
 func (c *AssessmentResultListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("assessmentresult list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

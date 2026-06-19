@@ -98,8 +98,8 @@ func (c *GPGKeyCreateCommand) Run(args []string) int {
 			"action":   "create",
 			"resource": "gpgkey",
 			"options": map[string]interface{}{
-				"namespace":    options.Namespace,
-				"ascii_armor":  "(redacted)",
+				"namespace":   options.Namespace,
+				"ascii_armor": "(redacted)",
 			},
 		})
 		return 0
