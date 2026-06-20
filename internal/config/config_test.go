@@ -208,6 +208,71 @@ func TestLoadDotEnvDoesNotOverrideExistingEnvironment(t *testing.T) {
 	}
 }
 
+func TestLoadDotEnvLoadsAncestorFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	home := t.TempDir()
+	root := filepath.Join(home, "project")
+	nested := filepath.Join(root, "lab", "b194")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatalf("failed to create nested directory: %v", err)
+	}
+	chdir(t, nested)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(root, ".env"), "TFE_TOKEN=ancestor-token\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "ancestor-token" {
+		t.Fatalf("expected TFE_TOKEN from ancestor .env, got %q", got)
+	}
+}
+
+func TestLoadDotEnvLoadsUserDefaults(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	home := t.TempDir()
+	work := filepath.Join(home, "work")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatalf("failed to create work directory: %v", err)
+	}
+	chdir(t, work)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(home, ".hcptf.env"), "TFE_TOKEN=user-token\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "user-token" {
+		t.Fatalf("expected TFE_TOKEN from user defaults, got %q", got)
+	}
+}
+
+func TestLoadDotEnvProjectFileWinsOverUserDefaults(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN", "TFE_ORG")
+	home := t.TempDir()
+	project := filepath.Join(home, "project")
+	if err := os.MkdirAll(project, 0o755); err != nil {
+		t.Fatalf("failed to create project directory: %v", err)
+	}
+	chdir(t, project)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(home, ".hcptf.env"), "TFE_TOKEN=user-token\nTFE_ORG=user-org\n")
+	writeFile(t, filepath.Join(project, ".env"), "TFE_ORG=project-org\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "user-token" {
+		t.Fatalf("expected TFE_TOKEN from user defaults, got %q", got)
+	}
+	if got := os.Getenv("TFE_ORG"); got != "project-org" {
+		t.Fatalf("expected project TFE_ORG to win, got %q", got)
+	}
+}
+
 func TestLoadDotEnvExplicitFileTakesPrecedenceOverDefaultFile(t *testing.T) {
 	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
 	dir := t.TempDir()

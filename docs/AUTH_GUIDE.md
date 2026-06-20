@@ -62,6 +62,17 @@ chmod 600 .env
 hcptf whoami
 ```
 
+When `HCPTF_ENV_FILE` / `--env-file` is not set, `hcptf` loads existing env
+files in this order:
+
+1. `.env` in the current directory
+2. `.env` in ancestor directories, stopping at your home directory
+3. `~/.hcptf.env`
+4. `~/.config/hcptf/env`
+
+Files are loaded without overriding existing variables, so a project `.env`
+can override `TFE_ORG` while still inheriting `TFE_TOKEN` from `~/.hcptf.env`.
+
 Select an explicit file:
 
 ```bash
