@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Dotenv configuration defaults**: Load HCP Terraform connection settings from explicit `--env-file` / `HCPTF_ENV_FILE`, project `.env` files, and user-level env files without overriding exported environment variables
+- **Default organization environment variables**: Support `TFE_ORG` and `HCPTF_ORG` as default organization sources for commands with `-organization` / `-org` flags
+- **Justfile recipes**: Add `just build`, `just install`, and `just test` shortcuts for common development workflows
+
 ## [0.6.0] - 2026-03-05
 
 ### Added
