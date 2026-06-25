@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Default organization environment variables**: Support `TFE_ORG` and `HCPTF_ORG` as default organization sources for commands with `-organization` / `-org` flags
 - **Justfile recipes**: Add `just build`, `just install`, and `just test` shortcuts for common development workflows
 
+### Changed
+
+- **Dependency updates**: Updated `github.com/hashicorp/go-tfe` from v1.103.0 to v1.104.0
+
 ## [0.6.0] - 2026-03-05
 
 ### Added
