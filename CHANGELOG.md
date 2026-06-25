@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Dependency updates**: Updated `github.com/hashicorp/go-tfe` from v1.103.0 to v1.104.0
+- **GitHub Actions updates**: Updated `actions/checkout` from v6 to v7
 
 ## [0.6.0] - 2026-03-05
 
