@@ -20,8 +20,8 @@ type AzureoidcCreateCommand struct {
 // Run executes the azureoidc create command
 func (c *AzureoidcCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("azureoidc create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.clientID, "client-id", "", "Azure application (client) ID (required)")
 	flags.StringVar(&c.subscriptionID, "subscription-id", "", "Azure subscription ID (required)")
 	flags.StringVar(&c.tenantID, "tenant-id", "", "Azure tenant (directory) ID (required)")

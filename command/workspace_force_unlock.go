@@ -26,8 +26,8 @@ type WorkspaceForceUnlockCommand struct {
 // Run executes the workspace force-unlock command.
 func (c *WorkspaceForceUnlockCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspace force-unlock")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Workspace name (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

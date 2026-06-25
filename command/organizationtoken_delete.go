@@ -15,8 +15,8 @@ type OrganizationTokenDeleteCommand struct {
 // Run executes the organization token delete command
 func (c *OrganizationTokenDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("organizationtoken delete")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
 
 	if err := flags.Parse(args); err != nil {

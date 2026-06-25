@@ -26,8 +26,8 @@ type QueryRunListCommand struct {
 // Run executes the query run list command
 func (c *QueryRunListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("queryrun list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.status, "status", "", "Filter by run status (comma-separated)")
 	flags.StringVar(&c.operation, "operation", "", "Filter by operation type (comma-separated)")
 	flags.StringVar(&c.source, "source", "", "Filter by run source (comma-separated)")

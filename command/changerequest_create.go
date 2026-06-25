@@ -53,8 +53,8 @@ type BulkActionResponse struct {
 // Run executes the changerequest create command
 func (c *ChangeRequestCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("changerequest create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.subject, "subject", "", "Change request subject (required)")
 	flags.StringVar(&c.message, "message", "", "Change request message (required)")

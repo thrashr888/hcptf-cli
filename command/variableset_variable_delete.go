@@ -67,10 +67,10 @@ func (c *VariableSetVariableDeleteCommand) Run(args []string) int {
 	if c.Meta.DryRun {
 		formatter := c.Meta.NewFormatter("json")
 		formatter.JSON(map[string]interface{}{
-			"action":          "delete",
-			"resource":        "variableset-variable",
-			"variableset_id":  c.variableSetID,
-			"variable_id":     c.variableID,
+			"action":         "delete",
+			"resource":       "variableset-variable",
+			"variableset_id": c.variableSetID,
+			"variable_id":    c.variableID,
 		})
 		return 0
 	}

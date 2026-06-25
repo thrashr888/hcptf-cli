@@ -22,8 +22,8 @@ type VaultoidcCreateCommand struct {
 // Run executes the vaultoidc create command
 func (c *VaultoidcCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("vaultoidc create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.address, "address", "", "Vault instance address (required)")
 	flags.StringVar(&c.roleName, "role", "", "Vault JWT auth role name (required)")
 	flags.StringVar(&c.namespace, "namespace", "", "Vault namespace (required)")

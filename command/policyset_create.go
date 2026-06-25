@@ -25,8 +25,8 @@ type PolicySetCreateCommand struct {
 // Run executes the policy set create command
 func (c *PolicySetCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policyset create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Policy set name (required)")
 	flags.StringVar(&c.description, "description", "", "Policy set description")
 	flags.BoolVar(&c.global, "global", false, "Apply to all workspaces")

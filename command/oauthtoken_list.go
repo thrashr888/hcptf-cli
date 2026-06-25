@@ -24,8 +24,8 @@ type OAuthTokenListCommand struct {
 // Run executes the oauthtoken list command
 func (c *OAuthTokenListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("oauthtoken list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {

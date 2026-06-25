@@ -17,7 +17,7 @@ type HYOKListCommand struct {
 // Run executes the HYOK list command
 func (c *HYOKListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("hyok list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 
 	if err := flags.Parse(args); err != nil {

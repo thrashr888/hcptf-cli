@@ -30,8 +30,8 @@ type RunListOrgCommand struct {
 // Run executes the run list-org command.
 func (c *RunListOrgCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("run list-org")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.user, "user", "", "Filter by VCS username")
 	flags.StringVar(&c.commit, "commit", "", "Filter by commit SHA")
 	flags.StringVar(&c.search, "search", "", "Search runs by username, commit, run ID, or message")

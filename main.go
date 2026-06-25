@@ -54,8 +54,14 @@ func realMain() int {
 	commandPaths := extractCommandPaths(commands)
 	getVerbIndex := buildGetVerbIndex(commands)
 
+	// Parse global flags that must be handled before command routing.
+	args, err := extractEnvFileFlag(os.Args[1:])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing arguments: %s\n", err.Error())
+		return 1
+	}
+
 	// Translate URL-like args if present
-	args := os.Args[1:]
 	r := router.NewRouter(nil, commandPaths) // Pass nil client for now - we don't need validation
 	translatedArgs, err := r.TranslateArgs(args)
 	if err != nil {
@@ -86,6 +92,44 @@ func realMain() int {
 	}
 
 	return exitCode
+}
+
+func extractEnvFileFlag(args []string) ([]string, error) {
+	out := make([]string, 0, len(args))
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--env-file" || arg == "-env-file":
+			if i+1 >= len(args) || args[i+1] == "" {
+				return nil, fmt.Errorf("%s requires a path", arg)
+			}
+			if err := os.Setenv("HCPTF_ENV_FILE", args[i+1]); err != nil {
+				return nil, err
+			}
+			i++
+		case strings.HasPrefix(arg, "--env-file="):
+			path := strings.TrimPrefix(arg, "--env-file=")
+			if path == "" {
+				return nil, fmt.Errorf("--env-file requires a path")
+			}
+			if err := os.Setenv("HCPTF_ENV_FILE", path); err != nil {
+				return nil, err
+			}
+		case strings.HasPrefix(arg, "-env-file="):
+			path := strings.TrimPrefix(arg, "-env-file=")
+			if path == "" {
+				return nil, fmt.Errorf("-env-file requires a path")
+			}
+			if err := os.Setenv("HCPTF_ENV_FILE", path); err != nil {
+				return nil, err
+			}
+		default:
+			out = append(out, arg)
+		}
+	}
+
+	return out, nil
 }
 
 // GetVersion returns the full version string

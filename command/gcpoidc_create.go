@@ -20,8 +20,8 @@ type GCPoidcCreateCommand struct {
 // Run executes the gcpoidc create command
 func (c *GCPoidcCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("gcpoidc create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.serviceAccountEmail, "service-account-email", "", "GCP service account email (required)")
 	flags.StringVar(&c.workloadProviderName, "workload-provider-name", "", "Workload provider path (required)")
 	flags.StringVar(&c.projectNumber, "project-number", "", "GCP project number (required)")

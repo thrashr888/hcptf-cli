@@ -18,8 +18,55 @@ func writeFile(t *testing.T, path, content string) {
 	}
 }
 
+func chdir(t *testing.T, dir string) {
+	t.Helper()
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to change working directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previous); err != nil {
+			t.Fatalf("failed to restore working directory: %v", err)
+		}
+	})
+}
+
+func unsetEnv(t *testing.T, keys ...string) {
+	t.Helper()
+	previous := make(map[string]string, len(keys))
+	present := make(map[string]bool, len(keys))
+	for _, key := range keys {
+		value, ok := os.LookupEnv(key)
+		if ok {
+			previous[key] = value
+			present[key] = true
+		}
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatalf("failed to unset %s: %v", key, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, key := range keys {
+			var err error
+			if present[key] {
+				err = os.Setenv(key, previous[key])
+			} else {
+				err = os.Unsetenv(key)
+			}
+			if err != nil {
+				t.Fatalf("failed to restore %s: %v", key, err)
+			}
+		}
+	})
+}
+
 func TestLoadMergesConfigAndTerraformCredentials(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
 	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	configContent := `
@@ -65,7 +112,9 @@ output_format = "json"
 }
 
 func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
 	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	cfg, err := Load()
@@ -82,8 +131,212 @@ func TestLoadDefaultsWhenConfigMissing(t *testing.T) {
 	}
 }
 
-func TestLoadInvalidTerraformCredentialsReturnsError(t *testing.T) {
+func TestLoadUsesDefaultOrganizationFromDotEnv(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
 	home := t.TempDir()
+	dir := t.TempDir()
+	chdir(t, dir)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_ORG=dotenv-org\n")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.DefaultOrganization != "dotenv-org" {
+		t.Fatalf("expected default organization dotenv-org, got %s", cfg.DefaultOrganization)
+	}
+}
+
+func TestLoadEnvironmentOrganizationOverridesConfig(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_ORG", "HCPTF_ORG")
+	home := t.TempDir()
+	chdir(t, t.TempDir())
+	t.Setenv("HOME", home)
+	t.Setenv("TFE_ORG", "env-org")
+
+	writeFile(t, filepath.Join(home, ".hcptfrc"), `
+default_organization = "config-org"
+`)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.DefaultOrganization != "env-org" {
+		t.Fatalf("expected default organization env-org, got %s", cfg.DefaultOrganization)
+	}
+}
+
+func TestLoadDotEnvLoadsDefaultFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN", "HCPTF_TOKEN", "TFE_ADDRESS", "HCPTF_ADDRESS")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), `
+# Terraform Enterprise connection
+TFE_TOKEN=dotenv-token
+TFE_ADDRESS=https://tfe.example.com
+`)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "dotenv-token" {
+		t.Fatalf("expected TFE_TOKEN from .env, got %q", got)
+	}
+	if got := os.Getenv("TFE_ADDRESS"); got != "https://tfe.example.com" {
+		t.Fatalf("expected TFE_ADDRESS from .env, got %q", got)
+	}
+}
+
+func TestLoadDotEnvDoesNotOverrideExistingEnvironment(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_TOKEN=dotenv-token\n")
+	t.Setenv("TFE_TOKEN", "exported-token")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "exported-token" {
+		t.Fatalf("expected exported TFE_TOKEN to win, got %q", got)
+	}
+}
+
+func TestLoadDotEnvLoadsAncestorFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	home := t.TempDir()
+	root := filepath.Join(home, "project")
+	nested := filepath.Join(root, "lab", "b194")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatalf("failed to create nested directory: %v", err)
+	}
+	chdir(t, nested)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(root, ".env"), "TFE_TOKEN=ancestor-token\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "ancestor-token" {
+		t.Fatalf("expected TFE_TOKEN from ancestor .env, got %q", got)
+	}
+}
+
+func TestLoadDotEnvLoadsUserDefaults(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	home := t.TempDir()
+	work := filepath.Join(home, "work")
+	if err := os.MkdirAll(work, 0o755); err != nil {
+		t.Fatalf("failed to create work directory: %v", err)
+	}
+	chdir(t, work)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(home, ".hcptf.env"), "TFE_TOKEN=user-token\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "user-token" {
+		t.Fatalf("expected TFE_TOKEN from user defaults, got %q", got)
+	}
+}
+
+func TestLoadDotEnvProjectFileWinsOverUserDefaults(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN", "TFE_ORG")
+	home := t.TempDir()
+	project := filepath.Join(home, "project")
+	if err := os.MkdirAll(project, 0o755); err != nil {
+		t.Fatalf("failed to create project directory: %v", err)
+	}
+	chdir(t, project)
+	t.Setenv("HOME", home)
+	writeFile(t, filepath.Join(home, ".hcptf.env"), "TFE_TOKEN=user-token\nTFE_ORG=user-org\n")
+	writeFile(t, filepath.Join(project, ".env"), "TFE_ORG=project-org\n")
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "user-token" {
+		t.Fatalf("expected TFE_TOKEN from user defaults, got %q", got)
+	}
+	if got := os.Getenv("TFE_ORG"); got != "project-org" {
+		t.Fatalf("expected project TFE_ORG to win, got %q", got)
+	}
+}
+
+func TestLoadDotEnvExplicitFileTakesPrecedenceOverDefaultFile(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	writeFile(t, filepath.Join(dir, ".env"), "TFE_TOKEN=default-token\n")
+	explicitPath := filepath.Join(dir, "prod.env")
+	writeFile(t, explicitPath, "TFE_TOKEN=explicit-token\n")
+	t.Setenv(EnvFileVariable, explicitPath)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+
+	if got := os.Getenv("TFE_TOKEN"); got != "explicit-token" {
+		t.Fatalf("expected explicit env file token to win, got %q", got)
+	}
+}
+
+func TestLoadDotEnvMissingDefaultFileIsIgnored(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	if err := LoadDotEnv(); err != nil {
+		t.Fatalf("LoadDotEnv() error = %v", err)
+	}
+}
+
+func TestLoadDotEnvMissingExplicitFileReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	t.Setenv(EnvFileVariable, filepath.Join(dir, "missing.env"))
+
+	err := LoadDotEnv()
+	if err == nil {
+		t.Fatal("expected missing explicit env file to return error")
+	}
+	if !strings.Contains(err.Error(), "failed to load env file") {
+		t.Fatalf("expected env file error, got %v", err)
+	}
+}
+
+func TestLoadDotEnvMalformedFileReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable, "TFE_TOKEN")
+	dir := t.TempDir()
+	chdir(t, dir)
+	envPath := filepath.Join(dir, "bad.env")
+	writeFile(t, envPath, "not valid dotenv\n")
+	t.Setenv(EnvFileVariable, envPath)
+
+	err := LoadDotEnv()
+	if err == nil {
+		t.Fatal("expected malformed env file to return error")
+	}
+	if !strings.Contains(err.Error(), "failed to load env file") {
+		t.Fatalf("expected env file error, got %v", err)
+	}
+}
+
+func TestLoadInvalidTerraformCredentialsReturnsError(t *testing.T) {
+	unsetEnv(t, EnvFileVariable)
+	home := t.TempDir()
+	chdir(t, t.TempDir())
 	t.Setenv("HOME", home)
 
 	writeFile(t, filepath.Join(home, ".terraform.d", "credentials.tfrc.json"), `{"credentials": invalid-json}`)

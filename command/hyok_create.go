@@ -25,7 +25,7 @@ type HYOKCreateCommand struct {
 // Run executes the HYOK create command
 func (c *HYOKCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("hyok create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
 	flags.StringVar(&c.name, "name", "", "HYOK configuration name (required)")
 	flags.StringVar(&c.kekID, "kek-id", "", "Key Encryption Key ID from your KMS (required)")
 	flags.StringVar(&c.agentPoolID, "agent-pool-id", "", "Agent pool ID (required)")

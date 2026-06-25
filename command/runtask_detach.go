@@ -17,8 +17,8 @@ type RunTaskDetachCommand struct {
 // Run executes the run task detach command
 func (c *RunTaskDetachCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("runtask detach")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.StringVar(&c.workspaceRunTaskID, "workspace-runtask-id", "", "Workspace run task ID (required)")
 	flags.BoolVar(&c.force, "force", false, "Force detach without confirmation")

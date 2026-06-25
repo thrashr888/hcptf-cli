@@ -24,8 +24,8 @@ type ConfigVersionCreateCommand struct {
 // Run executes the configversion create command
 func (c *ConfigVersionCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("configversion create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name (required)")
 	flags.BoolVar(&c.autoQueueRuns, "auto-queue-runs", true, "Automatically queue runs when uploaded")
 	flags.BoolVar(&c.speculative, "speculative", false, "Create a speculative configuration version")

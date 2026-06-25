@@ -19,8 +19,8 @@ type RegistryModuleDeleteCommand struct {
 // Run executes the registry module delete command
 func (c *RegistryModuleDeleteCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("registrymodule delete")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Module name (required)")
 	flags.BoolVar(&c.force, "force", false, "Force delete without confirmation")
 	flags.BoolVar(&c.force, "f", false, "Shorthand for -force")

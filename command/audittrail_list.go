@@ -21,8 +21,8 @@ type AuditTrailListCommand struct {
 // Run executes the audit trail list command
 func (c *AuditTrailListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("audittrail list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.since, "since", "", "Return audit events since this date (ISO8601 format: YYYY-MM-DDTHH:MM:SS.SSSZ)")
 	flags.IntVar(&c.pageNumber, "page-number", 1, "Page number")
 	flags.IntVar(&c.pageSize, "page-size", 100, "Number of items per page (max 1000)")

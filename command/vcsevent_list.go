@@ -68,8 +68,8 @@ type VCSEventListResponse struct {
 // Run executes the vcsevent list command
 func (c *VCSEventListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("vcsevent list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 	flags.StringVar(&c.from, "from", "", "Start time (RFC3339 format in UTC, e.g., 2021-02-02T14:09:00Z)")
 	flags.StringVar(&c.to, "to", "", "End time (RFC3339 format in UTC, e.g., 2021-02-12T14:09:59Z)")

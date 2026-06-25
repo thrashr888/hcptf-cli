@@ -21,8 +21,8 @@ type SSHKeyCreateCommand struct {
 // Run executes the SSH key create command
 func (c *SSHKeyCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("sshkey create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "SSH key name (required)")
 	flags.StringVar(&c.value, "value", "", "SSH private key content (required)")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

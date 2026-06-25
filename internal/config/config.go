@@ -48,6 +48,10 @@ type TerraformCredential struct {
 
 // Load loads the configuration from the default location or environment
 func Load() (*Config, error) {
+	if err := LoadDotEnv(); err != nil {
+		return nil, err
+	}
+
 	configPath := GetConfigPath()
 
 	var config Config
@@ -84,6 +88,10 @@ func Load() (*Config, error) {
 		if diskConfig.OutputFormat != "" {
 			config.OutputFormat = diskConfig.OutputFormat
 		}
+	}
+
+	if org := GetDefaultOrganizationEnv(); org != "" {
+		config.DefaultOrganization = org
 	}
 
 	// Also try to load credentials from Terraform CLI credentials file
@@ -151,6 +159,17 @@ func GetAddress() string {
 		return addr
 	}
 	return "https://app.terraform.io"
+}
+
+// GetDefaultOrganizationEnv returns the organization configured by environment.
+func GetDefaultOrganizationEnv() string {
+	if org := os.Getenv("TFE_ORG"); org != "" {
+		return org
+	}
+	if org := os.Getenv("HCPTF_ORG"); org != "" {
+		return org
+	}
+	return ""
 }
 
 // GetConfigPath returns the path to the configuration file

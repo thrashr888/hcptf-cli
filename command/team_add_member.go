@@ -18,8 +18,8 @@ type TeamAddMemberCommand struct {
 // Run executes the team add-member command
 func (c *TeamAddMemberCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("team add-member")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.teamName, "team", "", "Team name (required)")
 	flags.StringVar(&c.username, "username", "", "Username to add (required)")
 

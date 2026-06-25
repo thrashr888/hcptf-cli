@@ -19,8 +19,8 @@ type ProjectCreateCommand struct {
 // Run executes the project create command
 func (c *ProjectCreateCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("project create")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.name, "name", "", "Project name (required)")
 	flags.StringVar(&c.description, "description", "", "Project description")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")

@@ -26,8 +26,8 @@ type WorkspaceListCommand struct {
 // Run executes the workspace list command
 func (c *WorkspaceListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspace list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.search, "search", "", "Search workspace names by substring")
 	flags.StringVar(&c.tags, "tags", "", "Filter by tag names (comma-separated)")
 	flags.StringVar(&c.excludeTags, "exclude-tags", "", "Exclude workspaces with these tags (comma-separated)")

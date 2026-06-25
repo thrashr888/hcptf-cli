@@ -21,8 +21,8 @@ func (c *WorkspaceTagListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("workspacetag list")
 	flags.StringVar(&c.workspaceID, "workspace-id", "", "Workspace ID")
 	flags.StringVar(&c.workspaceID, "id", "", "Workspace ID (alias)")
-	flags.StringVar(&c.organization, "organization", "", "Organization name")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.workspace, "workspace", "", "Workspace name")
 	flags.StringVar(&c.format, "output", "table", "Output format: table or json")
 

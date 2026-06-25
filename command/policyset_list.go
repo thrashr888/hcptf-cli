@@ -22,8 +22,8 @@ type PolicySetListCommand struct {
 // Run executes the policy set list command
 func (c *PolicySetListCommand) Run(args []string) int {
 	flags := c.Meta.FlagSet("policyset list")
-	flags.StringVar(&c.organization, "organization", "", "Organization name (required)")
-	flags.StringVar(&c.organization, "org", "", "Organization name (alias)")
+	flags.StringVar(&c.organization, "organization", c.Meta.DefaultOrganization(), "Organization name (required)")
+	flags.StringVar(&c.organization, "org", c.Meta.DefaultOrganization(), "Organization name (alias)")
 	flags.StringVar(&c.search, "search", "", "Search policy set names by substring")
 	flags.StringVar(&c.kind, "kind", "", "Filter by policy set kind: sentinel or opa")
 	flags.StringVar(&c.include, "include", "", "Include related resources (comma-separated)")
