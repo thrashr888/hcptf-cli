@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-25
+
 ### Added
 
 - **Dotenv configuration defaults**: Load HCP Terraform connection settings from explicit `--env-file` / `HCPTF_ENV_FILE`, project `.env` files, and user-level env files without overriding exported environment variables
