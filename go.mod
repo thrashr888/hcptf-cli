@@ -3,12 +3,12 @@ module github.com/hashicorp/hcptf-cli
 go 1.25.0
 
 require (
-	github.com/hashicorp/go-tfe v1.104.0
-	github.com/hashicorp/hcl/v2 v2.24.0
+	github.com/hashicorp/go-tfe v1.111.2
+	github.com/hashicorp/hcl/v2 v2.25.0
 	github.com/hashicorp/jsonapi v1.5.0
 	github.com/joho/godotenv v1.5.1
 	github.com/mitchellh/cli v1.1.5
-	github.com/olekukonko/tablewriter v1.1.4
+	github.com/olekukonko/tablewriter v1.1.5
 )
 
 require (
@@ -18,6 +18,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
+	github.com/apparentlymart/go-textseg/v17 v17.0.1 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -33,7 +34,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-slug v0.16.8 // indirect
-	github.com/hashicorp/go-version v1.8.0 // indirect
+	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -48,7 +49,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/zclconf/go-cty v1.17.0 // indirect
+	github.com/zclconf/go-cty v1.19.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
